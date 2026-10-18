@@ -1,58 +1,98 @@
 
-/* 認証APIとの通信処理 */
-window.AREAuth = (() => {
-    const config = window.ARE_CONFIG;
+const AREAuth = (() => {
+    const functionUrl = (name) => `${ARE_CONFIG.supabaseUrl}/functions/v1/${name}`;
 
-    /* Edge FunctionをJSONで呼び出す */
-    async function callFunction(functionName, payload) {
-        const response = await fetch(
-            `${config.supabaseUrl}/functions/v1/${functionName}`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "apikey": config.supabasePublishableKey
-                },
-                body: JSON.stringify(payload)
-            }
-        );
+    async function callFunction(name, payload) {
+        const response = await fetch(functionUrl(name), {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "apikey": ARE_CONFIG.supabaseKey
+            },
+            body: JSON.stringify(payload)
+        });
 
         const result = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-            throw new Error(result.message || result.error || "API通信に失敗しました。");
+            throw new Error(result.error || result.message || "リクエストに失敗しました。");
         }
 
         return result;
     }
 
-    /* ログイン */
     async function login(loginId, password) {
-        return callFunction(config.functions.login, {
+        const result = await callFunction("login-user", {
             loginId,
             password
         });
+
+        // Edge FunctionのcamelCaseをSupabase JSの形式へ変換する
+        const accessToken = result.accessToken;
+        const refreshToken = result.refreshToken;
+
+        if (!accessToken || !refreshToken) {
+            throw new Error("ログインAPIのセッション情報が不足しています。");
+        }
+
+        const expiresAtValue = result.expiresAt;
+        let expiresAt = Number(expiresAtValue);
+
+        if (!Number.isFinite(expiresAt)) {
+            expiresAt = Math.floor(new Date(expiresAtValue).getTime() / 1000);
+        }
+
+        if (!Number.isFinite(expiresAt) || expiresAt <= 0) {
+            expiresAt = undefined;
+        }
+
+        const sessionResult = await window.areSupabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+        });
+
+        if (sessionResult.error) {
+            throw sessionResult.error;
+        }
+
+        return {
+            ...result,
+            session: sessionResult.data.session,
+            user: sessionResult.data.user || result.user
+        };
     }
 
-    /* 新規登録 */
-    async function register(displayName, loginId, password, phone) {
-        return callFunction(config.functions.register, {
+    async function register(displayName, loginId, password, phoneNumber) {
+        return callFunction("register-user", {
             displayName,
             loginId,
             password,
-            phone
+            phoneNumber
         });
     }
 
-    /* アカウント復旧 */
     async function recover(loginId, recoveryCode, newPassword) {
-        return callFunction(config.functions.recovery, {
+        return callFunction("recover-account", {
             loginId,
             recoveryCode,
             newPassword
         });
     }
 
-    /* 公開する認証メソッド */
-    return { login, register, recover };
+    async function logout() {
+        const result = await window.areSupabase.auth.signOut();
+
+        if (result.error) {
+            throw result.error;
+        }
+    }
+
+    return {
+        login,
+        register,
+        recover,
+        logout
+    };
 })();
+
+window.AREAuth = AREAuth;

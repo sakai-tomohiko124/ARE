@@ -38,6 +38,25 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    
+    document.getElementById("showRegister")?.addEventListener("click", () => {
+        showView("register");
+        showStatus("");
+    });
+
+    document.getElementById("showRecovery")?.addEventListener("click", () => {
+        showView("recovery");
+        showStatus("");
+    });
+
+    document.querySelectorAll("[data-view]").forEach((button) => {
+        button.addEventListener("click", () => {
+            showView(button.dataset.view === "loginView" ? "login" : button.dataset.view);
+            showStatus("");
+        });
+    });
+
+    
     async function openChat(user) {
         if (!user?.id) {
             throw new Error("ログインユーザー情報を取得できませんでした。");

@@ -1,172 +1,148 @@
 
-/* ARE共通システム：Supabase接続・認証・共通処理 */
 (function () {
     "use strict";
 
-    /* Supabase接続設定 */
-    const ARE_CONFIG = Object.freeze({
+    const CONFIG = Object.freeze({
         supabaseUrl: "https://xawevnvzkcoijswmujah.supabase.co",
         supabasePublishableKey: "sb_publishable_VWeGzACdSzM80biRbTtaog_diIE_AEj",
         functions: Object.freeze({
             register: "register-user",
             login: "login-user",
             recovery: "recover-account"
-        })
+        }),
+        requestTimeoutMs: 20000
     });
 
-    /* 共通設定を公開 */
-    window.ARE_CONFIG = ARE_CONFIG;
+    let supabaseClient = null;
 
-    /* 必要なライブラリを確認 */
-    if (!window.supabase || typeof window.supabase.createClient !== "function") {
-        console.error("Supabaseライブラリを読み込めません。");
-        throw new Error("Supabaseライブラリを読み込めません。");
+    function getConfig() {
+        const existingConfig = window.ARE_CONFIG || {};
+
+        return {
+            ...CONFIG,
+            ...existingConfig,
+            functions: {
+                ...CONFIG.functions,
+                ...(existingConfig.functions || {})
+            }
+        };
     }
 
-    /* Supabaseクライアントを初期化 */
-    const areSupabase = window.supabase.createClient(
-        ARE_CONFIG.supabaseUrl,
-        ARE_CONFIG.supabasePublishableKey
-    );
-
-    /* 既存コードとの互換性を維持 */
-    window.areSupabase = areSupabase;
-
-    /* APIのエラーメッセージを取得 */
-    async function readResponse(response) {
-        const responseText = await response.text();
-
-        if (!responseText) {
-            return {};
+    function getClient() {
+        if (supabaseClient) {
+            return supabaseClient;
         }
 
-        try {
-            return JSON.parse(responseText);
-        } catch {
-            return {
-                message: responseText
-            };
-        }
-    }
-
-    /* Supabase Edge Functionを呼び出す */
-    async function callFunction(functionName, payload) {
-        const endpointName = ARE_CONFIG.functions[functionName];
-
-        if (!endpointName) {
-            throw new Error("指定されたAPIが設定されていません。");
+        if (window.areSupabase) {
+            supabaseClient = window.areSupabase;
+            return supabaseClient;
         }
 
-        const response = await fetch(
-            `${ARE_CONFIG.supabaseUrl}/functions/v1/${endpointName}`,
+        if (!window.supabase || typeof window.supabase.createClient !== "function") {
+            throw new Error("Supabaseライブラリが読み込まれていません。HTMLのscript設定を確認してください。");
+        }
+
+        const config = getConfig();
+
+        if (!config.supabaseUrl || !config.supabasePublishableKey) {
+            throw new Error("Supabaseの接続設定が不足しています。");
+        }
+
+        supabaseClient = window.supabase.createClient(
+            config.supabaseUrl,
+            config.supabasePublishableKey,
             {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "apikey": ARE_CONFIG.supabasePublishableKey
-                },
-                body: JSON.stringify(payload)
+                auth: {
+                    persistSession: true,
+                    autoRefreshToken: true,
+                    detectSessionInUrl: true
+                }
             }
         );
 
-        const result = await readResponse(response);
+        window.areSupabase = supabaseClient;
 
-        if (!response.ok) {
-            throw new Error(
-                result.error ||
-                result.message ||
-                `APIリクエストに失敗しました。HTTP ${response.status}`
-            );
-        }
-
-        if (result && typeof result === "object" && result.error) {
-            throw new Error(result.error);
-        }
-
-        return result;
+        return supabaseClient;
     }
 
-    /* 必須文字列を検証 */
-    function requireText(value, label) {
-        if (typeof value !== "string" || !value.trim()) {
-            throw new Error(`${label}を入力してください。`);
-        }
-
-        return value.trim();
+    function getFunctionUrl(functionName) {
+        const config = getConfig();
+        return `${config.supabaseUrl}/functions/v1/${functionName}`;
     }
 
-    /* 時刻を日本語形式で表示 */
-    function formatTime(value) {
-        if (!value) {
-            return "";
+    async function callFunction(functionName, payload) {
+        const config = getConfig();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), config.requestTimeoutMs);
+
+        try {
+            const response = await fetch(getFunctionUrl(functionName), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "apikey": config.supabasePublishableKey
+                },
+                body: JSON.stringify(payload),
+                signal: controller.signal
+            });
+
+            const responseText = await response.text();
+            let result = {};
+
+            if (responseText) {
+                try {
+                    result = JSON.parse(responseText);
+                } catch {
+                    result = { message: responseText };
+                }
+            }
+
+            if (!response.ok) {
+                const errorMessage = result.error || result.message || `APIリクエストに失敗しました（HTTP ${response.status}）。`;
+                throw new Error(errorMessage);
+            }
+
+            if (result && result.error) {
+                throw new Error(result.error);
+            }
+
+            return result;
+        } catch (error) {
+            if (error.name === "AbortError") {
+                throw new Error("サーバーからの応答がタイムアウトしました。時間をおいて再試行してください。");
+            }
+
+            if (error instanceof TypeError) {
+                throw new Error("サーバーに接続できませんでした。通信状態とEdge Functionの設定を確認してください。");
+            }
+
+            throw error;
+        } finally {
+            clearTimeout(timeoutId);
         }
-
-        const date = new Date(value);
-
-        if (Number.isNaN(date.getTime())) {
-            return "";
-        }
-
-        return new Intl.DateTimeFormat("ja-JP", {
-            hour: "2-digit",
-            minute: "2-digit"
-        }).format(date);
     }
 
-    /* 新規アカウントを作成 */
-    async function register(displayName, loginId, password, phoneNumber = "") {
-        const normalizedDisplayName = requireText(displayName, "表示名");
-        const normalizedLoginId = requireText(loginId, "ログインID");
-
-        if (typeof password !== "string" || !password) {
-            throw new Error("パスワードを入力してください。");
-        }
-
-        if (normalizedDisplayName.length > 40) {
-            throw new Error("表示名は40文字以内で入力してください。");
-        }
-
-        if (normalizedLoginId.length > 80) {
-            throw new Error("ログインIDは80文字以内で入力してください。");
-        }
-
-        const normalizedPhoneNumber = typeof phoneNumber === "string"
-            ? phoneNumber.trim()
-            : "";
-
-        return callFunction("register", {
-            displayName: normalizedDisplayName,
-            loginId: normalizedLoginId,
-            password,
-            phoneNumber: normalizedPhoneNumber
-        });
-    }
-
-    /* ログインしてSupabaseセッションを設定 */
     async function login(loginId, password) {
-        const normalizedLoginId = requireText(loginId, "ログインID");
+        const normalizedLoginId = String(loginId || "").trim();
 
-        if (typeof password !== "string" || !password) {
-            throw new Error("パスワードを入力してください。");
+        if (!normalizedLoginId || !password) {
+            throw new Error("ログインIDとパスワードを入力してください。");
         }
 
-        const result = await callFunction("login", {
+        const config = getConfig();
+        const result = await callFunction(config.functions.login, {
             loginId: normalizedLoginId,
-            password
+            password: password
         });
 
-        /* APIからセッション情報を取得 */
         const accessToken = result.accessToken || result.access_token;
         const refreshToken = result.refreshToken || result.refresh_token;
 
         if (!accessToken || !refreshToken) {
-            throw new Error(
-                "ログインAPIの応答にセッション情報がありません。サーバー側の応答形式を確認してください。"
-            );
+            throw new Error("ログインAPIからセッション情報を取得できませんでした。login-userの応答形式を確認してください。");
         }
 
-        /* Supabase認証セッションを設定 */
-        const sessionResult = await areSupabase.auth.setSession({
+        const sessionResult = await getClient().auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
         });
@@ -175,39 +151,64 @@
             throw sessionResult.error;
         }
 
-        const session = sessionResult.data.session;
-        const user = sessionResult.data.user || session?.user || result.user;
-
-        if (!user?.id) {
-            throw new Error("ログイン後のユーザー情報を取得できませんでした。");
-        }
-
         return {
             ...result,
-            session,
-            user
+            session: sessionResult.data.session,
+            user: sessionResult.data.user || result.user || null
         };
     }
 
-    /* 復旧コードを使ってパスワードを再設定 */
-    async function recover(loginId, recoveryCode, newPassword) {
-        const normalizedLoginId = requireText(loginId, "ログインID");
-        const normalizedRecoveryCode = requireText(recoveryCode, "復旧コード");
+    async function register(displayName, loginId, password, phoneNumber) {
+        const normalizedDisplayName = String(displayName || "").trim();
+        const normalizedLoginId = String(loginId || "").trim();
+        const normalizedPhoneNumber = String(phoneNumber || "").trim();
 
-        if (typeof newPassword !== "string" || !newPassword) {
-            throw new Error("新しいパスワードを入力してください。");
+        if (!normalizedDisplayName) {
+            throw new Error("表示名を入力してください。");
         }
 
-        return callFunction("recovery", {
+        if (!normalizedLoginId) {
+            throw new Error("ログインIDを入力してください。");
+        }
+
+        if (!password || String(password).length < 8) {
+            throw new Error("パスワードは8文字以上で入力してください。");
+        }
+
+        const config = getConfig();
+
+        return callFunction(config.functions.register, {
+            displayName: normalizedDisplayName,
             loginId: normalizedLoginId,
-            recoveryCode: normalizedRecoveryCode,
-            newPassword
+            password: password,
+            phoneNumber: normalizedPhoneNumber
         });
     }
 
-    /* ログアウトしてセッションを破棄 */
+    async function recover(loginId, recoveryCode, newPassword) {
+        const normalizedLoginId = String(loginId || "").trim();
+        const normalizedRecoveryCode = String(recoveryCode || "").trim();
+
+        if (!normalizedLoginId || !normalizedRecoveryCode || !newPassword) {
+            throw new Error("ログインID、復旧コード、新しいパスワードを入力してください。");
+        }
+
+        if (String(newPassword).length < 8) {
+            throw new Error("新しいパスワードは8文字以上で入力してください。");
+        }
+
+        const config = getConfig();
+
+        return callFunction(config.functions.recovery, {
+            loginId: normalizedLoginId,
+            recoveryCode: normalizedRecoveryCode,
+            newPassword: newPassword
+        });
+    }
+
     async function logout() {
-        const result = await areSupabase.auth.signOut();
+        const client = getClient();
+        const result = await client.auth.signOut();
 
         if (result.error) {
             throw result.error;
@@ -216,9 +217,9 @@
         return true;
     }
 
-    /* 現在の認証セッションを取得 */
     async function getSession() {
-        const result = await areSupabase.auth.getSession();
+        const client = getClient();
+        const result = await client.auth.getSession();
 
         if (result.error) {
             throw result.error;
@@ -227,58 +228,130 @@
         return result.data.session;
     }
 
-    /* 現在のログインユーザーを取得 */
     async function getCurrentUser() {
-        const result = await areSupabase.auth.getUser();
+        const client = getClient();
+        const result = await client.auth.getUser();
 
         if (result.error) {
+            if (result.error.name === "AuthSessionMissingError") {
+                return null;
+            }
+
             throw result.error;
         }
 
-        return result.data.user;
+        return result.data.user || null;
     }
 
-    /* 認証状態の変化を監視 */
-    function onAuthStateChange(callback) {
-        if (typeof callback !== "function") {
-            throw new Error("認証状態のコールバックが正しくありません。");
+    async function requireSession(redirectUrl) {
+        const session = await getSession();
+
+        if (!session || !session.user) {
+            if (redirectUrl) {
+                window.location.href = redirectUrl;
+            }
+
+            return null;
         }
 
-        const result = areSupabase.auth.onAuthStateChange(
-            (event, session) => {
-                callback(event, session);
-            }
-        );
+        return session;
+    }
+
+    function onAuthStateChange(callback) {
+        if (typeof callback !== "function") {
+            throw new Error("認証状態の変更を受け取る関数を指定してください。");
+        }
+
+        const result = getClient().auth.onAuthStateChange((event, session) => {
+            callback(event, session);
+        });
 
         return result.data.subscription;
     }
 
-    /* 認証機能を公開 */
-    window.AREAuth = Object.freeze({
-        register,
+    function getCurrentAccessToken() {
+        return getSession().then((session) => session?.access_token || null);
+    }
+
+    async function callAuthenticatedFunction(functionName, payload) {
+        const config = getConfig();
+        const session = await getSession();
+
+        if (!session?.access_token) {
+            throw new Error("ログインしてください。");
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), config.requestTimeoutMs);
+
+        try {
+            const response = await fetch(getFunctionUrl(functionName), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "apikey": config.supabasePublishableKey,
+                    "Authorization": `Bearer ${session.access_token}`
+                },
+                body: JSON.stringify(payload || {}),
+                signal: controller.signal
+            });
+
+            const responseText = await response.text();
+            let result = {};
+
+            if (responseText) {
+                try {
+                    result = JSON.parse(responseText);
+                } catch {
+                    result = { message: responseText };
+                }
+            }
+
+            if (!response.ok) {
+                throw new Error(result.error || result.message || `APIリクエストに失敗しました（HTTP ${response.status}）。`);
+            }
+
+            if (result && result.error) {
+                throw new Error(result.error);
+            }
+
+            return result;
+        } catch (error) {
+            if (error.name === "AbortError") {
+                throw new Error("サーバーからの応答がタイムアウトしました。");
+            }
+
+            throw error;
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    }
+
+    const AREAuth = Object.freeze({
         login,
+        register,
         recover,
         logout,
         getSession,
         getCurrentUser,
-        onAuthStateChange
+        requireSession,
+        onAuthStateChange,
+        getCurrentAccessToken
     });
 
-    /* 共通ユーティリティを公開 */
-    window.AREUtils = Object.freeze({
-        formatTime,
-        requireText
-    });
-
-    /* 共通システムの初期化完了を記録 */
-    window.ARESystem = Object.freeze({
-        config: ARE_CONFIG,
-        client: areSupabase,
+    const ARESystem = Object.freeze({
+        get client() {
+            return getClient();
+        },
+        getConfig,
         callFunction,
+        callAuthenticatedFunction,
         getSession,
         getCurrentUser,
+        requireSession,
         onAuthStateChange
     });
 
-    console.info("ARE system.js の初期化が完了しました。");
+    window.AREAuth = AREAuth;
+    window.ARESystem = ARESystem;
 })();

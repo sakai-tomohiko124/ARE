@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
             recovery: elements.recoveryView,
             chat: elements.chatView
         };
-
+    
         Object.entries(views).forEach(([name, element]) => {
             if (element) {
                 element.hidden = name !== viewName;

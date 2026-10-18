@@ -1,1 +1,281 @@
-<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101318"><title>ARE | Chat</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><style>/* AREの基本デザイン */:root{color-scheme:dark;--bg:#101318;--panel:#191e27;--border:#303846;--text:#f4f6fb;--muted:#9ca8bb;--accent:#7c6cff}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#20233a,#101318 60%);font-family:system-ui,sans-serif;color:var(--text)}button,input{font:inherit}button{cursor:pointer}.app{min-height:100vh;display:grid;place-items:center;padding:20px}.panel{width:min(100%,440px);padding:30px;background:var(--panel);border:1px solid var(--border);border-radius:18px;box-shadow:0 24px 80px #0005}.brand{text-align:center;font-size:32px;font-weight:850;letter-spacing:3px}.subtitle{text-align:center;color:var(--muted);font-size:14px;margin:8px 0 26px}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:5px;margin-bottom:22px;border-radius:12px;background:var(--bg)}.tab{padding:11px;border:0;border-radius:9px;background:transparent;color:var(--muted)}.tab.active{background:#303044;color:white}.screen{display:none}.screen.active{display:block}.field{margin-bottom:16px}.field label{display:block;margin-bottom:7px;font-size:13px;font-weight:650}.field input{width:100%;padding:13px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text)}.primary,.secondary{width:100%;padding:13px;border-radius:10px;font-weight:700}.primary{border:0;background:var(--accent);color:white}.primary:disabled{opacity:.6}.secondary{margin-top:10px;border:1px solid var(--border);background:transparent;color:var(--muted)}.message{display:none;margin-top:16px;padding:12px;border-radius:10px;font-size:13px;line-height:1.6;overflow-wrap:anywhere}.message.show{display:block}.message.error{background:#48212c;color:#ffc1cb}.message.success{background:#173b32;color:#b3f3d9}.hint{color:var(--muted);font-size:12px;line-height:1.6}.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:22px}</style></head><body><main class="app"><section class="panel"><header class="brand">ARE</header><p class="subtitle">つながる、話せる、AREチャット</p><div class="tabs"><button class="tab active" id="loginTab" type="button">ログイン</button><button class="tab" id="registerTab" type="button">新規登録</button></div><section class="screen active" id="loginScreen"><form id="loginForm"><div class="field"><label for="loginId">ログインID</label><input id="loginId" name="loginId" autocomplete="username" maxlength="64" required></div><div class="field"><label for="loginPassword">パスワード</label><input id="loginPassword" name="password" type="password" autocomplete="current-password" maxlength="128" required></div><button class="primary" type="submit">ログイン</button><button class="secondary" id="recoveryButton" type="button">アカウント復旧</button></form></section><section class="screen" id="registerScreen"><form id="registerForm"><div class="field"><label for="displayName">表示名</label><input id="displayName" name="displayName" autocomplete="nickname" maxlength="40" required></div><div class="field"><label for="registerId">ログインID</label><input id="registerId" name="loginId" autocomplete="username" maxlength="64" required></div><div class="field"><label for="registerPassword">パスワード</label><input id="registerPassword" name="password" type="password" autocomplete="new-password" minlength="6" maxlength="128" required></div><div class="field"><label for="phone">電話番号</label><input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="30" required></div><button class="primary" type="submit">アカウントを作成</button></form></section><section class="screen" id="recoveryScreen"><form id="recoveryForm"><div class="field"><label for="recoveryId">ログインID</label><input id="recoveryId" name="loginId" required maxlength="64"></div><div class="field"><label for="recoveryCode">復旧コード</label><input id="recoveryCode" name="recoveryCode" required maxlength="128"></div><div class="field"><label for="newPassword">新しいパスワード</label><input id="newPassword" name="newPassword" type="password" minlength="6" maxlength="128" required></div><button class="primary" type="submit">パスワードを再設定</button><button class="secondary" id="backToLogin" type="button">ログインへ戻る</button></form></section><div id="status" class="message" role="status" aria-live="polite"></div><footer class="footer">ARE Chat Application</footer></section></main><script>/* Supabase接続設定。公開用キーのみを設定し、service_roleキーは絶対に記載しない */const SUPABASE_URL="https://xawevnvzkcoijswmujah.supabase.co";const SUPABASE_ANON_KEY="ここにSupabaseの公開用anonキーを設定";const REGISTER_URL=SUPABASE_URL+"/functions/v1/register-user";const LOGIN_URL=SUPABASE_URL+"/functions/v1/login-user";const RECOVERY_URL=SUPABASE_URL+"/functions/v1/recover-account";const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);const loginTab=document.getElementById("loginTab"),registerTab=document.getElementById("registerTab"),loginScreen=document.getElementById("loginScreen"),registerScreen=document.getElementById("registerScreen"),recoveryScreen=document.getElementById("recoveryScreen"),status=document.getElementById("status");/* 指定された画面を表示する */function showScreen(name){loginScreen.classList.toggle("active",name==="login");registerScreen.classList.toggle("active",name==="register");recoveryScreen.classList.toggle("active",name==="recovery");loginTab.classList.toggle("active",name==="login");registerTab.classList.toggle("active",name==="register");status.className="message";status.textContent=""}/* 処理結果を画面に表示する */function notify(message,type="error"){status.textContent=message;status.className="message show "+type}/* APIレスポンスから安全にメッセージを取り出す */async function requestApi(url,payload){const response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY},body:JSON.stringify(payload)});const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error||result.message||"リクエストに失敗しました。");return result}/* ボタンの二重送信を防ぎながら処理する */async function submitForm(form,handler){const button=form.querySelector('button[type="submit"]');button.disabled=true;try{await handler(new FormData(form))}catch(error){notify(error.message||"処理に失敗しました。")}finally{button.disabled=false}}/* ログイン画面を選択する */loginTab.addEventListener("click",()=>showScreen("login"));/* 新規登録画面を選択する */registerTab.addEventListener("click",()=>showScreen("register"));/* アカウント復旧画面を選択する */document.getElementById("recoveryButton").addEventListener("click",()=>showScreen("recovery"));/* ログイン画面へ戻る */document.getElementById("backToLogin").addEventListener("click",()=>showScreen("login"));/* 登録APIを呼び出して結果を表示する */document.getElementById("registerForm").addEventListener("submit",event=>{event.preventDefault();submitForm(event.currentTarget,async form=>{if(SUPABASE_ANON_KEY==="ここにSupabaseの公開用anonキーを設定")throw new Error("Supabaseの公開用anonキーを設定してください。");const result=await requestApi(REGISTER_URL,{displayName:String(form.get("displayName")).trim(),loginId:String(form.get("loginId")),password:String(form.get("password")),phone:String(form.get("phone")).trim()});notify(result.message||"登録処理が完了しました。", "success");if(result.recoveryCode)notify("復旧コードを安全な場所に保存してください："+result.recoveryCode,"success")})});/* ログインAPIを呼び出して結果を表示する */document.getElementById("loginForm").addEventListener("submit",event=>{event.preventDefault();submitForm(event.currentTarget,async form=>{if(SUPABASE_ANON_KEY==="ここにSupabaseの公開用anonキーを設定")throw new Error("Supabaseの公開用anonキーを設定してください。");const result=await requestApi(LOGIN_URL,{loginId:String(form.get("loginId")),password:String(form.get("password"))});if(result.access_token){const {error}=await supabaseClient.auth.setSession({access_token:result.access_token,refresh_token:result.refresh_token||""});if(error)throw error}notify(result.message||"ログインAPIから応答がありました。","success")})});/* 復旧APIを呼び出してパスワードを再設定する */document.getElementById("recoveryForm").addEventListener("submit",event=>{event.preventDefault();submitForm(event.currentTarget,async form=>{if(SUPABASE_ANON_KEY==="ここにSupabaseの公開用anonキーを
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARE | Login</title>
+
+    <style>
+        /* ページ全体 */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-family: "Segoe UI", sans-serif;
+            color: #ffffff;
+            background: #080b14;
+        }
+
+        /* 背景の装飾 */
+        .background {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            background:
+                radial-gradient(ellipse at 20% 20%, #243b6555, transparent 45%),
+                radial-gradient(ellipse at 80% 80%, #563b8255, transparent 45%),
+                #080b14;
+        }
+
+        .background::before {
+            content: "ARE";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(180px, 35vw, 460px);
+            font-weight: 900;
+            letter-spacing: 20px;
+            color: #ffffff05;
+            user-select: none;
+        }
+
+        .background-text {
+            position: absolute;
+            bottom: 30px;
+            width: 100%;
+            text-align: center;
+            color: #9299ad;
+            font-size: 11px;
+            letter-spacing: 4px;
+        }
+
+        /* ログイン画面 */
+        .login-container {
+            position: relative;
+            z-index: 1;
+            width: min(90%, 390px);
+            padding: 38px 32px;
+            border: 1px solid #ffffff20;
+            border-radius: 20px;
+            background: #111725cc;
+            box-shadow: 0 20px 80px #0008;
+            backdrop-filter: blur(18px);
+        }
+
+        .logo {
+            margin-bottom: 8px;
+            text-align: center;
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: 12px;
+            text-indent: 12px;
+        }
+
+        .subtitle {
+            margin: 0 0 35px;
+            text-align: center;
+            color: #9da8c0;
+            font-size: 12px;
+            letter-spacing: 3px;
+        }
+
+        .welcome {
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 17px;
+            font-weight: 400;
+        }
+
+        /* 入力欄 */
+        label {
+            display: block;
+            margin: 17px 0 8px;
+            color: #c4ccdc;
+            font-size: 12px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #ffffff20;
+            border-radius: 9px;
+            outline: none;
+            background: #080d18cc;
+            color: white;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: #8b9cff;
+        }
+
+        input::placeholder {
+            color: #657087;
+        }
+
+        /* ログインボタン */
+        button {
+            width: 100%;
+            margin-top: 25px;
+            padding: 14px;
+            border: none;
+            border-radius: 9px;
+            background: linear-gradient(100deg, #6679f5, #8b5cf6);
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.88;
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: wait;
+            transform: none;
+        }
+
+        /* 結果表示 */
+        #status {
+            min-height: 20px;
+            margin: 18px 0 0;
+            color: #aeb9d0;
+            text-align: center;
+            font-size: 12px;
+            line-height: 1.6;
+            overflow-wrap: anywhere;
+        }
+
+        .footer {
+            margin-top: 28px;
+            color: #626e85;
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 背景 -->
+    <div class="background">
+        <div class="background-text">CONNECT · COMMUNICATE · ARE</div>
+    </div>
+
+    <!-- ログインフォーム -->
+    <main class="login-container">
+        <div class="logo">ARE</div>
+        <p class="subtitle">REALTIME CHAT</p>
+
+        <h1 class="welcome">Welcome back.</h1>
+
+        <form id="loginForm">
+            <label for="loginId">LOGIN ID</label>
+            <input
+                id="loginId"
+                name="loginId"
+                type="text"
+                placeholder="ログインIDを入力"
+                autocomplete="username"
+                required
+            >
+
+            <label for="password">PASSWORD</label>
+            <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="パスワードを入力"
+                autocomplete="current-password"
+                required
+            >
+
+            <button id="loginButton" type="submit">LOGIN</button>
+        </form>
+
+        <p id="status" role="status" aria-live="polite">
+            AREへようこそ
+        </p>
+
+        <div class="footer">A NEW WAY TO CONNECT</div>
+    </main>
+
+    <script>
+        /* Supabase接続設定 */
+        const SUPABASE_URL = "https://xawevnvzkcoijswmujah.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_VWeGzACdSzM80biRbTtaog_diIE_AEj";
+
+        /* ログインAPI */
+        const LOGIN_URL = `${SUPABASE_URL}/functions/v1/login-user`;
+
+        const loginForm = document.getElementById("loginForm");
+        const loginButton = document.getElementById("loginButton");
+        const statusText = document.getElementById("status");
+
+        /* ログイン処理 */
+        loginForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const loginId = document.getElementById("loginId").value.trim();
+            const password = document.getElementById("password").value;
+
+            if (!loginId || !password) {
+                statusText.textContent = "ログインIDとパスワードを入力してください。";
+                return;
+            }
+
+            loginButton.disabled = true;
+            loginButton.textContent = "CONNECTING...";
+            statusText.textContent = "サーバーに接続しています...";
+
+            try {
+                const response = await fetch(LOGIN_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "apikey": SUPABASE_ANON_KEY
+                    },
+                    body: JSON.stringify({
+                        loginId: loginId,
+                        password: password
+                    })
+                });
+
+                const result = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    throw new Error(
+                        result.message || result.error || "ログインに失敗しました。"
+                    );
+                }
+
+                statusText.textContent =
+                    result.message || "ログインAPIから正常な応答を受信しました。";
+
+                /* 認証成功後のチャット画面は次の段階で実装 */
+            } catch (error) {
+                statusText.textContent =
+                    error.message || "サーバーに接続できませんでした。";
+            } finally {
+                loginButton.disabled = false;
+                loginButton.textContent = "LOGIN";
+            }
+        });
+    </script>
+</body>
+</html>

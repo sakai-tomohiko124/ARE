@@ -2,1607 +2,903 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0b1020">
-    <title>ARE | チャット</title>
-
-    <style>
-        :root {
-            color-scheme: dark;
-            --background: #0b1020;
-            --panel: #151c2e;
-            --panel-light: #202a40;
-            --border: #2a344b;
-            --text: #f4f6ff;
-            --muted: #9ba7c0;
-            --accent: #818cf8;
-            --accent-hover: #6366f1;
-            --success: #6ee7b7;
-            --danger: #fca5a5;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        [hidden] {
-            display: none !important;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: var(--background);
-            color: var(--text);
-            font-family: system-ui, sans-serif;
-        }
-
-        button,
-        input,
-        textarea {
-            font: inherit;
-        }
-
-        button {
-            cursor: pointer;
-        }
-
-        button:disabled {
-            cursor: wait;
-            opacity: 0.55;
-        }
-
-        .app {
-            width: min(1440px, 100%);
-            min-height: 100vh;
-            margin: 0 auto;
-            padding: 18px;
-        }
-
-        .topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 18px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .brand-logo {
-            display: grid;
-            width: 44px;
-            height: 44px;
-            place-items: center;
-            border-radius: 13px;
-            background: linear-gradient(135deg, #818cf8, #7c3aed);
-            font-size: 24px;
-            font-weight: 800;
-        }
-
-        .brand h1 {
-            margin: 0;
-            letter-spacing: 4px;
-        }
-
-        .brand p {
-            margin: 2px 0 0;
-            color: var(--muted);
-            font-size: 11px;
-            letter-spacing: 2px;
-        }
-
-        .topbar-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .user-label {
-            color: var(--muted);
-            font-size: 13px;
-            overflow-wrap: anywhere;
-        }
-
-        .button {
-            min-height: 40px;
-            padding: 9px 14px;
-            border: 0;
-            border-radius: 9px;
-            background: var(--accent);
-            color: white;
-            font-weight: 600;
-        }
-
-        .button:hover {
-            background: var(--accent-hover);
-        }
-
-        .button-secondary {
-            border: 1px solid var(--border);
-            background: #222b40;
-        }
-
-        .button-secondary:hover {
-            background: #303b55;
-        }
-
-        .button-small {
-            min-height: 34px;
-            padding: 6px 10px;
-            font-size: 12px;
-        }
-
-        .layout {
-            display: grid;
-            grid-template-columns: 290px minmax(0, 1fr);
-            gap: 16px;
-            min-height: calc(100vh - 100px);
-        }
-
-        .sidebar {
-            display: flex;
-            min-width: 0;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .panel {
-            min-width: 0;
-            overflow: hidden;
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            background: var(--panel);
-        }
-
-        .panel-heading {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 16px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .panel-heading h2,
-        .panel-heading h3 {
-            margin: 0;
-            font-size: 16px;
-        }
-
-        .panel-body {
-            padding: 12px;
-        }
-
-        .search-input,
-        .message-input {
-            width: 100%;
-            min-width: 0;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            outline: none;
-            background: #0c1220;
-            color: var(--text);
-        }
-
-        .search-input {
-            min-height: 40px;
-            margin-bottom: 10px;
-            padding: 9px 11px;
-        }
-
-        .search-input:focus,
-        .message-input:focus {
-            border-color: var(--accent);
-        }
-
-        .user-list,
-        .room-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .user-card,
-        .room-card {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            min-width: 0;
-            padding: 10px;
-            border: 1px solid transparent;
-            border-radius: 11px;
-            background: #1b2438;
-        }
-
-        .user-card {
-            justify-content: space-between;
-        }
-
-        .user-card:hover,
-        .room-card:hover {
-            border-color: var(--border);
-            background: #222d44;
-        }
-
-        .room-card {
-            width: 100%;
-            color: var(--text);
-            text-align: left;
-        }
-
-        .room-card.active {
-            border-color: #6366f1;
-            background: #30316b;
-        }
-
-        .user-info {
-            display: flex;
-            min-width: 0;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .user-name {
-            min-width: 0;
-            overflow-wrap: anywhere;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .avatar {
-            display: grid;
-            width: 38px;
-            height: 38px;
-            flex-shrink: 0;
-            place-items: center;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #4f46e5, #9333ea);
-            font-weight: 700;
-        }
-
-        .empty-state {
-            padding: 18px 10px;
-            color: var(--muted);
-            text-align: center;
-            font-size: 13px;
-            line-height: 1.7;
-        }
-
-        .chat-panel {
-            display: flex;
-            min-width: 0;
-            min-height: 650px;
-            flex-direction: column;
-        }
-
-        .chat-heading {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .chat-heading h2 {
-            margin: 0;
-            font-size: 17px;
-            overflow-wrap: anywhere;
-        }
-
-        .connection-status {
-            margin: 5px 0 0;
-            color: var(--muted);
-            font-size: 12px;
-        }
-
-        .message-list {
-            display: flex;
-            flex: 1;
-            min-height: 300px;
-            flex-direction: column;
-            gap: 12px;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .message {
-            max-width: min(78%, 600px);
-            padding: 11px 13px;
-            border: 1px solid var(--border);
-            border-radius: 13px;
-            background: var(--panel-light);
-            overflow-wrap: anywhere;
-        }
-
-        .message.own {
-            align-self: flex-end;
-            border-color: #5556b7;
-            background: #37358a;
-        }
-
-        .message-content {
-            margin: 0;
-            white-space: pre-wrap;
-            overflow-wrap: anywhere;
-            line-height: 1.6;
-        }
-
-        .message-time {
-            display: block;
-            margin-top: 7px;
-            color: #c0c8dc;
-            text-align: right;
-            font-size: 11px;
-        }
-
-        .message-image {
-            display: block;
-            max-width: min(100%, 360px);
-            max-height: 360px;
-            margin-top: 8px;
-            border-radius: 9px;
-            object-fit: contain;
-        }
-
-        .message-video {
-            display: block;
-            width: min(100%, 420px);
-            max-height: 360px;
-            margin-top: 8px;
-            border-radius: 9px;
-        }
-
-        .attachment-link {
-            display: inline-block;
-            margin-top: 8px;
-            color: #c7d2fe;
-            overflow-wrap: anywhere;
-        }
-
-        .composer {
-            padding: 14px;
-            border-top: 1px solid var(--border);
-        }
-
-        .attachment-preview {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        .preview-item {
-            position: relative;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            max-width: 100%;
-            padding: 7px 9px;
-            border: 1px solid var(--border);
-            border-radius: 9px;
-            background: #0c1220;
-            font-size: 12px;
-            overflow-wrap: anywhere;
-        }
-
-        .preview-item button {
-            min-width: 26px;
-            min-height: 26px;
-            padding: 2px 7px;
-        }
-
-        .composer-tools {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        .file-label {
-            display: inline-flex;
-            min-height: 36px;
-            align-items: center;
-            padding: 7px 11px;
-            border: 1px solid var(--border);
-            border-radius: 9px;
-            background: #222b40;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .file-label:hover {
-            background: #303b55;
-        }
-
-        .file-input {
-            display: none;
-        }
-
-        .composer-row {
-            display: flex;
-            align-items: flex-end;
-            gap: 10px;
-        }
-
-        .message-input {
-            min-height: 46px;
-            max-height: 180px;
-            padding: 12px;
-            resize: vertical;
-        }
-
-        .composer-meta {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            margin-top: 7px;
-            color: var(--muted);
-            font-size: 11px;
-        }
-
-        .status-message {
-            min-height: 22px;
-            margin-top: 10px;
-            color: var(--muted);
-            font-size: 12px;
-            line-height: 1.6;
-            overflow-wrap: anywhere;
-        }
-
-        .status-message[data-state="error"] {
-            color: var(--danger);
-        }
-
-        .status-message[data-state="success"] {
-            color: var(--success);
-        }
-
-        .notice {
-            margin: 0;
-            padding: 10px 12px;
-            border: 1px solid #594d2c;
-            border-radius: 10px;
-            background: #2b2619;
-            color: #f5d58a;
-            font-size: 12px;
-            line-height: 1.7;
-        }
-
-        footer {
-            margin-top: 16px;
-            color: #68748d;
-            text-align: center;
-            font-size: 10px;
-            letter-spacing: 2px;
-        }
-
-        @media (max-width: 850px) {
-            .app {
-                padding: 12px;
-            }
-
-            .layout {
-                grid-template-columns: minmax(0, 1fr);
-            }
-
-            .sidebar {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                align-items: start;
-            }
-
-            .chat-panel {
-                min-height: 60vh;
-            }
-
-            .user-list,
-            .room-list {
-                max-height: 260px;
-                overflow-y: auto;
-            }
-        }
-
-        @media (max-width: 560px) {
-            .topbar {
-                align-items: flex-start;
-            }
-
-            .topbar-actions {
-                flex-direction: column;
-                align-items: flex-end;
-            }
-
-            .user-label {
-                max-width: 140px;
-                text-align: right;
-            }
-
-            .sidebar {
-                grid-template-columns: minmax(0, 1fr);
-            }
-
-            .chat-heading {
-                padding: 13px;
-            }
-
-            .message-list {
-                min-height: 260px;
-                padding: 12px;
-            }
-
-            .composer {
-                padding: 10px;
-            }
-
-            .composer-row {
-                align-items: stretch;
-            }
-
-            .composer-row .button {
-                padding: 8px 12px;
-            }
-
-            .message {
-                max-width: 90%;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#111827">
+<title>ARE | チャット</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#141b2d;--panel2:#1b253a;--line:#2b3851;--text:#edf2ff;--muted:#9aa8c2;--accent:#7c9cff;--accent2:#5578ed;--danger:#ff7777;--success:#5de0b0}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+.app{display:grid;grid-template-columns:320px minmax(0,1fr);height:100dvh;min-height:540px}
+.sidebar{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:#0f1627}
+.brand{display:flex;justify-content:space-between;align-items:center;padding:20px;border-bottom:1px solid var(--line)}
+.brand h1{font-size:24px;letter-spacing:2px;margin:0}
+.brand small{display:block;color:var(--muted);font-size:11px;letter-spacing:1px}
+.userbar{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.avatar{display:flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#34466b;color:white;font-weight:700;overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.user-info{flex:1;min-width:0}
+.user-info strong,.user-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-info small{color:var(--muted);font-size:12px;margin-top:3px}
+.button{border:0;border-radius:10px;background:var(--accent2);color:white;padding:10px 13px;font-weight:650}
+.button:hover{filter:brightness(1.1)}
+.button-secondary{border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text);padding:9px 12px}
+.button-danger{border:1px solid #743f50;background:#3b1e2b;color:#ffb5c0;border-radius:9px;padding:8px 10px}
+.sidebar-content{padding:16px;overflow-y:auto;min-height:0}
+.section-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 12px}
+.section-heading h2{font-size:14px;margin:0}
+.search{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 12px;outline:none}
+.search:focus,textarea:focus,input:focus{border-color:var(--accent)}
+.user-list,.room-list{display:flex;flex-direction:column;gap:7px}
+.person,.room-item{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--text);text-align:left;width:100%;min-width:0}
+.person:hover,.room-item:hover,.room-item.active{background:var(--panel2);border-color:var(--line)}
+.person .person-text,.room-item .person-text{flex:1;min-width:0}
+.person strong,.person small,.room-item strong,.room-item small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.person small,.room-item small{color:var(--muted);font-size:12px;margin-top:3px}
+.person .add{font-size:19px;color:var(--accent);font-weight:700}
+.room-item .avatar,.person .avatar{width:38px;height:38px;flex-basis:38px}
+.section-divider{height:1px;background:var(--line);margin:20px 0}
+.empty-list{color:var(--muted);font-size:13px;line-height:1.7;padding:12px 4px}
+.main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.chat-header{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--line);background:#0f1627;min-height:78px}
+.chat-header .person-text{flex:1;min-width:0}
+.chat-header h2{font-size:17px;margin:0}
+.chat-header p{font-size:12px;color:var(--muted);margin:4px 0 0}
+.mobile-back{display:none}
+.messages{flex:1;min-height:0;overflow-y:auto;padding:24px clamp(12px,4vw,48px);display:flex;flex-direction:column;gap:14px}
+.welcome{margin:auto;text-align:center;max-width:390px;color:var(--muted);line-height:1.8}
+.welcome .welcome-icon{font-size:48px;margin-bottom:10px}
+.welcome h2{color:var(--text);font-size:22px;margin:0 0 8px}
+.day-divider{text-align:center;color:var(--muted);font-size:11px;margin:8px 0}
+.message-row{display:flex;align-items:flex-end;gap:9px;max-width:min(82%,700px)}
+.message-row.own{align-self:flex-end;flex-direction:row-reverse}
+.message-avatar{width:28px;height:28px;flex:0 0 28px;border-radius:50%;background:#34466b;display:flex;align-items:center;justify-content:center;font-size:11px;overflow:hidden}
+.message-avatar img{width:100%;height:100%;object-fit:cover}
+.message-body{min-width:0}
+.message-sender{font-size:11px;color:var(--muted);margin:0 0 5px 3px}
+.message-row.own .message-sender{text-align:right}
+.bubble{padding:11px 14px;border:1px solid var(--line);background:var(--panel);border-radius:15px 15px 15px 4px;overflow-wrap:anywhere;white-space:pre-wrap;line-height:1.65}
+.message-row.own .bubble{background:#273d73;border-color:#405b9c;border-radius:15px 15px 4px 15px}
+.message-time{font-size:10px;color:var(--muted);margin-top:5px}
+.message-row.own .message-time{text-align:right}
+.attachment{display:flex;flex-direction:column;gap:8px;max-width:min(100%,380px)}
+.attachment img{max-width:100%;max-height:330px;object-fit:contain;border-radius:10px;background:#0b1020}
+.attachment video{max-width:100%;max-height:300px;border-radius:10px;background:#000}
+.attachment a{color:#c6d6ff;overflow-wrap:anywhere}
+.file-card{display:flex;gap:10px;align-items:center;padding:10px;background:#111a2d;border:1px solid var(--line);border-radius:10px}
+.file-icon{font-size:25px}
+.file-name{overflow-wrap:anywhere}
+.file-meta{font-size:11px;color:var(--muted);margin-top:3px}
+.composer{padding:14px clamp(12px,3vw,32px) 18px;border-top:1px solid var(--line);background:#0f1627}
+.composer-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.tool-button{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:8px 10px;border-radius:9px;font-size:12px}
+.file-input{display:none}
+.composer-bottom{display:flex;align-items:flex-end;gap:10px}
+.composer textarea{flex:1;min-width:0;resize:vertical;min-height:48px;max-height:180px;padding:13px 14px;border:1px solid var(--line);border-radius:13px;background:var(--panel);color:var(--text);outline:none;line-height:1.5}
+.char-count{font-size:11px;color:var(--muted);text-align:right;margin:6px 4px 0}
+.status{padding:10px 14px;font-size:13px;line-height:1.6;display:none}
+.status.show{display:block}
+.status.error{color:#ffb1b1;background:#3b1e2b}
+.status.success{color:#9df2d0;background:#12382f}
+.status.info{color:#c9d7ff;background:#1c2b4b}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10;padding:12px 16px;border-radius:10px;background:#26344d;color:white;box-shadow:0 10px 35px #0008;max-width:90vw;display:none}
+.toast.show{display:block}
+.loading{opacity:.65;pointer-events:none}
+@media(max-width:800px){.app{grid-template-columns:minmax(0,1fr)}.sidebar{position:absolute;inset:0;z-index:2;display:flex}.main{display:none}.app.chat-open .sidebar{display:none}.app.chat-open .main{display:flex}.mobile-back{display:inline-block}.messages{padding:18px 12px}.message-row{max-width:92%}.chat-header{padding:12px}.composer{padding:12px}}
+@media(min-width:801px){.app{height:100dvh}.sidebar{width:320px}}
+</style>
 </head>
 <body>
-    <main class="app">
-        <header class="topbar">
-            <div class="brand">
-                <div class="brand-logo">A</div>
-                <div>
-                    <h1>ARE</h1>
-                    <p>REALTIME CHAT</p>
-                </div>
-            </div>
+<div class="app" id="app">
+    <aside class="sidebar">
+        <div class="brand">
+            <div><h1>ARE</h1><small>CONNECT YOUR WORLD</small></div>
+            <button class="button-secondary" id="logoutButton" type="button">ログアウト</button>
+        </div>
+        <div class="userbar">
+            <div class="avatar" id="myAvatar">A</div>
+            <div class="user-info"><strong id="myName">読み込み中...</strong><small id="myLoginStatus">接続を確認しています</small></div>
+        </div>
+        <div class="sidebar-content">
+            <div class="section-heading"><h2>🔎 おすすめユーザー</h2><button class="button-secondary" id="refreshUsersButton" type="button">更新</button></div>
+            <input class="search" id="userSearch" type="search" placeholder="ユーザー名を検索..." autocomplete="off">
+            <div class="user-list" id="recommendedUsers"><div class="empty-list">ユーザーを読み込んでいます...</div></div>
+            <div class="section-divider"></div>
+            <div class="section-heading"><h2>💬 チャット</h2><button class="button-secondary" id="refreshRoomsButton" type="button">更新</button></div>
+            <div class="room-list" id="roomList"><div class="empty-list">チャットを読み込んでいます...</div></div>
+        </div>
+    </aside>
 
-            <div class="topbar-actions">
-                <span id="currentUserLabel" class="user-label">ログイン状態を確認中...</span>
-                <button id="logoutButton" class="button button-secondary" type="button">ログアウト</button>
-            </div>
+    <main class="main">
+        <header class="chat-header">
+            <button class="button-secondary mobile-back" id="backButton" type="button">← 戻る</button>
+            <div class="avatar" id="chatAvatar">💬</div>
+            <div class="person-text"><h2 id="chatTitle">AREへようこそ</h2><p id="chatSubtitle">チャット相手を選択してください</p></div>
+            <button class="button-secondary" id="refreshMessagesButton" type="button" disabled>更新</button>
         </header>
 
-        <p class="notice">
-            添付ファイルの容量に固定上限を設けない設計を目指します。ただし、実際の保存容量やアップロード上限はSupabaseの契約・設定に従います。
-        </p>
+        <div class="status" id="pageStatus" role="status" aria-live="polite"></div>
 
-        <div class="layout">
-            <aside class="sidebar">
-                <section class="panel">
-                    <div class="panel-heading">
-                        <h2>おすすめユーザー</h2>
-                        <button id="refreshUsersButton" class="button button-secondary button-small" type="button">更新</button>
-                    </div>
+        <section class="messages" id="messages" aria-live="polite">
+            <div class="welcome"><div class="welcome-icon">✉️</div><h2>会話を始めよう</h2><div>おすすめユーザーを選択するか、既存のチャットを開いてください。</div></div>
+        </section>
 
-                    <div class="panel-body">
-                        <input
-                            id="userSearchInput"
-                            class="search-input"
-                            type="search"
-                            placeholder="ユーザーを検索..."
-                            autocomplete="off"
-                            aria-label="ユーザーを検索"
-                        >
-                        <div id="recommendedUsers" class="user-list">
-                            <div class="empty-state">ユーザーを読み込んでいます...</div>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="panel">
-                    <div class="panel-heading">
-                        <h2>チャット一覧</h2>
-                        <button id="refreshRoomsButton" class="button button-secondary button-small" type="button">更新</button>
-                    </div>
-
-                    <div class="panel-body">
-                        <div id="roomList" class="room-list">
-                            <div class="empty-state">チャットを読み込んでいます...</div>
-                        </div>
-                    </div>
-                </section>
-            </aside>
-
-            <section class="panel chat-panel">
-                <header class="chat-heading">
-                    <div>
-                        <h2 id="chatTitle">相手を選択してください</h2>
-                        <p id="connectionStatus" class="connection-status">待機中</p>
-                    </div>
-                </header>
-
-                <div id="messageList" class="message-list" aria-live="polite">
-                    <div class="empty-state">
-                        おすすめユーザーから相手を追加すると、ここでチャットできます。
-                    </div>
-                </div>
-
-                <form id="messageForm" class="composer">
-                    <div id="attachmentPreview" class="attachment-preview"></div>
-
-                    <div class="composer-tools">
-                        <label class="file-label" for="imageInput">画像を選択</label>
-                        <input id="imageInput" class="file-input" type="file" accept="image/*" multiple>
-
-                        <label class="file-label" for="fileInput">ファイルを選択</label>
-                        <input id="fileInput" class="file-input" type="file">
-
-                        <label class="file-label" for="videoInput">動画を選択</label>
-                        <input id="videoInput" class="file-input" type="file" accept="video/*">
-                    </div>
-
-                    <div class="composer-row">
-                        <textarea
-                            id="messageInput"
-                            class="message-input"
-                            rows="2"
-                            maxlength="10000"
-                            placeholder="メッセージを入力（最大10,000文字）"
-                            aria-label="メッセージ"
-                        ></textarea>
-                        <button id="sendButton" class="button" type="submit">送信</button>
-                    </div>
-
-                    <div class="composer-meta">
-                        <span id="characterCount">0 / 10,000文字</span>
-                        <span id="attachmentCount">添付ファイルなし</span>
-                    </div>
-
-                    <div id="statusMessage" class="status-message" role="status" aria-live="polite"></div>
-                </form>
-            </section>
-        </div>
-
-        <footer>ARE · CONNECT WITH EVERYONE</footer>
+        <section class="composer">
+            <div class="composer-tools">
+                <label class="tool-button" for="imageInput">🖼️ 画像を選択</label>
+                <input class="file-input" id="imageInput" type="file" accept="image/*" multiple>
+                <label class="tool-button" for="fileInput">📎 ファイルを選択</label>
+                <input class="file-input" id="fileInput" type="file" multiple>
+                <label class="tool-button" for="videoInput">🎬 動画を選択</label>
+                <input class="file-input" id="videoInput" type="file" accept="video/*">
+                <span id="attachmentStatus" style="font-size:11px;color:var(--muted)"></span>
+            </div>
+            <div class="composer-bottom">
+                <textarea id="messageInput" maxlength="10000" placeholder="メッセージを入力...（Enterで送信、Shift+Enterで改行）" disabled></textarea>
+                <button class="button" id="sendButton" type="button" disabled>送信</button>
+            </div>
+            <div class="char-count"><span id="charCount">0</span> / 10,000文字</div>
+        </section>
     </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    <script src="config.js"></script>
-    <script src="supabase-client.js"></script>
-    <script src="system.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./system.js"></script>
+<script>
+(function(){
+    "use strict";
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const MAX_TEXT_LENGTH = 10000;
-            const MAX_IMAGES = 10;
-            const MAX_VIDEO_SECONDS = 300;
-            const STORAGE_BUCKET = "chat-attachments";
+    const TABLES = Object.freeze({
+        profiles: "profiles",
+        rooms: "chat_rooms",
+        members: "chat_room_member",
+        messages: "messages"
+    });
 
-            const elements = {
-                currentUserLabel: document.getElementById("currentUserLabel"),
-                logoutButton: document.getElementById("logoutButton"),
-                refreshUsersButton: document.getElementById("refreshUsersButton"),
-                refreshRoomsButton: document.getElementById("refreshRoomsButton"),
-                userSearchInput: document.getElementById("userSearchInput"),
-                recommendedUsers: document.getElementById("recommendedUsers"),
-                roomList: document.getElementById("roomList"),
-                chatTitle: document.getElementById("chatTitle"),
-                connectionStatus: document.getElementById("connectionStatus"),
-                messageList: document.getElementById("messageList"),
-                messageForm: document.getElementById("messageForm"),
-                messageInput: document.getElementById("messageInput"),
-                sendButton: document.getElementById("sendButton"),
-                imageInput: document.getElementById("imageInput"),
-                fileInput: document.getElementById("fileInput"),
-                videoInput: document.getElementById("videoInput"),
-                attachmentPreview: document.getElementById("attachmentPreview"),
-                characterCount: document.getElementById("characterCount"),
-                attachmentCount: document.getElementById("attachmentCount"),
-                statusMessage: document.getElementById("statusMessage")
+    const STORAGE_BUCKET = "chat-attachments";
+    const MAX_TEXT_LENGTH = 10000;
+    const MAX_IMAGES = 10;
+    const MAX_VIDEO_SECONDS = 300;
+    const MAX_FILE_BYTES = 50 * 1024 * 1024;
+    const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+
+    const state = {
+        client: null,
+        user: null,
+        profile: null,
+        rooms: [],
+        recommendations: [],
+        currentRoom: null,
+        currentPartner: null,
+        messages: [],
+        subscription: null,
+        loadingMessages: false,
+        sending: false,
+        loadingRooms: false,
+        loadingUsers: false,
+        searchText: "",
+        authSubscription: null
+    };
+
+    const el = {};
+    const $ = (id) => document.getElementById(id);
+
+    function cacheElements(){
+        [
+            "app","logoutButton","myAvatar","myName","myLoginStatus",
+            "refreshUsersButton","userSearch","recommendedUsers","refreshRoomsButton",
+            "roomList","backButton","chatAvatar","chatTitle","chatSubtitle",
+            "refreshMessagesButton","pageStatus","messages","imageInput","fileInput",
+            "videoInput","attachmentStatus","messageInput","sendButton","charCount","toast"
+        ].forEach((id) => el[id] = $(id));
+    }
+
+    function escapeHtml(value){
+        return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+            "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+        })[char]);
+    }
+
+    function shortName(value){
+        const name = String(value || "A").trim();
+        return Array.from(name)[0] || "A";
+    }
+
+    function formatDate(value){
+        if(!value) return "";
+        const date = new Date(value);
+        if(Number.isNaN(date.getTime())) return "";
+        return new Intl.DateTimeFormat("ja-JP",{hour:"2-digit",minute:"2-digit"}).format(date);
+    }
+
+    function formatBytes(bytes){
+        if(!Number.isFinite(bytes) || bytes < 0) return "";
+        if(bytes < 1024) return bytes + " B";
+        if(bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+        if(bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+        return (bytes / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+    }
+
+    function setStatus(message, type){
+        el.pageStatus.textContent = message || "";
+        el.pageStatus.className = "status" + (message ? " show " + (type || "info") : "");
+    }
+
+    function showToast(message){
+        el.toast.textContent = message;
+        el.toast.classList.add("show");
+        window.clearTimeout(showToast.timeout);
+        showToast.timeout = window.setTimeout(() => el.toast.classList.remove("show"), 3500);
+    }
+
+    function setBusy(button, busy, busyText){
+        if(!button.dataset.originalText) button.dataset.originalText = button.textContent;
+        button.disabled = busy;
+        button.textContent = busy ? (busyText || "処理中...") : button.dataset.originalText;
+    }
+
+    function getErrorMessage(error){
+        const message = error?.message || String(error || "不明なエラー");
+        if(/row-level security|permission denied|not allowed|42501/i.test(message)){
+            return "データベースのアクセス権限で拒否されました。SupabaseのRLSポリシーを確認してください。";
+        }
+        if(/relation .* does not exist|could not find the table/i.test(message)){
+            return "必要なテーブルが見つかりません。テーブル名とSupabaseの構造を確認してください。";
+        }
+        if(/bucket not found|no such bucket/i.test(message)){
+            return "添付ファイル用のStorageバケットがありません。chat-attachmentsを作成してください。";
+        }
+        if(/JWT|auth session missing|not authenticated/i.test(message)){
+            return "ログイン状態を確認できません。再度ログインしてください。";
+        }
+        return message;
+    }
+
+    function requireClient(){
+        if(!state.client) throw new Error("Supabaseクライアントが初期化されていません。");
+        return state.client;
+    }
+
+    async function getProfile(userId){
+        const client = requireClient();
+        const result = await client.from(TABLES.profiles).select("*").eq("id",userId).maybeSingle();
+        if(result.error) throw result.error;
+        return result.data;
+    }
+
+    function profileDisplayName(profile){
+        return profile?.display_name || profile?.displayName || profile?.username || profile?.login_id || "ユーザー";
+    }
+
+    function setAvatar(target, profile){
+        const name = profileDisplayName(profile);
+        const avatarUrl = profile?.avatar_url || profile?.avatarUrl || profile?.photo_url || "";
+        if(avatarUrl){
+            target.innerHTML = '<img src="' + escapeHtml(avatarUrl) + '" alt="">';
+        }else{
+            target.textContent = shortName(name);
+        }
+    }
+
+    function setChatEnabled(enabled){
+        el.messageInput.disabled = !enabled;
+        el.sendButton.disabled = !enabled;
+        el.refreshMessagesButton.disabled = !enabled;
+        if(!enabled) el.messageInput.value = "";
+        updateCharCount();
+    }
+
+    function updateCharCount(){
+        const length = Array.from(el.messageInput.value).length;
+        el.charCount.textContent = String(length);
+        el.charCount.style.color = length > MAX_TEXT_LENGTH ? "var(--danger)" : "var(--muted)";
+        el.sendButton.disabled = !state.currentRoom || state.sending || length > MAX_TEXT_LENGTH;
+    }
+
+    async function initialize(){
+        cacheElements();
+
+        try{
+            if(!window.ARESystem || !window.AREAuth){
+                throw new Error("system.jsが読み込まれていません。");
+            }
+
+            state.client = window.ARESystem.client;
+
+            const session = await window.AREAuth.getSession();
+            if(!session?.user){
+                window.location.replace("./index.html");
+                return;
+            }
+
+            state.user = session.user;
+            state.profile = await getProfile(state.user.id).catch(() => null);
+
+            el.myName.textContent = profileDisplayName(state.profile);
+            el.myLoginStatus.textContent = "ログイン中";
+            setAvatar(el.myAvatar,state.profile);
+
+            bindEvents();
+            await Promise.all([loadRecommendations(),loadRooms()]);
+            setStatus("チャットの準備ができました。ユーザーを選択してください。","success");
+
+            state.authSubscription = window.AREAuth.onAuthStateChange((event, sessionValue) => {
+                if(event === "SIGNED_OUT" || !sessionValue){
+                    window.location.replace("./index.html");
+                }
+            });
+        }catch(error){
+            console.error("ARE initialization error:",error);
+            setStatus(getErrorMessage(error),"error");
+            if(/ログイン|session|認証/i.test(error?.message || "")){
+                window.setTimeout(() => window.location.replace("./index.html"),1200);
+            }
+        }
+    }
+
+    function bindEvents(){
+        el.logoutButton.addEventListener("click",logout);
+        el.refreshUsersButton.addEventListener("click",loadRecommendations);
+        el.refreshRoomsButton.addEventListener("click",loadRooms);
+        el.refreshMessagesButton.addEventListener("click",() => loadMessages(true));
+        el.userSearch.addEventListener("input",() => {
+            state.searchText = el.userSearch.value.trim().toLocaleLowerCase();
+            renderRecommendations();
+        });
+        el.sendButton.addEventListener("click",sendTextMessage);
+        el.messageInput.addEventListener("input",updateCharCount);
+        el.messageInput.addEventListener("keydown",(event) => {
+            if(event.key === "Enter" && !event.shiftKey && !event.isComposing){
+                event.preventDefault();
+                sendTextMessage();
+            }
+        });
+        el.imageInput.addEventListener("change",() => handleFiles(el.imageInput.files,"image"));
+        el.fileInput.addEventListener("change",() => handleFiles(el.fileInput.files,"file"));
+        el.videoInput.addEventListener("change",() => handleFiles(el.videoInput.files,"video"));
+        el.backButton.addEventListener("click",() => el.app.classList.remove("chat-open"));
+        window.addEventListener("beforeunload",cleanupSubscription);
+    }
+
+    async function loadRecommendations(){
+        if(state.loadingUsers) return;
+        state.loadingUsers = true;
+        el.recommendedUsers.innerHTML = '<div class="empty-list">ユーザーを読み込んでいます...</div>';
+
+        try{
+            const client = requireClient();
+            const result = await client.from(TABLES.profiles).select("*").neq("id",state.user.id).order("display_name",{ascending:true}).limit(100);
+            if(result.error) throw result.error;
+            state.recommendations = result.data || [];
+            renderRecommendations();
+        }catch(error){
+            console.error("User recommendations error:",error);
+            el.recommendedUsers.innerHTML = '<div class="empty-list">ユーザー一覧を取得できませんでした。<br>' + escapeHtml(getErrorMessage(error)) + '</div>';
+        }finally{
+            state.loadingUsers = false;
+        }
+    }
+
+    function renderRecommendations(){
+        const list = state.recommendations.filter((profile) => {
+            const name = profileDisplayName(profile).toLocaleLowerCase();
+            return !state.searchText || name.includes(state.searchText);
+        });
+
+        if(!list.length){
+            el.recommendedUsers.innerHTML = '<div class="empty-list">表示できるユーザーがいません。</div>';
+            return;
+        }
+
+        el.recommendedUsers.innerHTML = list.map((profile,index) => {
+            const name = profileDisplayName(profile);
+            const avatar = profile?.avatar_url || profile?.avatarUrl || profile?.photo_url || "";
+            const avatarHtml = avatar
+                ? '<div class="avatar"><img src="' + escapeHtml(avatar) + '" alt=""></div>'
+                : '<div class="avatar">' + escapeHtml(shortName(name)) + '</div>';
+
+            return '<button class="person" type="button" data-user-id="' + escapeHtml(profile.id) + '">' +
+                avatarHtml +
+                '<span class="person-text"><strong>' + escapeHtml(name) + '</strong><small>ユーザーを追加してチャット</small></span>' +
+                '<span class="add" aria-hidden="true">＋</span></button>';
+        }).join("");
+
+        el.recommendedUsers.querySelectorAll("[data-user-id]").forEach((button) => {
+            button.addEventListener("click",() => openOrCreateDirectChat(button.dataset.userId));
+        });
+    }
+
+    async function loadRooms(){
+        if(state.loadingRooms) return;
+        state.loadingRooms = true;
+        el.roomList.innerHTML = '<div class="empty-list">チャットを読み込んでいます...</div>';
+
+        try{
+            const client = requireClient();
+            const membershipResult = await client.from(TABLES.members).select("room_id").eq("user_id",state.user.id);
+            if(membershipResult.error) throw membershipResult.error;
+
+            const roomIds = [...new Set((membershipResult.data || []).map((row) => row.room_id).filter(Boolean))];
+            if(!roomIds.length){
+                state.rooms = [];
+                renderRooms();
+                return;
+            }
+
+            const roomsResult = await client.from(TABLES.rooms).select("*").in("id",roomIds).order("created_at",{ascending:false});
+            if(roomsResult.error) throw roomsResult.error;
+
+            const roomRows = roomsResult.data || [];
+            const membersResult = await client.from(TABLES.members).select("room_id,user_id").in("room_id",roomIds);
+            if(membersResult.error) throw membersResult.error;
+
+            const otherIds = [...new Set((membersResult.data || []).map((row) => row.user_id).filter((id) => id && id !== state.user.id))];
+            let profiles = [];
+
+            if(otherIds.length){
+                const profilesResult = await client.from(TABLES.profiles).select("*").in("id",otherIds);
+                if(profilesResult.error) throw profilesResult.error;
+                profiles = profilesResult.data || [];
+            }
+
+            state.rooms = roomRows.map((room) => {
+                const memberIds = (membersResult.data || []).filter((row) => row.room_id === room.id).map((row) => row.user_id);
+                const partnerId = memberIds.find((id) => id !== state.user.id) || null;
+                const partner = profiles.find((profile) => profile.id === partnerId) || null;
+                return {...room,partner,partnerId};
+            });
+
+            renderRooms();
+        }catch(error){
+            console.error("Room list error:",error);
+            el.roomList.innerHTML = '<div class="empty-list">チャット一覧を取得できませんでした。<br>' + escapeHtml(getErrorMessage(error)) + '</div>';
+        }finally{
+            state.loadingRooms = false;
+        }
+    }
+
+    function renderRooms(){
+        if(!state.rooms.length){
+            el.roomList.innerHTML = '<div class="empty-list">まだチャットがありません。<br>おすすめユーザーから相手を選択してください。</div>';
+            return;
+        }
+
+        el.roomList.innerHTML = state.rooms.map((room) => {
+            const name = profileDisplayName(room.partner);
+            const avatar = room.partner?.avatar_url || room.partner?.avatarUrl || "";
+            const avatarHtml = avatar
+                ? '<div class="avatar"><img src="' + escapeHtml(avatar) + '" alt=""></div>'
+                : '<div class="avatar">' + escapeHtml(shortName(name)) + '</div>';
+            const active = state.currentRoom?.id === room.id ? " active" : "";
+
+            return '<button class="room-item' + active + '" type="button" data-room-id="' + escapeHtml(room.id) + '">' +
+                avatarHtml + '<span class="person-text"><strong>' + escapeHtml(name) + '</strong><small>チャットを開く</small></span></button>';
+        }).join("");
+
+        el.roomList.querySelectorAll("[data-room-id]").forEach((button) => {
+            button.addEventListener("click",() => {
+                const room = state.rooms.find((item) => item.id === button.dataset.roomId);
+                if(room) selectRoom(room,room.partner);
+            });
+        });
+    }
+
+    async function openOrCreateDirectChat(partnerId){
+        if(!partnerId || partnerId === state.user.id) return;
+
+        try{
+            setStatus("チャットを開いています...","info");
+            const client = requireClient();
+
+            const membershipResult = await client.from(TABLES.members).select("room_id").eq("user_id",state.user.id);
+            if(membershipResult.error) throw membershipResult.error;
+
+            const roomIds = (membershipResult.data || []).map((row) => row.room_id).filter(Boolean);
+            let existingRoom = null;
+
+            if(roomIds.length){
+                const partnerMembershipResult = await client.from(TABLES.members).select("room_id").eq("user_id",partnerId).in("room_id",roomIds);
+                if(partnerMembershipResult.error) throw partnerMembershipResult.error;
+
+                const sharedRoomIds = [...new Set((partnerMembershipResult.data || []).map((row) => row.room_id))];
+
+                for(const roomId of sharedRoomIds){
+                    const countResult = await client.from(TABLES.members).select("user_id",{count:"exact",head:true}).eq("room_id",roomId);
+                    if(countResult.error) throw countResult.error;
+                    if(countResult.count === 2){
+                        const roomResult = await client.from(TABLES.rooms).select("*").eq("id",roomId).maybeSingle();
+                        if(roomResult.error) throw roomResult.error;
+                        if(roomResult.data && !roomResult.data.suspended_at){
+                            existingRoom = roomResult.data;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            const partner = state.recommendations.find((profile) => profile.id === partnerId) || await getProfile(partnerId);
+            if(!partner) throw new Error("相手のプロフィールが見つかりません。");
+
+            if(existingRoom){
+                await loadRooms();
+                const room = state.rooms.find((item) => item.id === existingRoom.id) || {...existingRoom,partner,partnerId};
+                await selectRoom(room,partner);
+                return;
+            }
+
+            const roomInsert = await client.from(TABLES.rooms).insert({}).select("id,created_at,suspended_at").single();
+            if(roomInsert.error) throw roomInsert.error;
+
+            const newRoom = roomInsert.data;
+            const memberInsert = await client.from(TABLES.members).insert([
+                {room_id:newRoom.id,user_id:state.user.id},
+                {room_id:newRoom.id,user_id:partnerId}
+            ]);
+
+            if(memberInsert.error){
+                console.error("Room member insert failed:",memberInsert.error);
+                throw new Error("チャットルームは作成されましたが、メンバー登録に失敗しました。SupabaseのRLSと外部キー設定を確認してください。");
+            }
+
+            const room = {...newRoom,partner,partnerId};
+            await loadRooms();
+            await selectRoom(room,partner);
+            showToast("チャットを開始しました。");
+        }catch(error){
+            console.error("Open direct chat error:",error);
+            setStatus(getErrorMessage(error),"error");
+        }
+    }
+
+    async function selectRoom(room,partner){
+        if(!room?.id) return;
+        cleanupSubscription();
+
+        state.currentRoom = room;
+        state.currentPartner = partner || room.partner || null;
+        state.messages = [];
+
+        const name = profileDisplayName(state.currentPartner);
+        el.chatTitle.textContent = name;
+        el.chatSubtitle.textContent = room.suspended_at ? "このチャットは停止中です" : "1対1チャット";
+        setAvatar(el.chatAvatar,state.currentPartner);
+        el.app.classList.add("chat-open");
+
+        const suspended = Boolean(room.suspended_at);
+        setChatEnabled(!suspended);
+        if(suspended){
+            setStatus("このチャットルームは停止されているため、送信できません。","error");
+        }else{
+            setStatus("メッセージを読み込んでいます...","info");
+        }
+
+        renderRooms();
+        await loadMessages(false);
+        subscribeToMessages();
+        setStatus(suspended ? "このチャットルームは停止中です。" : "チャットに接続しました。",suspended ? "error" : "success");
+        el.messageInput.focus();
+    }
+
+    async function loadMessages(showFeedback){
+        if(!state.currentRoom || state.loadingMessages) return;
+        state.loadingMessages = true;
+
+        try{
+            const result = await requireClient()
+                .from(TABLES.messages)
+                .select("id,room_id,sender_id,content,created_at")
+                .eq("room_id",state.currentRoom.id)
+                .order("created_at",{ascending:true})
+                .limit(500);
+
+            if(result.error) throw result.error;
+            state.messages = result.data || [];
+            renderMessages(true);
+            if(showFeedback) showToast("メッセージを更新しました。");
+        }catch(error){
+            console.error("Message loading error:",error);
+            setStatus(getErrorMessage(error),"error");
+        }finally{
+            state.loadingMessages = false;
+        }
+    }
+
+    function subscribeToMessages(){
+        if(!state.currentRoom) return;
+
+        const roomId = state.currentRoom.id;
+        state.subscription = requireClient()
+            .channel("are-messages-" + roomId)
+            .on("postgres_changes",{
+                event:"INSERT",
+                schema:"public",
+                table:TABLES.messages,
+                filter:"room_id=eq." + roomId
+            },(payload) => {
+                if(!payload.new) return;
+                const exists = state.messages.some((message) => message.id === payload.new.id);
+                if(!exists){
+                    state.messages.push(payload.new);
+                    state.messages.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+                    renderMessages(true);
+                }
+            })
+            .subscribe((status) => {
+                if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
+                    console.warn("Realtime subscription status:",status);
+                }
+            });
+    }
+
+    function cleanupSubscription(){
+        if(state.subscription && state.client){
+            state.client.removeChannel(state.subscription);
+            state.subscription = null;
+        }
+    }
+
+    function parseMessageContent(content){
+        if(typeof content !== "string") return {type:"text",text:String(content ?? "")};
+        try{
+            const parsed = JSON.parse(content);
+            if(parsed && typeof parsed === "object" && ["text","image","file","video"].includes(parsed.type)){
+                return parsed;
+            }
+        }catch(_error){}
+        return {type:"text",text:content};
+    }
+
+    function renderMessageContent(content){
+        const item = parseMessageContent(content);
+
+        if(item.type === "text"){
+            return '<div class="bubble">' + escapeHtml(item.text || "") + '</div>';
+        }
+
+        const url = item.url || "";
+        const name = item.name || "添付ファイル";
+        const safeUrl = escapeHtml(url);
+        const safeName = escapeHtml(name);
+        const size = item.size ? '<div class="file-meta">' + escapeHtml(formatBytes(Number(item.size))) + '</div>' : "";
+
+        if(item.type === "image"){
+            return '<div class="bubble"><div class="attachment"><a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer"><img src="' + safeUrl + '" alt="' + safeName + '" loading="lazy"></a><div class="file-meta">' + safeName + '</div></div></div>';
+        }
+
+        if(item.type === "video"){
+            return '<div class="bubble"><div class="attachment"><video controls preload="metadata" src="' + safeUrl + '"></video><a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer">' + safeName + '</a>' + size + '</div></div>';
+        }
+
+        return '<div class="bubble"><div class="attachment"><a class="file-card" href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" download="' + safeName + '"><span class="file-icon">📄</span><span><span class="file-name">' + safeName + '</span>' + size + '</span></a></div></div>';
+    }
+
+    function renderMessages(scrollToBottom){
+        if(!state.messages.length){
+            el.messages.innerHTML = '<div class="welcome"><div class="welcome-icon">✉️</div><h2>最初のメッセージを送ろう</h2><div>メッセージやファイルを送信すると、ここに表示されます。</div></div>';
+            return;
+        }
+
+        el.messages.innerHTML = state.messages.map((message) => {
+            const own = message.sender_id === state.user.id;
+            const profile = own ? state.profile : state.currentPartner;
+            const name = own ? "あなた" : profileDisplayName(profile);
+            const avatarUrl = profile?.avatar_url || profile?.avatarUrl || "";
+            const avatar = avatarUrl
+                ? '<div class="message-avatar"><img src="' + escapeHtml(avatarUrl) + '" alt=""></div>'
+                : '<div class="message-avatar">' + escapeHtml(shortName(name)) + '</div>';
+
+            return '<article class="message-row' + (own ? ' own' : '') + '">' +
+                avatar +
+                '<div class="message-body"><div class="message-sender">' + escapeHtml(name) + '</div>' +
+                renderMessageContent(message.content) +
+                '<div class="message-time">' + escapeHtml(formatDate(message.created_at)) + '</div></div></article>';
+        }).join("");
+
+        if(scrollToBottom){
+            el.messages.scrollTop = el.messages.scrollHeight;
+        }
+    }
+
+    async function sendTextMessage(){
+        if(!state.currentRoom || state.sending) return;
+
+        const text = el.messageInput.value;
+        if(!text.trim()){
+            showToast("メッセージを入力してください。");
+            return;
+        }
+
+        if(Array.from(text).length > MAX_TEXT_LENGTH){
+            showToast("メッセージは10,000文字以内で入力してください。");
+            return;
+        }
+
+        await sendMessagePayload({type:"text",text});
+    }
+
+    async function sendMessagePayload(payload){
+        if(!state.currentRoom || state.sending) return;
+
+        state.sending = true;
+        el.sendButton.disabled = true;
+
+        try{
+            const client = requireClient();
+            const content = JSON.stringify(payload);
+            const result = await client.rpc("send_message",{
+                p_room_id:state.currentRoom.id,
+                p_content:content
+            });
+
+            if(result.error) throw result.error;
+
+            if(payload.type === "text"){
+                el.messageInput.value = "";
+                updateCharCount();
+            }
+
+            await loadMessages(false);
+        }catch(error){
+            console.error("Send message error:",error);
+            setStatus(getErrorMessage(error),"error");
+        }finally{
+            state.sending = false;
+            updateCharCount();
+        }
+    }
+
+    async function handleFiles(fileList,kind){
+        const files = Array.from(fileList || []);
+        if(!files.length) return;
+
+        if(!state.currentRoom){
+            showToast("先にチャット相手を選択してください。");
+            clearFileInputs();
+            return;
+        }
+
+        if(kind === "image" && files.length > MAX_IMAGES){
+            showToast("画像は一度に最大10枚まで選択できます。");
+            clearFileInputs();
+            return;
+        }
+
+        if(kind === "video" && files.length > 1){
+            showToast("動画は一度に1本ずつ送信してください。");
+            clearFileInputs();
+            return;
+        }
+
+        if(kind === "image" && files.some((file) => !file.type.startsWith("image/"))){
+            showToast("画像ファイルを選択してください。");
+            clearFileInputs();
+            return;
+        }
+
+        if(kind === "video" && files.some((file) => !file.type.startsWith("video/"))){
+            showToast("動画ファイルを選択してください。");
+            clearFileInputs();
+            return;
+        }
+
+        for(const file of files){
+            if(kind === "video"){
+                if(file.size > MAX_VIDEO_BYTES){
+                    showToast("動画は1本100MB以下にしてください。Storage側の上限にも制限されます。");
+                    continue;
+                }
+
+                try{
+                    const duration = await getVideoDuration(file);
+                    if(duration > MAX_VIDEO_SECONDS){
+                        showToast(file.name + " は5分を超えているため送信できません。");
+                        continue;
+                    }
+                }catch(error){
+                    showToast(file.name + " の動画時間を確認できませんでした。");
+                    continue;
+                }
+            }else if(file.size > MAX_FILE_BYTES){
+                showToast(file.name + " は50MBを超えているため送信できません。");
+                continue;
+            }
+
+            await uploadAndSend(file,kind);
+        }
+
+        clearFileInputs();
+    }
+
+    function clearFileInputs(){
+        el.imageInput.value = "";
+        el.fileInput.value = "";
+        el.videoInput.value = "";
+        el.attachmentStatus.textContent = "";
+    }
+
+    function getVideoDuration(file){
+        return new Promise((resolve,reject) => {
+            const video = document.createElement("video");
+            const objectUrl = URL.createObjectURL(file);
+            video.preload = "metadata";
+            video.onloadedmetadata = () => {
+                const duration = video.duration;
+                URL.revokeObjectURL(objectUrl);
+                resolve(duration);
+            };
+            video.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                reject(new Error("動画メタデータを読み込めません。"));
+            };
+            video.src = objectUrl;
+        });
+    }
+
+    async function uploadAndSend(file,kind){
+        el.attachmentStatus.textContent = file.name + " をアップロード中...";
+        el.app.classList.add("loading");
+
+        try{
+            const client = requireClient();
+            const safeName = file.name.replace(/[^\w.\-()ぁ-んァ-ヶ一-龠]/g,"_").slice(0,120) || "attachment";
+            const objectPath = state.currentRoom.id + "/" + state.user.id + "/" + crypto.randomUUID() + "-" + safeName;
+
+            const uploadResult = await client.storage.from(STORAGE_BUCKET).upload(objectPath,file,{
+                cacheControl:"3600",
+                contentType:file.type || "application/octet-stream",
+                upsert:false
+            });
+
+            if(uploadResult.error) throw uploadResult.error;
+
+            const signedResult = await client.storage.from(STORAGE_BUCKET).createSignedUrl(objectPath,60 * 60 * 24 * 7);
+            if(signedResult.error) throw signedResult.error;
+
+            const payload = {
+                type:kind,
+                name:file.name,
+                url:signedResult.data.signedUrl,
+                path:objectPath,
+                mimeType:file.type || "application/octet-stream",
+                size:file.size
             };
 
-            let currentUser = null;
-            let currentRoom = null;
-            let currentChannel = null;
-            let users = [];
-            let rooms = [];
-            let messages = [];
-            let attachments = [];
-            let isSending = false;
-            let isLoadingMessages = false;
+            await sendMessagePayload(payload);
+        }catch(error){
+            console.error("Attachment upload error:",error);
+            setStatus(getErrorMessage(error),"error");
+        }finally{
+            el.app.classList.remove("loading");
+            el.attachmentStatus.textContent = "";
+        }
+    }
 
-            function getClient() {
-                const client = window.ARESystem?.client || window.areSupabase;
+    async function logout(){
+        if(!confirm("ログアウトしますか？")) return;
 
-                if (!client) {
-                    throw new Error("Supabaseクライアントを取得できません。system.jsとsupabase-client.jsを確認してください。");
-                }
-
-                return client;
+        setBusy(el.logoutButton,true,"ログアウト中...");
+        try{
+            cleanupSubscription();
+            if(state.authSubscription){
+                state.authSubscription.unsubscribe();
+                state.authSubscription = null;
             }
-
-            function showStatus(message, isError = false) {
-                elements.statusMessage.textContent = message;
-                elements.statusMessage.dataset.state = isError ? "error" : "success";
-            }
-
-            function setConnectionStatus(message) {
-                elements.connectionStatus.textContent = message;
-            }
-
-            function normalizeText(value) {
-                return String(value || "").trim();
-            }
-
-            function getDisplayName(profile) {
-                return profile.display_name || profile.username || "ユーザー";
-            }
-
-            function getInitial(name) {
-                return Array.from(name || "A")[0].toUpperCase();
-            }
-
-            function formatTime(value) {
-                if (!value) {
-                    return "";
-                }
-
-                const date = new Date(value);
-
-                if (Number.isNaN(date.getTime())) {
-                    return "";
-                }
-
-                return new Intl.DateTimeFormat("ja-JP", {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                }).format(date);
-            }
-
-            function makeElement(tagName, className, text) {
-                const element = document.createElement(tagName);
-
-                if (className) {
-                    element.className = className;
-                }
-
-                if (text !== undefined) {
-                    element.textContent = text;
-                }
-
-                return element;
-            }
-
-            function makeButton(text, className, onClick) {
-                const button = makeElement("button", className, text);
-                button.type = "button";
-                button.addEventListener("click", onClick);
-                return button;
-            }
-
-            async function getCurrentSession() {
-                if (window.AREAuth?.getSession) {
-                    return window.AREAuth.getSession();
-                }
-
-                const result = await getClient().auth.getSession();
-
-                if (result.error) {
-                    throw result.error;
-                }
-
-                return result.data.session;
-            }
-
-            async function getAuthenticatedUser() {
-                if (window.AREAuth?.getCurrentUser) {
-                    return window.AREAuth.getCurrentUser();
-                }
-
-                const result = await getClient().auth.getUser();
-
-                if (result.error) {
-                    throw result.error;
-                }
-
-                return result.data.user;
-            }
-
-            async function signOut() {
-                if (window.AREAuth?.logout) {
-                    await window.AREAuth.logout();
-                    return;
-                }
-
-                const result = await getClient().auth.signOut();
-
-                if (result.error) {
-                    throw result.error;
-                }
-            }
-
-            async function loadRecommendedUsers() {
-                if (!currentUser?.id) {
-                    return;
-                }
-
-                elements.recommendedUsers.replaceChildren(
-                    makeElement("div", "empty-state", "ユーザーを読み込んでいます...")
-                );
-
-                try {
-                    const result = await getClient()
-                        .from("profiles")
-                        .select("id, display_name")
-                        .neq("id", currentUser.id)
-                        .limit(100);
-
-                    if (result.error) {
-                        throw result.error;
-                    }
-
-                    users = result.data || [];
-                    renderRecommendedUsers();
-                } catch (error) {
-                    elements.recommendedUsers.replaceChildren(
-                        makeElement("div", "empty-state", "ユーザーを取得できませんでした。profilesテーブルのRLS設定を確認してください。")
-                    );
-
-                    showStatus(error.message || "おすすめユーザーの読み込みに失敗しました。", true);
-                }
-            }
-
-            function renderRecommendedUsers() {
-                const keyword = normalizeText(elements.userSearchInput.value).toLocaleLowerCase();
-                const filteredUsers = users.filter((user) => {
-                    return getDisplayName(user).toLocaleLowerCase().includes(keyword);
-                });
-
-                elements.recommendedUsers.replaceChildren();
-
-                if (filteredUsers.length === 0) {
-                    elements.recommendedUsers.appendChild(
-                        makeElement("div", "empty-state", "表示できるユーザーがいません。")
-                    );
-                    return;
-                }
-
-                for (const user of filteredUsers) {
-                    const card = makeElement("div", "user-card");
-                    const info = makeElement("div", "user-info");
-                    const avatar = makeElement("div", "avatar", getInitial(getDisplayName(user)));
-                    const name = makeElement("div", "user-name", getDisplayName(user));
-                    const addButton = makeButton("追加", "button button-small", async () => {
-                        addButton.disabled = true;
-
-                        try {
-                            await startDirectChat(user);
-                        } catch (error) {
-                            showStatus(error.message || "チャットを開始できませんでした。", true);
-                        } finally {
-                            addButton.disabled = false;
-                        }
-                    });
-
-                    info.append(avatar, name);
-                    card.append(info, addButton);
-                    elements.recommendedUsers.appendChild(card);
-                }
-            }
-
-            async function startDirectChat(otherUser) {
-                if (!currentUser?.id || !otherUser?.id) {
-                    throw new Error("ユーザー情報を取得できません。");
-                }
-
-                if (otherUser.id === currentUser.id) {
-                    throw new Error("自分自身とはチャットできません。");
-                }
-
-                const client = getClient();
-
-                // 既存の1対1ルームがあるか確認する
-                const membershipResult = await client
-                    .from("chat_room_members")
-                    .select("room_id")
-                    .eq("user_id", currentUser.id);
-
-                if (membershipResult.error) {
-                    throw membershipResult.error;
-                }
-
-                const existingRoomIds = (membershipResult.data || []).map((row) => row.room_id);
-
-                if (existingRoomIds.length > 0) {
-                    const otherMembershipResult = await client
-                        .from("chat_room_members")
-                        .select("room_id")
-                        .eq("user_id", otherUser.id)
-                        .in("room_id", existingRoomIds);
-
-                    if (otherMembershipResult.error) {
-                        throw otherMembershipResult.error;
-                    }
-
-                    const sharedRoomIds = (otherMembershipResult.data || []).map((row) => row.room_id);
-
-                    if (sharedRoomIds.length > 0) {
-                        const allMembersResult = await client
-                            .from("chat_room_members")
-                            .select("room_id, user_id")
-                            .in("room_id", sharedRoomIds);
-
-                        if (allMembersResult.error) {
-                            throw allMembersResult.error;
-                        }
-
-                        const directRoom = sharedRoomIds.find((roomId) => {
-                            const memberIds = allMembersResult.data
-                                .filter((row) => row.room_id === roomId)
-                                .map((row) => row.user_id);
-
-                            return memberIds.length === 2 &&
-                                memberIds.includes(currentUser.id) &&
-                                memberIds.includes(otherUser.id);
-                        });
-
-                        if (directRoom) {
-                            await loadRooms();
-                            await openRoom(rooms.find((room) => room.id === directRoom) || {
-                                id: directRoom,
-                                name: getDisplayName(otherUser),
-                                otherUserId: otherUser.id
-                            });
-                            return;
-                        }
-                    }
-                }
-
-                // 新規ルームを作成する
-                const roomResult = await client
-                    .from("chat_rooms")
-                    .insert({})
-                    .select("id")
-                    .single();
-
-                if (roomResult.error) {
-                    throw roomResult.error;
-                }
-
-                const roomId = roomResult.data.id;
-
-                const membersResult = await client
-                    .from("chat_room_members")
-                    .insert([
-                        { room_id: roomId, user_id: currentUser.id },
-                        { room_id: roomId, user_id: otherUser.id }
-                    ]);
-
-                if (membersResult.error) {
-                    throw membersResult.error;
-                }
-
-                await loadRooms();
-
-                const newRoom = rooms.find((room) => room.id === roomId) || {
-                    id: roomId,
-                    name: getDisplayName(otherUser),
-                    otherUserId: otherUser.id
-                };
-
-                await openRoom(newRoom);
-                showStatus(`${getDisplayName(otherUser)} さんとのチャットを開始しました。`);
-            }
-
-            async function loadRooms() {
-                if (!currentUser?.id) {
-                    return;
-                }
-
-                elements.roomList.replaceChildren(
-                    makeElement("div", "empty-state", "チャット一覧を読み込んでいます...")
-                );
-
-                const client = getClient();
-
-                const memberResult = await client
-                    .from("chat_room_members")
-                    .select("room_id")
-                    .eq("user_id", currentUser.id);
-
-                if (memberResult.error) {
-                    throw memberResult.error;
-                }
-
-                const roomIds = [...new Set((memberResult.data || []).map((row) => row.room_id))];
-
-                if (roomIds.length === 0) {
-                    rooms = [];
-                    renderRooms();
-                    return;
-                }
-
-                const roomResult = await client
-                    .from("chat_rooms")
-                    .select("id, created_at")
-                    .in("id", roomIds)
-                    .order("created_at", { ascending: false });
-
-                if (roomResult.error) {
-                    throw roomResult.error;
-                }
-
-                const allMembersResult = await client
-                    .from("chat_room_members")
-                    .select("room_id, user_id")
-                    .in("room_id", roomIds);
-
-                if (allMembersResult.error) {
-                    throw allMembersResult.error;
-                }
-
-                const otherUserIds = [
-                    ...new Set(
-                        (allMembersResult.data || [])
-                            .map((row) => row.user_id)
-                            .filter((id) => id !== currentUser.id)
-                    )
-                ];
-
-                let profiles = [];
-
-                if (otherUserIds.length > 0) {
-                    const profileResult = await client
-                        .from("profiles")
-                        .select("id, display_name")
-                        .in("id", otherUserIds);
-
-                    if (profileResult.error) {
-                        throw profileResult.error;
-                    }
-
-                    profiles = profileResult.data || [];
-                }
-
-                const profileMap = new Map(
-                    profiles.map((profile) => [profile.id, getDisplayName(profile)])
-                );
-
-                rooms = (roomResult.data || []).map((room) => {
-                    const memberIds = (allMembersResult.data || [])
-                        .filter((member) => member.room_id === room.id)
-                        .map((member) => member.user_id);
-
-                    const otherUserId = memberIds.find((id) => id !== currentUser.id);
-
-                    return {
-                        id: room.id,
-                        createdAt: room.created_at,
-                        otherUserId,
-                        name: profileMap.get(otherUserId) || "ユーザー"
-                    };
-                });
-
-                renderRooms();
-            }
-
-            function renderRooms() {
-                elements.roomList.replaceChildren();
-
-                if (rooms.length === 0) {
-                    elements.roomList.appendChild(
-                        makeElement("div", "empty-state", "まだチャットがありません。おすすめユーザーから相手を追加してください。")
-                    );
-                    return;
-                }
-
-                for (const room of rooms) {
-                    const button = makeButton(
-                        "",
-                        `room-card${currentRoom?.id === room.id ? " active" : ""}`,
-                        async () => {
-                            try {
-                                await openRoom(room);
-                            } catch (error) {
-                                showStatus(error.message || "チャットを開けませんでした。", true);
-                            }
-                        }
-                    );
-
-                    const avatar = makeElement("div", "avatar", getInitial(room.name));
-                    const name = makeElement("div", "user-name", room.name);
-
-                    button.append(avatar, name);
-                    elements.roomList.appendChild(button);
-                }
-            }
-
-            async function openRoom(room) {
-                if (!room?.id) {
-                    throw new Error("チャットルームを特定できません。");
-                }
-
-                await unsubscribeFromMessages();
-
-                currentRoom = room;
-                elements.chatTitle.textContent = room.name || "チャット";
-                elements.messageInput.disabled = false;
-                elements.sendButton.disabled = false;
-                messages = [];
-                renderRooms();
-
-                elements.messageList.replaceChildren(
-                    makeElement("div", "empty-state", "メッセージを読み込んでいます...")
-                );
-
-                await loadMessages(room.id);
-                await subscribeToMessages(room.id);
-
-                setConnectionStatus("チャットを開いています");
-            }
-
-            async function loadMessages(roomId) {
-                isLoadingMessages = true;
-
-                try {
-                    const result = await getClient()
-                        .from("messages")
-                        .select("id, room_id, sender_id, content, created_at")
-                        .eq("room_id", roomId)
-                        .order("created_at", { ascending: true })
-                        .limit(200);
-
-                    if (result.error) {
-                        throw result.error;
-                    }
-
-                    messages = result.data || [];
-                    renderMessages();
-                } finally {
-                    isLoadingMessages = false;
-                }
-            }
-
-            async function subscribeToMessages(roomId) {
-                const client = getClient();
-
-                currentChannel = client
-                    .channel(`are-chat-${roomId}`)
-                    .on(
-                        "postgres_changes",
-                        {
-                            event: "INSERT",
-                            schema: "public",
-                            table: "messages",
-                            filter: `room_id=eq.${roomId}`
-                        },
-                        (payload) => {
-                            if (currentRoom?.id !== roomId) {
-                                return;
-                            }
-
-                            if (!messages.some((message) => message.id === payload.new.id)) {
-                                messages.push(payload.new);
-                                renderMessages();
-                            }
-                        }
-                    )
-                    .subscribe((status) => {
-                        if (status === "SUBSCRIBED") {
-                            setConnectionStatus("リアルタイム接続中");
-                        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-                            setConnectionStatus("接続エラー");
-                        } else {
-                            setConnectionStatus("接続中...");
-                        }
-                    });
-            }
-
-            async function unsubscribeFromMessages() {
-                if (!currentChannel) {
-                    return;
-                }
-
-                const channel = currentChannel;
-                currentChannel = null;
-                await getClient().removeChannel(channel);
-            }
-
-            function parseMessageContent(content) {
-                if (typeof content !== "string") {
-                    return { text: "", attachments: [] };
-                }
-
-                // 添付情報をJSON文字列で保存する形式に対応する
-                try {
-                    const parsed = JSON.parse(content);
-
-                    if (
-                        parsed &&
-                        parsed.type === "are-message-v1" &&
-                        Array.isArray(parsed.attachments)
-                    ) {
-                        return {
-                            text: String(parsed.text || ""),
-                            attachments: parsed.attachments
-                        };
-                    }
-                } catch {
-                    // 通常のテキストメッセージとして表示する
-                }
-
-                return { text: content, attachments: [] };
-            }
-
-            function renderMessages() {
-                elements.messageList.replaceChildren();
-
-                if (messages.length === 0) {
-                    elements.messageList.appendChild(
-                        makeElement("div", "empty-state", "メッセージはまだありません。最初のメッセージを送ってみましょう。")
-                    );
-                    return;
-                }
-
-                for (const message of messages) {
-                    const ownMessage = message.sender_id === currentUser?.id;
-                    const item = makeElement("article", `message${ownMessage ? " own" : ""}`);
-                    const parsed = parseMessageContent(message.content);
-
-                    if (parsed.text) {
-                        item.appendChild(makeElement("p", "message-content", parsed.text));
-                    }
-
-                    for (const attachment of parsed.attachments) {
-                        if (!attachment || typeof attachment.url !== "string") {
-                            continue;
-                        }
-
-                        if (attachment.type === "image") {
-                            const image = document.createElement("img");
-                            image.className = "message-image";
-                            image.src = attachment.url;
-                            image.alt = attachment.name || "送信された画像";
-                            image.loading = "lazy";
-                            item.appendChild(image);
-                        } else if (attachment.type === "video") {
-                            const video = document.createElement("video");
-                            video.className = "message-video";
-                            video.src = attachment.url;
-                            video.controls = true;
-                            video.preload = "metadata";
-                            item.appendChild(video);
-                        } else {
-                            const link = makeElement("a", "attachment-link", attachment.name || "ファイルを開く");
-                            link.href = attachment.url;
-                            link.target = "_blank";
-                            link.rel = "noopener noreferrer";
-                            link.download = attachment.name || "";
-                            item.appendChild(link);
-                        }
-                    }
-
-                    if (!parsed.text && parsed.attachments.length === 0) {
-                        item.appendChild(makeElement("p", "message-content", "[表示できないメッセージ]"));
-                    }
-
-                    item.appendChild(makeElement("small", "message-time", formatTime(message.created_at)));
-                    elements.messageList.appendChild(item);
-                }
-
-                elements.messageList.scrollTop = elements.messageList.scrollHeight;
-            }
-
-            function getAttachmentType(file) {
-                if (file.type.startsWith("image/")) {
-                    return "image";
-                }
-
-                if (file.type.startsWith("video/")) {
-                    return "video";
-                }
-
-                return "file";
-            }
-
-            function addFiles(fileList, requestedType) {
-                const selectedFiles = Array.from(fileList || []);
-
-                if (selectedFiles.length === 0) {
-                    return;
-                }
-
-                if (!currentRoom) {
-                    showStatus("先にチャット相手を選択してください。", true);
-                    return;
-                }
-
-                const incomingImages = selectedFiles.filter((file) => getAttachmentType(file) === "image");
-                const existingImages = attachments.filter((item) => item.type === "image").length;
-
-                if (existingImages + incomingImages.length > MAX_IMAGES) {
-                    showStatus(`画像は1回のメッセージにつき最大${MAX_IMAGES}枚です。`, true);
-                    return;
-                }
-
-                const videos = selectedFiles.filter((file) => getAttachmentType(file) === "video");
-
-                if (videos.length > 1 || (videos.length > 0 && attachments.some((item) => item.type === "video"))) {
-                    showStatus("動画は1回のメッセージにつき1本まで選択できます。", true);
-                    return;
-                }
-
-                if (videos.length > 0 && attachments.length > 0) {
-                    showStatus("動画はほかの添付ファイルと分けて送信してください。", true);
-                    return;
-                }
-
-                if (requestedType === "video" && selectedFiles.some((file) => getAttachmentType(file) !== "video")) {
-                    showStatus("動画ファイルを選択してください。", true);
-                    return;
-                }
-
-                if (requestedType === "image" && selectedFiles.some((file) => getAttachmentType(file) !== "image")) {
-                    showStatus("画像ファイルを選択してください。", true);
-                    return;
-                }
-
-                attachments.push(
-                    ...selectedFiles.map((file) => ({
-                        file,
-                        type: getAttachmentType(file),
-                        name: file.name
-                    }))
-                );
-
-                renderAttachmentPreview();
-                showStatus("添付ファイルを選択しました。");
-            }
-
-            async function validateVideoDuration(file) {
-                if (getAttachmentType(file) !== "video") {
-                    return true;
-                }
-
-                const video = document.createElement("video");
-                const objectUrl = URL.createObjectURL(file);
-
-                try {
-                    const duration = await new Promise((resolve, reject) => {
-                        video.preload = "metadata";
-                        video.onloadedmetadata = () => resolve(video.duration);
-                        video.onerror = () => reject(new Error("動画の長さを確認できません。"));
-                        video.src = objectUrl;
-                    });
-
-                    if (!Number.isFinite(duration) || duration > MAX_VIDEO_SECONDS) {
-                        throw new Error("動画は5分以内のものを選択してください。");
-                    }
-
-                    return true;
-                } finally {
-                    URL.revokeObjectURL(objectUrl);
-                }
-            }
-
-            function renderAttachmentPreview() {
-                elements.attachmentPreview.replaceChildren();
-
-                for (const [index, attachment] of attachments.entries()) {
-                    const item = makeElement("div", "preview-item");
-                    const name = makeElement("span", "", `${attachment.type === "image" ? "画像" : attachment.type === "video" ? "動画" : "ファイル"}: ${attachment.name}`);
-                    const removeButton = makeButton("削除", "button button-secondary button-small", () => {
-                        attachments.splice(index, 1);
-                        renderAttachmentPreview();
-                    });
-
-                    item.append(name, removeButton);
-                    elements.attachmentPreview.appendChild(item);
-                }
-
-                elements.attachmentCount.textContent = attachments.length
-                    ? `添付 ${attachments.length} 件`
-                    : "添付ファイルなし";
-            }
-
-            function updateCharacterCount() {
-                const length = Array.from(elements.messageInput.value).length;
-                elements.characterCount.textContent = `${length.toLocaleString("ja-JP")} / ${MAX_TEXT_LENGTH.toLocaleString("ja-JP")}文字`;
-            }
-
-            async function uploadAttachment(attachment) {
-                const client = getClient();
-                const safeName = attachment.name.replace(/[^\w.\-()\u3040-\u30ff\u4e00-\u9fff]/g, "_");
-                const path = `${currentRoom.id}/${currentUser.id}/${crypto.randomUUID()}-${safeName}`;
-
-                const uploadResult = await client.storage
-                    .from(STORAGE_BUCKET)
-                    .upload(path, attachment.file, {
-                        upsert: false,
-                        contentType: attachment.file.type || "application/octet-stream"
-                    });
-
-                if (uploadResult.error) {
-                    throw uploadResult.error;
-                }
-
-                // バケットが公開設定でない場合は、署名付きURLを発行するAPIに置き換える
-                const urlResult = client.storage
-                    .from(STORAGE_BUCKET)
-                    .getPublicUrl(uploadResult.data.path);
-
-                return {
-                    type: attachment.type,
-                    name: attachment.name,
-                    path: uploadResult.data.path,
-                    url: urlResult.data.publicUrl,
-                    mimeType: attachment.file.type || "application/octet-stream"
-                };
-            }
-
-            async function sendMessage(event) {
-                event.preventDefault();
-
-                if (isSending) {
-                    return;
-                }
-
-                if (!currentUser?.id) {
-                    showStatus("ログインしてください。", true);
-                    return;
-                }
-
-                if (!currentRoom?.id) {
-                    showStatus("先にチャット相手を選択してください。", true);
-                    return;
-                }
-
-                const text = elements.messageInput.value;
-                const normalizedText = text.trim();
-                const textLength = Array.from(text).length;
-
-                if (textLength > MAX_TEXT_LENGTH) {
-                    showStatus(`テキストは最大${MAX_TEXT_LENGTH.toLocaleString("ja-JP")}文字です。`, true);
-                    return;
-                }
-
-                if (!normalizedText && attachments.length === 0) {
-                    showStatus("メッセージか添付ファイルを入力してください。", true);
-                    return;
-                }
-
-                isSending = true;
-                elements.sendButton.disabled = true;
-                elements.sendButton.textContent = "送信中...";
-
-                try {
-                    for (const attachment of attachments) {
-                        await validateVideoDuration(attachment.file);
-                    }
-
-                    showStatus("送信内容を準備しています...");
-
-                    const uploadedAttachments = [];
-
-                    for (const attachment of attachments) {
-                        uploadedAttachments.push(await uploadAttachment(attachment));
-                    }
-
-                    const content = uploadedAttachments.length > 0
-                        ? JSON.stringify({
-                            type: "are-message-v1",
-                            text: normalizedText,
-                            attachments: uploadedAttachments
-                        })
-                        : normalizedText;
-
-                    // DB側に send_message(p_room_id, p_content) RPCが必要
-                    const result = await getClient().rpc("send_message", {
-                        p_room_id: currentRoom.id,
-                        p_content: content
-                    });
-
-                    if (result.error) {
-                        throw result.error;
-                    }
-
-                    elements.messageInput.value = "";
-                    attachments = [];
-                    renderAttachmentPreview();
-                    updateCharacterCount();
-
-                    // Realtimeが有効でない場合にも送信内容を確認できるように再読込する
-                    await loadMessages(currentRoom.id);
-                    showStatus("メッセージを送信しました。");
-                } catch (error) {
-                    showStatus(error.message || "メッセージを送信できませんでした。", true);
-                } finally {
-                    isSending = false;
-                    elements.sendButton.disabled = !currentRoom;
-                    elements.sendButton.textContent = "送信";
-                }
-            }
-
-            elements.userSearchInput.addEventListener("input", renderRecommendedUsers);
-            elements.refreshUsersButton.addEventListener("click", loadRecommendedUsers);
-
-            elements.refreshRoomsButton.addEventListener("click", async () => {
-                try {
-                    await loadRooms();
-                    showStatus("チャット一覧を更新しました。");
-                } catch (error) {
-                    showStatus(error.message || "チャット一覧の更新に失敗しました。", true);
-                }
-            });
-
-            elements.imageInput.addEventListener("change", (event) => {
-                addFiles(event.target.files, "image");
-                event.target.value = "";
-            });
-
-            elements.fileInput.addEventListener("change", (event) => {
-                addFiles(event.target.files, "file");
-                event.target.value = "";
-            });
-
-            elements.videoInput.addEventListener("change", (event) => {
-                addFiles(event.target.files, "video");
-                event.target.value = "";
-            });
-
-            elements.messageInput.addEventListener("input", updateCharacterCount);
-            elements.messageForm.addEventListener("submit", sendMessage);
-
-            elements.logoutButton.addEventListener("click", async () => {
-                elements.logoutButton.disabled = true;
-
-                try {
-                    await unsubscribeFromMessages();
-                    await signOut();
-                    window.location.href = "./index.html";
-                } catch (error) {
-                    showStatus(error.message || "ログアウトに失敗しました。", true);
-                } finally {
-                    elements.logoutButton.disabled = false;
-                }
-            });
-
-            async function initialize() {
-                try {
-                    const session = await getCurrentSession();
-
-                    if (!session?.user) {
-                        window.location.href = "./index.html";
-                        return;
-                    }
-
-                    currentUser = session.user;
-
-                    const authenticatedUser = await getAuthenticatedUser();
-
-                    if (authenticatedUser?.id) {
-                        currentUser = authenticatedUser;
-                    }
-
-                    elements.currentUserLabel.textContent = `ログイン中: ${currentUser.email || currentUser.id}`;
-
-                    elements.messageInput.disabled = true;
-                    elements.sendButton.disabled = true;
-
-                    await Promise.all([
-                        loadRecommendedUsers(),
-                        loadRooms()
-                    ]);
-
-                    setConnectionStatus("相手を選択してください");
-                } catch (error) {
-                    setConnectionStatus("初期化エラー");
-                    showStatus(error.message || "チャット画面を初期化できませんでした。", true);
-                }
-            }
-
-            updateCharacterCount();
-            initialize();
-        });
-    </script>
+            await window.AREAuth.logout();
+            window.location.replace("./index.html");
+        }catch(error){
+            console.error("Logout error:",error);
+            setStatus(getErrorMessage(error),"error");
+            setBusy(el.logoutButton,false);
+        }
+    }
+
+    initialize();
+})();
+</script>
 </body>
 </html>

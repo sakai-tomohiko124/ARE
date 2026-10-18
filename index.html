@@ -6,9 +6,342 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b1020">
     <title>ARE | Realtime Chat</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            color-scheme: dark;
+            --background: #0b1020;
+            --panel: #151c2e;
+            --border: #2a344b;
+            --text: #f4f6ff;
+            --muted: #9ba7c0;
+            --accent: #818cf8;
+            --accent-hover: #6366f1;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 16px;
+            background: var(--background);
+            color: var(--text);
+            font-family: system-ui, sans-serif;
+        }
+
+        button,
+        input,
+        textarea {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button:disabled {
+            cursor: wait;
+            opacity: 0.6;
+        }
+
+        .background-glow {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 15% 15%, #4338ca33, transparent 35%),
+                radial-gradient(circle at 85% 85%, #7c3aed22, transparent 35%);
+        }
+
+        .app {
+            width: min(100%, 1050px);
+            margin: 0 auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 0 20px;
+        }
+
+        .brand-logo {
+            display: grid;
+            width: 46px;
+            height: 46px;
+            flex-shrink: 0;
+            place-items: center;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #818cf8, #7c3aed);
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .brand h1 {
+            margin: 0;
+            letter-spacing: 4px;
+        }
+
+        .brand p {
+            margin: 2px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .panel {
+            width: min(100%, 430px);
+            margin: 0 auto;
+            padding: 24px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: #151c2eee;
+            box-shadow: 0 20px 70px #0003;
+        }
+
+        .panel h2 {
+            margin: 0 0 8px;
+            font-size: 24px;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .panel > .muted {
+            margin: 0 0 18px;
+        }
+
+        label {
+            display: block;
+            margin: 14px 0 6px;
+            color: #cbd5e1;
+            font-size: 13px;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            min-width: 0;
+            padding: 11px 12px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            outline: none;
+            background: #0c1220;
+            color: var(--text);
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: var(--accent);
+        }
+
+        button {
+            padding: 11px 14px;
+            border: 0;
+            border-radius: 9px;
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+        }
+
+        .primary-button {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .button-secondary {
+            border: 1px solid var(--border);
+            background: #222b40;
+        }
+
+        .button-secondary:hover {
+            background: #303b55;
+        }
+
+        .status-message {
+            min-height: 22px;
+            margin: 14px 0 0;
+            color: #c7d2fe;
+            font-size: 13px;
+            overflow-wrap: anywhere;
+        }
+
+        .status-message[data-state="error"] {
+            color: #fca5a5;
+        }
+
+        .chat-layout {
+            display: grid;
+            grid-template-columns: 250px minmax(0, 1fr);
+            min-height: 520px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: var(--panel);
+        }
+
+        .room-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 16px;
+            border-right: 1px solid var(--border);
+        }
+
+        .sidebar-heading,
+        .chat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .sidebar-heading h2,
+        .chat-header h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .room-list {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 100px;
+        }
+
+        .room-list p {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .chat-main {
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            min-height: 72px;
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .chat-header p {
+            margin: 5px 0 0;
+        }
+
+        .message-list {
+            display: flex;
+            flex: 1;
+            min-height: 260px;
+            flex-direction: column;
+            gap: 10px;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .empty-chat {
+            margin: auto;
+            color: var(--muted);
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .message-form {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .message-form input {
+            flex: 1;
+        }
+
+        footer {
+            margin-top: 22px;
+            color: #68748d;
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: 3px;
+        }
+
+        @media (max-width: 650px) {
+            body {
+                padding: 12px;
+            }
+
+            .panel {
+                padding: 20px;
+            }
+
+            .chat-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .room-sidebar {
+                border-right: 0;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .room-list {
+                max-height: 130px;
+                overflow-y: auto;
+            }
+
+            .message-form {
+                padding: 10px;
+            }
+        }
+
+        @media (max-height: 700px) {
+            body {
+                padding-top: 8px;
+            }
+
+            .brand {
+                margin-bottom: 10px;
+            }
+
+            .panel {
+                padding: 16px 20px;
+            }
+
+            label {
+                margin-top: 10px;
+            }
+
+            .primary-button {
+                margin-top: 14px;
+            }
+
+            footer {
+                margin-top: 12px;
+            }
+        }
+    </style>
 </head>
+
 <body>
     <div class="background-glow"></div>
 
@@ -21,101 +354,237 @@
             </div>
         </header>
 
+        <!-- ログイン画面 -->
         <section id="loginView" class="panel">
             <h2>おかえりなさい</h2>
             <p class="muted">ログインして会話を始めましょう。</p>
 
             <form id="loginForm">
                 <label for="loginId">ログインID</label>
-                <input id="loginId" name="loginId" autocomplete="username" required>
+                <input
+                    id="loginId"
+                    name="loginId"
+                    autocomplete="username"
+                    maxlength="80"
+                    required
+                >
 
                 <label for="loginPassword">パスワード</label>
-                <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+                <input
+                    id="loginPassword"
+                    name="password"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                >
 
-                <button type="submit" id="loginButton">ログイン</button>
+                <button id="loginButton" class="primary-button" type="submit">
+                    ログイン
+                </button>
             </form>
 
             <div class="button-row">
-                <button type="button" class="button-secondary" onclick="window.location.href='./register.html'">新規登録</button>
-                <button type="button" class="button-secondary" id="showRecovery">アカウント復旧</button>
+                <button id="showRegister" class="button-secondary" type="button">
+                    新規登録
+                </button>
+                <button id="showRecovery" class="button-secondary" type="button">
+                    アカウント復旧
+                </button>
             </div>
+
+            <p id="loginStatus" class="status-message" role="status" aria-live="polite"></p>
         </section>
 
-        <section id="registerView" class="panel hidden">
-            <h2>新規登録</h2>
-            <form id="registerForm">
-                <label for="displayName">表示名</label>
-                <input id="displayName" name="displayName" maxlength="40" required>
-
-                <label for="newLoginId">ログインID</label>
-                <input id="newLoginId" name="loginId" maxlength="80" required>
-
-                <label for="newPassword">パスワード</label>
-                <input id="newPassword" name="password" type="password" autocomplete="new-password" required>
-
-                <label for="phone">電話番号（任意）</label>
-                <input id="phone" name="phone" type="tel" autocomplete="tel">
-
-                <button type="submit" id="registerButton">アカウントを作成</button>
-                <button type="button" class="button-secondary" data-view="loginView">戻る</button>
-            </form>
-        </section>
-
-        <section id="recoveryView" class="panel hidden">
-            <h2>アカウント復旧</h2>
-            <form id="recoveryForm">
-                <label for="recoveryLoginId">ログインID</label>
-                <input id="recoveryLoginId" name="loginId" required>
-
-                <label for="recoveryCode">復旧コード</label>
-                <input id="recoveryCode" name="recoveryCode" required>
-
-                <label for="recoveryPassword">新しいパスワード</label>
-                <input id="recoveryPassword" name="newPassword" type="password" autocomplete="new-password" required>
-
-                <button type="submit" id="recoveryButton">パスワードを再設定</button>
-                <button type="button" class="button-secondary" data-view="loginView">戻る</button>
-            </form>
-        </section>
-
-        <section id="chatView" class="chat-layout hidden">
+        <!-- ログイン成功後のチャット画面 -->
+        <section id="chatView" class="chat-layout" hidden>
             <aside class="room-sidebar">
                 <div class="sidebar-heading">
-                    <h2>ルーム</h2>
-                    <button id="createRoomButton" class="icon-button" type="button" aria-label="ルーム作成">＋</button>
+                    <h2>チャット</h2>
                 </div>
-                <div id="roomList" class="room-list"></div>
-                <button id="logoutButton" class="button-secondary" type="button">ログアウト</button>
+
+                <p id="signedInUser" class="muted"></p>
+
+                <div id="roomList" class="room-list">
+                    <p>チャット相手を読み込んでいます...</p>
+                </div>
+
+                <button id="logoutButton" class="button-secondary" type="button">
+                    ログアウト
+                </button>
             </aside>
 
             <section class="chat-main">
                 <header class="chat-header">
                     <div>
-                        <h2 id="currentRoomName">ルームを選択</h2>
+                        <h2 id="currentRoomName">チャット</h2>
                         <p id="connectionStatus" class="muted">接続待機中</p>
                     </div>
                 </header>
 
-                <div id="messageList" class="message-list" aria-live="polite"></div>
+                <div id="messageList" class="message-list" aria-live="polite">
+                    <p class="empty-chat">
+                        ログインしました。チャット機能は次の実装ステップで接続します。
+                    </p>
+                </div>
 
                 <form id="messageForm" class="message-form">
-                    <input id="messageInput" maxlength="2000" placeholder="メッセージを入力..." autocomplete="off" required>
-                    <button id="sendButton" type="submit">送信</button>
+                    <input
+                        id="messageInput"
+                        maxlength="10000"
+                        placeholder="メッセージを入力..."
+                        autocomplete="off"
+                        aria-label="メッセージ"
+                        disabled
+                    >
+                    <button id="sendButton" type="submit" disabled>
+                        送信
+                    </button>
                 </form>
+
+                <p id="chatStatus" class="status-message" role="status" aria-live="polite"></p>
             </section>
         </section>
 
-        <div id="statusMessage" class="status-message" role="status" aria-live="polite"></div>
         <footer>ARE · CONNECT WITH EVERYONE</footer>
     </main>
 
-    <script src="config.js"></script>
-    <script src="supabase-client.js"></script>
-    <script src="utils.js"></script>
-    <script src="auth.js"></script>
-    <script src="rooms.js"></script>
-    <script src="messages.js"></script>
-    <script src="realtime.js"></script>
-    <script src="app.js"></script>
+    <!-- システム共通処理は system.js に集約 -->
+    <script src="system.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const elements = {
+                loginView: document.getElementById("loginView"),
+                loginForm: document.getElementById("loginForm"),
+                loginButton: document.getElementById("loginButton"),
+                loginStatus: document.getElementById("loginStatus"),
+                loginId: document.getElementById("loginId"),
+                loginPassword: document.getElementById("loginPassword"),
+                chatView: document.getElementById("chatView"),
+                signedInUser: document.getElementById("signedInUser"),
+                chatStatus: document.getElementById("chatStatus"),
+                logoutButton: document.getElementById("logoutButton")
+            };
+
+            function showStatus(element, message, isError = false) {
+                element.textContent = message;
+                element.dataset.state = isError ? "error" : "success";
+            }
+
+            function showView(viewName) {
+                elements.loginView.hidden = viewName !== "login";
+                elements.chatView.hidden = viewName !== "chat";
+            }
+
+            function openRegistration() {
+                window.location.href = "./register.html";
+            }
+
+            function openRecovery() {
+                window.location.href = "./recovery.html";
+            }
+
+            function showChat(user) {
+                showView("chat");
+
+                const displayName = user?.user_metadata?.display_name
+                    || user?.user_metadata?.displayName
+                    || user?.email
+                    || "ログインユーザー";
+
+                elements.signedInUser.textContent = `${displayName} さん`;
+                showStatus(elements.chatStatus, "ログインしました。");
+            }
+
+            document.getElementById("showRegister").addEventListener("click", openRegistration);
+            document.getElementById("showRecovery").addEventListener("click", openRecovery);
+
+            elements.loginForm.addEventListener("submit", async (event) => {
+                event.preventDefault();
+
+                if (!window.AREAuth || typeof window.AREAuth.login !== "function") {
+                    showStatus(
+                        elements.loginStatus,
+                        "system.js の読み込み、またはログイン機能の初期化に失敗しました。",
+                        true
+                    );
+                    return;
+                }
+
+                const loginId = elements.loginId.value.trim();
+                const password = elements.loginPassword.value;
+
+                elements.loginButton.disabled = true;
+                showStatus(elements.loginStatus, "ログインしています...");
+
+                try {
+                    const result = await window.AREAuth.login(loginId, password);
+                    const user = result?.user || result?.session?.user;
+
+                    if (!user?.id) {
+                        throw new Error("ログイン結果からユーザー情報を取得できませんでした。");
+                    }
+
+                    elements.loginPassword.value = "";
+                    showChat(user);
+                } catch (error) {
+                    showStatus(
+                        elements.loginStatus,
+                        error?.message || "ログインに失敗しました。",
+                        true
+                    );
+                } finally {
+                    elements.loginButton.disabled = false;
+                }
+            });
+
+            elements.logoutButton.addEventListener("click", async () => {
+                try {
+                    if (window.AREAuth && typeof window.AREAuth.logout === "function") {
+                        await window.AREAuth.logout();
+                    }
+
+                    elements.loginForm.reset();
+                    showView("login");
+                    showStatus(elements.loginStatus, "ログアウトしました。");
+                } catch (error) {
+                    showStatus(
+                        elements.chatStatus,
+                        error?.message || "ログアウトに失敗しました。",
+                        true
+                    );
+                }
+            });
+
+            // 保存済みセッションがあればログイン画面を省略する
+            async function restoreSession() {
+                try {
+                    if (!window.AREAuth || typeof window.AREAuth.getSession !== "function") {
+                        showView("login");
+                        return;
+                    }
+
+                    const result = await window.AREAuth.getSession();
+                    const session = result?.session || result?.data?.session;
+                    const user = session?.user || result?.user;
+
+                    if (user?.id) {
+                        showChat(user);
+                    } else {
+                        showView("login");
+                    }
+                } catch (error) {
+                    showView("login");
+                    showStatus(
+                        elements.loginStatus,
+                        "保存済みのログイン状態を確認できませんでした。再度ログインしてください。",
+                        true
+                    );
+                }
+            }
+
+            restoreSession();
+        });
+    </script>
 </body>
 </html>

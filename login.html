@@ -259,3 +259,128 @@
     <script src="login.js"></script>
 </body>
 </html>
+
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b1020">
+    <title>ARE | ログイン</title>
+
+    <link rel="stylesheet" href="login.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="apikey.js"></script>
+    <script src="system.js"></script>
+    <script src="login.js" defer></script>
+
+</head>
+
+<body>
+    <div class="background-glow"></div>
+
+    <main class="app">
+        <header class="brand">
+            <div class="brand-logo">A</div>
+            <div>
+                <h1>ARE</h1>
+                <p>REALTIME CHAT</p>
+            </div>
+        </header>
+
+        <!-- ログイン画面 -->
+        <section id="loginView" class="panel">
+            <h2>おかえりなさい</h2>
+            <p class="muted">ログインして会話を始めましょう。</p>
+
+            <form id="loginForm">
+                <label for="loginId">ログインID</label>
+                <input
+                    id="loginId"
+                    name="loginId"
+                    autocomplete="username"
+                    maxlength="80"
+                    required
+                >
+
+                <label for="loginPassword">パスワード</label>
+                <input
+                    id="loginPassword"
+                    name="password"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                >
+
+                <button id="loginButton" class="primary-button" type="submit">
+                    ログイン
+                </button>
+            </form>
+
+            <div class="button-row">
+                <button id="showRegister" class="button-secondary" type="button">
+                    新規登録
+                </button>
+                <button id="showRecovery" class="button-secondary" type="button">
+                    アカウント復旧
+                </button>
+            </div>
+
+            <p id="loginStatus" class="status-message" role="status" aria-live="polite"></p>
+        </section>
+
+        <!-- ログイン成功後のチャット画面 -->
+        <section id="chatView" class="chat-layout" hidden>
+            <aside class="room-sidebar">
+                <div class="sidebar-heading">
+                    <h2>チャット</h2>
+                    <button id="refreshRoomsButton" class="button-secondary compact-button" type="button">更新</button>
+                </div>
+
+                <p id="signedInUser" class="muted"></p>
+
+                <div id="roomList" class="room-list" aria-label="チャットルーム一覧">
+                    <p>チャットルームを読み込んでいます...</p>
+                </div>
+
+                <button id="logoutButton" class="button-secondary" type="button">
+                    ログアウト
+                </button>
+            </aside>
+
+            <section class="chat-main">
+                <header class="chat-header">
+                    <div>
+                        <h2 id="currentRoomName">チャット</h2>
+                        <p id="connectionStatus" class="muted">接続待機中</p>
+                    </div>
+                </header>
+
+                <div id="messageList" class="message-list" aria-live="polite">
+                    <p class="empty-chat">左側のチャットルームを選択すると、メッセージが表示されます。</p>
+                </div>
+
+                <form id="messageForm" class="message-form">
+                    <input
+                        id="messageInput"
+                        maxlength="10000"
+                        placeholder="メッセージを入力..."
+                        autocomplete="off"
+                        aria-label="メッセージ"
+                        disabled
+                    >
+                    <button id="sendButton" type="submit" disabled>
+                        送信
+                    </button>
+                </form>
+
+                <p id="chatStatus" class="status-message" role="status" aria-live="polite"></p>
+            </section>
+        </section>
+
+        <footer>ARE · CONNECT WITH EVERYONE</footer>
+    </main>
+</body>
+</html>
+

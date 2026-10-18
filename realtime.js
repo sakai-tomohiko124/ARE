@@ -1,39 +1,59 @@
 
-/* Supabase Realtimeの購読管理 */
-window.ARERealtime = (() => {
+const ARERealtime = (() => {
     let activeChannel = null;
 
-    /* メッセージ変更を購読 */
-    function subscribeToMessages(roomId, onMessage) {
-        unsubscribe();
+    async function unsubscribe() {
+        if (!activeChannel) {
+            return;
+        }
 
-        activeChannel = window.areSupabase
-            .channel(`are-room-${roomId}`)
+        const channel = activeChannel;
+        activeChannel = null;
+
+        await window.areSupabase.removeChannel(channel);
+    }
+
+    async function subscribeToMessages(roomId) {
+        await unsubscribe();
+
+        const channel = window.areSupabase
+            .channel(`are-messages-${roomId}`)
             .on(
                 "postgres_changes",
                 {
-                    event: "*",
+                    event: "INSERT",
                     schema: "public",
                     table: "messages",
                     filter: `room_id=eq.${roomId}`
                 },
-                payload => onMessage(payload)
+                (payload) => {
+                    window.AREMessages.addMessage(payload.new);
+                }
             )
-            .subscribe(status => {
+            .subscribe((status) => {
                 const statusElement = document.getElementById("connectionStatus");
-                statusElement.textContent = `Realtime: ${status}`;
+
+                if (!statusElement) {
+                    return;
+                }
+
+                if (status === "SUBSCRIBED") {
+                    statusElement.textContent = "リアルタイム接続中";
+                } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+                    statusElement.textContent = "リアルタイム接続エラー";
+                } else {
+                    statusElement.textContent = "接続中...";
+                }
             });
 
-        return activeChannel;
+        activeChannel = channel;
+        return channel;
     }
 
-    /* 購読を解除 */
-    function unsubscribe() {
-        if (activeChannel) {
-            window.areSupabase.removeChannel(activeChannel);
-            activeChannel = null;
-        }
-    }
-
-    return { subscribeToMessages, unsubscribe };
+    return {
+        subscribeToMessages,
+        unsubscribe
+    };
 })();
+
+window.ARERealtime = ARERealtime;

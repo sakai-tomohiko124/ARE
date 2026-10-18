@@ -1,58 +1,144 @@
 
-/* メッセージの描画と送信 */
-window.AREMessages = (() => {
-    let currentUserId = null;
+const AREMessages = (() => {
+    let currentUser = null;
+    let currentRoomId = null;
+    let messages = [];
 
-    /* 現在のユーザーIDを設定 */
-    function setCurrentUser(userId) {
-        currentUserId = userId;
+    function setCurrentUser(user) {
+        currentUser = user;
     }
 
-    /* メッセージ一覧を描画 */
-    function render(messages) {
-        const list = document.getElementById("messageList");
-        list.replaceChildren();
+    function setCurrentRoom(roomId) {
+        currentRoomId = roomId;
+        messages = [];
+        render();
+    }
 
-        if (!messages.length) {
-            const empty = document.createElement("p");
-            empty.className = "muted";
-            empty.textContent = "最初のメッセージを送ってみましょう。";
-            list.appendChild(empty);
+    function getMessages() {
+        return messages;
+    }
+
+    function normalizeMessage(row) {
+        return {
+            id: row.id,
+            roomId: row.room_id,
+            senderId: row.sender_id,
+            content: row.content,
+            createdAt: row.created_at
+        };
+    }
+
+    function addMessage(row) {
+        if (!row || row.room_id !== currentRoomId) {
             return;
         }
 
-        messages.forEach(message => {
-            const item = document.createElement("article");
-            item.className = "message";
-            item.classList.toggle("own", message.sender_id === currentUserId);
-
-            const author = document.createElement("div");
-            author.className = "message-author";
-            author.textContent = message.display_name || "ユーザー";
-
-            const content = document.createElement("div");
-            content.textContent = message.content;
-
-            const time = document.createElement("div");
-            time.className = "message-time";
-            time.textContent = window.AREUtils.formatTime(message.created_at);
-
-            item.append(author, content, time);
-            list.appendChild(item);
-        });
-
-        list.scrollTop = list.scrollHeight;
-    }
-
-    /* メッセージ送信を受け付ける */
-    async function send(roomId, content) {
-        if (!roomId || !content.trim()) {
-            throw new Error("ルームとメッセージを指定してください。");
+        if (messages.some((message) => message.id === row.id)) {
+            return;
         }
 
-        /* 実際のINSERT処理はDBスキーマ確認後に接続 */
-        throw new Error("メッセージ保存用テーブルとの接続が未設定です。");
+        messages.push(normalizeMessage(row));
+        messages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        render();
     }
 
-    return { render, send, setCurrentUser };
+    async function load(roomId) {
+        currentRoomId = roomId;
+
+        const result = await window.areSupabase
+            .from("messages")
+            .select("id, room_id, sender_id, content, created_at")
+            .eq("room_id", roomId)
+            .order("created_at", { ascending: true })
+            .limit(200);
+
+        if (result.error) {
+            throw result.error;
+        }
+
+        messages = result.data.map(normalizeMessage);
+        render();
+
+        return messages;
+    }
+
+    async function send(content) {
+        if (!currentUser?.id) {
+            throw new Error("ログイン状態を確認してください。");
+        }
+
+        if (!currentRoomId) {
+            throw new Error("送信先のルームを選択してください。");
+        }
+
+        const normalizedContent = String(content || "").trim();
+
+        if (!normalizedContent) {
+            throw new Error("メッセージを入力してください。");
+        }
+
+        if (normalizedContent.length > 2000) {
+            throw new Error("メッセージは2000文字以内で入力してください。");
+        }
+
+        // DB関数側で認証・参加者・本文を検証して保存する
+        const result = await window.areSupabase.rpc("send_message", {
+            p_room_id: currentRoomId,
+            p_content: normalizedContent
+        });
+
+        if (result.error) {
+            throw result.error;
+        }
+
+        // RPCが保存済みメッセージを返した場合は画面へ反映する
+        const savedMessage = Array.isArray(result.data) ? result.data[0] : result.data;
+
+        if (savedMessage?.id && savedMessage?.room_id) {
+            addMessage(savedMessage);
+        } else {
+            // 戻り値がbooleanなどの場合はDBから読み直す
+            await load(currentRoomId);
+        }
+
+        return result.data;
+    }
+
+    function render() {
+        const messageList = document.getElementById("messageList");
+
+        if (!messageList) {
+            return;
+        }
+
+        messageList.replaceChildren();
+
+        for (const message of messages) {
+            const item = document.createElement("div");
+            const isOwnMessage = message.senderId === currentUser?.id;
+            const content = document.createElement("p");
+            const time = document.createElement("small");
+
+            item.className = isOwnMessage ? "message own-message" : "message";
+            content.textContent = message.content;
+            time.textContent = window.AREUtils?.formatTime(message.createdAt) || "";
+
+            item.append(content, time);
+            messageList.appendChild(item);
+        }
+
+        messageList.scrollTop = messageList.scrollHeight;
+    }
+
+    return {
+        setCurrentUser,
+        setCurrentRoom,
+        getMessages,
+        load,
+        send,
+        addMessage,
+        render
+    };
 })();
+
+window.AREMessages = AREMessages;

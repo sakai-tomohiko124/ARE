@@ -7,7 +7,7 @@ const AREAuth = (() => {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "apikey": ARE_CONFIG.supabaseKey
+                "apikey": ARE_CONFIG.supabasePublishableKey
             },
             body: JSON.stringify(payload)
         });

@@ -6,9 +6,304 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b1020">
     <title>ARE | 新規登録</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            color-scheme: dark;
+            --background: #0b1020;
+            --panel: #151c2e;
+            --border: #2a344b;
+            --text: #f4f6ff;
+            --muted: #9ba7c0;
+            --accent: #818cf8;
+            --accent-hover: #6366f1;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            padding: 12px 16px;
+            background: var(--background);
+            color: var(--text);
+            font-family: system-ui, sans-serif;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button:disabled {
+            cursor: wait;
+            opacity: 0.6;
+        }
+
+        .background-glow {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 15% 15%, #4338ca33, transparent 35%),
+                radial-gradient(circle at 85% 85%, #7c3aed22, transparent 35%);
+        }
+
+        .app {
+            width: min(100%, 1050px);
+            margin: 0 auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 0 12px;
+        }
+
+        .brand-logo {
+            display: grid;
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+            place-items: center;
+            border-radius: 13px;
+            background: linear-gradient(135deg, #818cf8, #7c3aed);
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        .brand h1 {
+            margin: 0;
+            letter-spacing: 4px;
+            font-size: 26px;
+        }
+
+        .brand p {
+            margin: 1px 0 0;
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .panel {
+            width: min(100%, 480px);
+            margin: 0 auto;
+            padding: 18px 24px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: #151c2eee;
+            box-shadow: 0 20px 70px #0003;
+        }
+
+        .panel h2 {
+            margin: 0 0 4px;
+            font-size: 23px;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .panel > .muted {
+            margin: 0 0 10px;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            color: #cbd5e1;
+            font-size: 13px;
+        }
+
+        .optional {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        input {
+            width: 100%;
+            min-width: 0;
+            height: 38px;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            outline: none;
+            background: #0c1220;
+            color: var(--text);
+        }
+
+        input:focus {
+            border-color: var(--accent);
+        }
+
+        input:invalid:not(:placeholder-shown) {
+            border-color: #f87171;
+        }
+
+        button {
+            padding: 10px 14px;
+            border: 0;
+            border-radius: 9px;
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: var(--accent-hover);
+        }
+
+        .primary-button {
+            width: 100%;
+            min-height: 42px;
+            margin-top: 14px;
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .button-secondary {
+            border: 1px solid var(--border);
+            background: #222b40;
+        }
+
+        .button-secondary:hover {
+            background: #303b55;
+        }
+
+        .status-message {
+            min-height: 20px;
+            margin: 10px 0 0;
+            color: #c7d2fe;
+            font-size: 13px;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+        }
+
+        .status-message[data-state="error"] {
+            color: #fca5a5;
+        }
+
+        .status-message[data-state="success"] {
+            color: #86efac;
+        }
+
+        .recovery-box {
+            margin-top: 14px;
+            padding: 14px;
+            border: 1px solid #4b5563;
+            border-radius: 12px;
+            background: #0c1220;
+        }
+
+        .recovery-box h3 {
+            margin: 0 0 8px;
+            font-size: 16px;
+        }
+
+        .recovery-warning {
+            color: #fcd34d;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .recovery-code {
+            margin: 10px 0;
+            padding: 12px;
+            border: 1px dashed var(--accent);
+            border-radius: 8px;
+            color: #e0e7ff;
+            font-family: ui-monospace, monospace;
+            font-size: 14px;
+            overflow-wrap: anywhere;
+            user-select: all;
+        }
+
+        footer {
+            margin-top: 14px;
+            padding-bottom: 4px;
+            color: #68748d;
+            text-align: center;
+            font-size: 10px;
+            letter-spacing: 3px;
+        }
+
+        @media (max-height: 760px) {
+            body {
+                padding-top: 6px;
+                padding-bottom: 6px;
+            }
+
+            .brand {
+                margin-bottom: 6px;
+            }
+
+            .brand-logo {
+                width: 36px;
+                height: 36px;
+            }
+
+            .brand h1 {
+                font-size: 22px;
+            }
+
+            .panel {
+                padding: 12px 20px;
+            }
+
+            .panel h2 {
+                font-size: 20px;
+            }
+
+            label {
+                margin-top: 7px;
+            }
+
+            input {
+                height: 34px;
+            }
+
+            .primary-button {
+                min-height: 38px;
+                margin-top: 10px;
+            }
+
+            footer {
+                margin-top: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+
+            .panel {
+                padding: 16px;
+            }
+
+            .button-row button {
+                flex: 1;
+            }
+        }
+    </style>
 </head>
+
 <body>
     <div class="background-glow"></div>
 
@@ -27,86 +322,268 @@
 
             <form id="registerForm">
                 <label for="displayName">表示名</label>
-                <input id="displayName" name="displayName" maxlength="40" autocomplete="nickname" required>
+                <input
+                    id="displayName"
+                    name="displayName"
+                    type="text"
+                    maxlength="40"
+                    autocomplete="nickname"
+                    placeholder="チャットで表示する名前"
+                    required
+                >
 
-                <label for="newLoginId">ログインID</label>
-                <input id="newLoginId" name="loginId" maxlength="80" autocomplete="username" required>
+                <label for="loginId">ログインID</label>
+                <input
+                    id="loginId"
+                    name="loginId"
+                    type="text"
+                    minlength="3"
+                    maxlength="80"
+                    autocomplete="username"
+                    placeholder="ログイン時に使用するID"
+                    required
+                >
 
-                <label for="newPassword">パスワード</label>
-                <input id="newPassword" name="password" type="password" autocomplete="new-password" required>
+                <label for="password">パスワード</label>
+                <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    minlength="8"
+                    autocomplete="new-password"
+                    placeholder="8文字以上"
+                    required
+                >
 
                 <label for="confirmPassword">パスワード（確認）</label>
-                <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required>
+                <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    minlength="8"
+                    autocomplete="new-password"
+                    placeholder="同じパスワードを入力"
+                    required
+                >
 
-                <label for="phoneNumber">電話番号（任意）</label>
-                <input id="phoneNumber" name="phoneNumber" type="tel" autocomplete="tel">
+                <label for="phoneNumber">
+                    電話番号 <span class="optional">（任意）</span>
+                </label>
+                <input
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    type="tel"
+                    maxlength="30"
+                    autocomplete="tel"
+                    placeholder="必要な場合のみ入力"
+                >
 
-                <button type="submit" id="registerButton">アカウントを作成</button>
+                <button id="registerButton" class="primary-button" type="submit">
+                    アカウントを作成
+                </button>
             </form>
 
             <div class="button-row">
-                <button type="button" class="button-secondary" id="backToLogin">ログイン画面へ戻る</button>
+                <button id="backToLogin" class="button-secondary" type="button">
+                    ログイン画面へ戻る
+                </button>
             </div>
 
-            <div id="statusMessage" class="status-message" role="status" aria-live="polite"></div>
+            <p id="statusMessage" class="status-message" role="status" aria-live="polite"></p>
+
+            <section id="recoveryCodeBox" class="recovery-box" hidden>
+                <h3>復旧コード</h3>
+                <p class="recovery-warning">
+                    このコードは、パスワードを忘れたときに必要です。
+                    安全な場所に保存してください。ほかの人には教えないでください。
+                </p>
+
+                <div id="recoveryCode" class="recovery-code"></div>
+
+                <div class="button-row">
+                    <button id="copyRecoveryCode" class="button-secondary" type="button">
+                        復旧コードをコピー
+                    </button>
+                    <button id="goToLogin" type="button">
+                        ログイン画面へ
+                    </button>
+                </div>
+
+                <p id="copyStatus" class="status-message" role="status" aria-live="polite"></p>
+            </section>
         </section>
 
         <footer>ARE · CONNECT WITH EVERYONE</footer>
     </main>
 
-    <script src="config.js"></script>
-    <script src="supabase-client.js"></script>
-    <script src="utils.js"></script>
-    <script src="auth.js"></script>
+    <!-- Supabase・認証・登録処理は system.js に集約 -->
+    <script src="system.js"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            const form = document.getElementById("registerForm");
-            const button = document.getElementById("registerButton");
-            const status = document.getElementById("statusMessage");
+            const elements = {
+                form: document.getElementById("registerForm"),
+                displayName: document.getElementById("displayName"),
+                loginId: document.getElementById("loginId"),
+                password: document.getElementById("password"),
+                confirmPassword: document.getElementById("confirmPassword"),
+                phoneNumber: document.getElementById("phoneNumber"),
+                registerButton: document.getElementById("registerButton"),
+                statusMessage: document.getElementById("statusMessage"),
+                recoveryCodeBox: document.getElementById("recoveryCodeBox"),
+                recoveryCode: document.getElementById("recoveryCode"),
+                copyRecoveryCode: document.getElementById("copyRecoveryCode"),
+                copyStatus: document.getElementById("copyStatus")
+            };
+
+            let savedRecoveryCode = "";
 
             function showStatus(message, isError = false) {
-                status.textContent = message;
-                status.dataset.state = isError ? "error" : "success";
+                elements.statusMessage.textContent = message;
+                elements.statusMessage.dataset.state = isError ? "error" : "success";
             }
 
-            document.getElementById("backToLogin").addEventListener("click", () => {
+            function showCopyStatus(message, isError = false) {
+                elements.copyStatus.textContent = message;
+                elements.copyStatus.dataset.state = isError ? "error" : "success";
+            }
+
+            function getErrorMessage(error) {
+                return error?.message || "登録に失敗しました。時間をおいて再度お試しください。";
+            }
+
+            function getRecoveryCode(result) {
+                return result?.recoveryCode
+                    || result?.recovery_code
+                    || result?.data?.recoveryCode
+                    || result?.data?.recovery_code
+                    || "";
+            }
+
+            function showRecoveryCode(code) {
+                savedRecoveryCode = String(code);
+                elements.recoveryCode.textContent = savedRecoveryCode;
+                elements.recoveryCodeBox.hidden = false;
+                elements.copyRecoveryCode.disabled = false;
+            }
+
+            function goToLogin() {
                 window.location.href = "./index.html";
+            }
+
+            document.getElementById("backToLogin").addEventListener("click", goToLogin);
+            document.getElementById("goToLogin").addEventListener("click", goToLogin);
+
+            // 入力値が変わったら確認用パスワードを再検証する
+            elements.confirmPassword.addEventListener("input", () => {
+                if (elements.confirmPassword.value !== elements.password.value) {
+                    elements.confirmPassword.setCustomValidity("パスワードが一致しません。");
+                } else {
+                    elements.confirmPassword.setCustomValidity("");
+                }
             });
 
-            form.addEventListener("submit", async (event) => {
+            elements.password.addEventListener("input", () => {
+                if (elements.confirmPassword.value !== elements.password.value) {
+                    elements.confirmPassword.setCustomValidity("パスワードが一致しません。");
+                } else {
+                    elements.confirmPassword.setCustomValidity("");
+                }
+            });
+
+            elements.form.addEventListener("submit", async (event) => {
                 event.preventDefault();
 
-                const formData = new FormData(form);
-                const displayName = String(formData.get("displayName") || "").trim();
-                const loginId = String(formData.get("loginId") || "").trim();
-                const password = String(formData.get("password") || "");
-                const confirmPassword = String(formData.get("confirmPassword") || "");
-                const phoneNumber = String(formData.get("phoneNumber") || "").trim();
+                const displayName = elements.displayName.value.trim();
+                const loginId = elements.loginId.value.trim();
+                const password = elements.password.value;
+                const confirmPassword = elements.confirmPassword.value;
+                const phoneNumber = elements.phoneNumber.value.trim();
 
-                if (password !== confirmPassword) {
-                    showStatus("パスワードが一致しません。", true);
+                if (!displayName) {
+                    showStatus("表示名を入力してください。", true);
+                    elements.displayName.focus();
                     return;
                 }
 
-                button.disabled = true;
+                if (!loginId || loginId.length < 3) {
+                    showStatus("ログインIDは3文字以上で入力してください。", true);
+                    elements.loginId.focus();
+                    return;
+                }
+
+                if (password.length < 6) {
+                    showStatus("パスワードは6文字以上で入力してください。", true);
+                    elements.password.focus();
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    showStatus("パスワードが一致しません。", true);
+                    elements.confirmPassword.focus();
+                    return;
+                }
+
+                if (!window.AREAuth || typeof window.AREAuth.register !== "function") {
+                    showStatus(
+                        "system.js の登録機能を読み込めません。ファイル名と読み込み設定を確認してください。",
+                        true
+                    );
+                    return;
+                }
+
+                elements.registerButton.disabled = true;
+                elements.recoveryCodeBox.hidden = true;
+                showStatus("アカウントを作成しています...");
 
                 try {
-                    showStatus("アカウントを作成しています...");
+                    const result = await window.AREAuth.register(
+                        displayName,
+                        loginId,
+                        password,
+                        phoneNumber
+                    );
 
-                    const result = await AREAuth.register(displayName, loginId, password, phoneNumber);
+                    if (result?.success === false) {
+                        throw new Error(result.message || result.error || "登録に失敗しました。");
+                    }
 
-                    form.reset();
+                    elements.form.reset();
 
-                    if (result.recoveryCode) {
-                        showStatus("登録が完了しました。復旧コードを安全な場所に保存してください: " + result.recoveryCode);
+                    const recoveryCode = getRecoveryCode(result);
+
+                    if (recoveryCode) {
+                        showRecoveryCode(recoveryCode);
+                        showStatus(
+                            "アカウントを作成しました。復旧コードを必ず保存してください。"
+                        );
                     } else {
-                        showStatus(result.message || "登録が完了しました。ログイン画面へ戻ってください。");
+                        showStatus(
+                            result?.message
+                                || "登録リクエストが完了しました。復旧コードが表示されない場合は、サーバー側の登録結果を確認してください。"
+                        );
                     }
                 } catch (error) {
-                    showStatus(error.message || "登録に失敗しました。", true);
+                    showStatus(getErrorMessage(error), true);
                 } finally {
-                    button.disabled = false;
+                    elements.registerButton.disabled = false;
+                }
+            });
+
+            elements.copyRecoveryCode.addEventListener("click", async () => {
+                if (!savedRecoveryCode) {
+                    showCopyStatus("コピーする復旧コードがありません。", true);
+                    return;
+                }
+
+                try {
+                    await navigator.clipboard.writeText(savedRecoveryCode);
+                    showCopyStatus("復旧コードをコピーしました。安全な場所に保存してください。");
+                } catch (error) {
+                    showCopyStatus(
+                        "自動コピーできませんでした。復旧コードを選択して手動でコピーしてください。",
+                        true
+                    );
                 }
             });
         });

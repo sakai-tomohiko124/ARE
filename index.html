@@ -4,278 +4,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARE | Login</title>
-
-    <style>
-        /* ページ全体 */
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-            font-family: "Segoe UI", sans-serif;
-            color: #ffffff;
-            background: #080b14;
-        }
-
-        /* 背景の装飾 */
-        .background {
-            position: fixed;
-            inset: 0;
-            overflow: hidden;
-            background:
-                radial-gradient(ellipse at 20% 20%, #243b6555, transparent 45%),
-                radial-gradient(ellipse at 80% 80%, #563b8255, transparent 45%),
-                #080b14;
-        }
-
-        .background::before {
-            content: "ARE";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: clamp(180px, 35vw, 460px);
-            font-weight: 900;
-            letter-spacing: 20px;
-            color: #ffffff05;
-            user-select: none;
-        }
-
-        .background-text {
-            position: absolute;
-            bottom: 30px;
-            width: 100%;
-            text-align: center;
-            color: #9299ad;
-            font-size: 11px;
-            letter-spacing: 4px;
-        }
-
-        /* ログイン画面 */
-        .login-container {
-            position: relative;
-            z-index: 1;
-            width: min(90%, 390px);
-            padding: 38px 32px;
-            border: 1px solid #ffffff20;
-            border-radius: 20px;
-            background: #111725cc;
-            box-shadow: 0 20px 80px #0008;
-            backdrop-filter: blur(18px);
-        }
-
-        .logo {
-            margin-bottom: 8px;
-            text-align: center;
-            font-size: 48px;
-            font-weight: 800;
-            letter-spacing: 12px;
-            text-indent: 12px;
-        }
-
-        .subtitle {
-            margin: 0 0 35px;
-            text-align: center;
-            color: #9da8c0;
-            font-size: 12px;
-            letter-spacing: 3px;
-        }
-
-        .welcome {
-            margin-bottom: 25px;
-            text-align: center;
-            font-size: 17px;
-            font-weight: 400;
-        }
-
-        /* 入力欄 */
-        label {
-            display: block;
-            margin: 17px 0 8px;
-            color: #c4ccdc;
-            font-size: 12px;
-        }
-
-        input {
-            width: 100%;
-            padding: 14px;
-            border: 1px solid #ffffff20;
-            border-radius: 9px;
-            outline: none;
-            background: #080d18cc;
-            color: white;
-            font-size: 14px;
-            transition: border-color 0.2s;
-        }
-
-        input:focus {
-            border-color: #8b9cff;
-        }
-
-        input::placeholder {
-            color: #657087;
-        }
-
-        /* ログインボタン */
-        button {
-            width: 100%;
-            margin-top: 25px;
-            padding: 14px;
-            border: none;
-            border-radius: 9px;
-            background: linear-gradient(100deg, #6679f5, #8b5cf6);
-            color: white;
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            cursor: pointer;
-            transition: opacity 0.2s, transform 0.2s;
-        }
-
-        button:hover {
-            opacity: 0.88;
-            transform: translateY(-1px);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: wait;
-            transform: none;
-        }
-
-        /* 結果表示 */
-        #status {
-            min-height: 20px;
-            margin: 18px 0 0;
-            color: #aeb9d0;
-            text-align: center;
-            font-size: 12px;
-            line-height: 1.6;
-            overflow-wrap: anywhere;
-        }
-
-        .footer {
-            margin-top: 28px;
-            color: #626e85;
-            text-align: center;
-            font-size: 10px;
-            letter-spacing: 2px;
-        }
-    </style>
+    <meta name="theme-color" content="#0b1020">
+    <title>ARE | Realtime Chat</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-
 <body>
-    <!-- 背景 -->
-    <div class="background">
-        <div class="background-text">CONNECT · COMMUNICATE · ARE</div>
-    </div>
+    <div class="background-glow"></div>
 
-    <!-- ログインフォーム -->
-    <main class="login-container">
-        <div class="logo">ARE</div>
-        <p class="subtitle">REALTIME CHAT</p>
+    <main class="app">
+        <header class="brand">
+            <div class="brand-logo">A</div>
+            <div>
+                <h1>ARE</h1>
+                <p>REALTIME CHAT</p>
+            </div>
+        </header>
 
-        <h1 class="welcome">Welcome back.</h1>
+        <section id="loginView" class="panel">
+            <h2>おかえりなさい</h2>
+            <p class="muted">ログインして会話を始めましょう。</p>
 
-        <form id="loginForm">
-            <label for="loginId">LOGIN ID</label>
-            <input
-                id="loginId"
-                name="loginId"
-                type="text"
-                placeholder="ログインIDを入力"
-                autocomplete="username"
-                required
-            >
+            <form id="loginForm">
+                <label for="loginId">ログインID</label>
+                <input id="loginId" name="loginId" autocomplete="username" required>
 
-            <label for="password">PASSWORD</label>
-            <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="パスワードを入力"
-                autocomplete="current-password"
-                required
-            >
+                <label for="loginPassword">パスワード</label>
+                <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
 
-            <button id="loginButton" type="submit">LOGIN</button>
-        </form>
+                <button type="submit" id="loginButton">ログイン</button>
+            </form>
 
-        <p id="status" role="status" aria-live="polite">
-            AREへようこそ
-        </p>
+            <div class="button-row">
+                <button type="button" class="button-secondary" id="showRegister">新規登録</button>
+                <button type="button" class="button-secondary" id="showRecovery">アカウント復旧</button>
+            </div>
+        </section>
 
-        <div class="footer">A NEW WAY TO CONNECT</div>
+        <section id="registerView" class="panel hidden">
+            <h2>新規登録</h2>
+            <form id="registerForm">
+                <label for="displayName">表示名</label>
+                <input id="displayName" name="displayName" maxlength="40" required>
+
+                <label for="newLoginId">ログインID</label>
+                <input id="newLoginId" name="loginId" maxlength="80" required>
+
+                <label for="newPassword">パスワード</label>
+                <input id="newPassword" name="password" type="password" autocomplete="new-password" required>
+
+                <label for="phone">電話番号（任意）</label>
+                <input id="phone" name="phone" type="tel" autocomplete="tel">
+
+                <button type="submit" id="registerButton">アカウントを作成</button>
+                <button type="button" class="button-secondary" data-view="loginView">戻る</button>
+            </form>
+        </section>
+
+        <section id="recoveryView" class="panel hidden">
+            <h2>アカウント復旧</h2>
+            <form id="recoveryForm">
+                <label for="recoveryLoginId">ログインID</label>
+                <input id="recoveryLoginId" name="loginId" required>
+
+                <label for="recoveryCode">復旧コード</label>
+                <input id="recoveryCode" name="recoveryCode" required>
+
+                <label for="recoveryPassword">新しいパスワード</label>
+                <input id="recoveryPassword" name="newPassword" type="password" autocomplete="new-password" required>
+
+                <button type="submit" id="recoveryButton">パスワードを再設定</button>
+                <button type="button" class="button-secondary" data-view="loginView">戻る</button>
+            </form>
+        </section>
+
+        <section id="chatView" class="chat-layout hidden">
+            <aside class="room-sidebar">
+                <div class="sidebar-heading">
+                    <h2>ルーム</h2>
+                    <button id="createRoomButton" class="icon-button" type="button" aria-label="ルーム作成">＋</button>
+                </div>
+                <div id="roomList" class="room-list"></div>
+                <button id="logoutButton" class="button-secondary" type="button">ログアウト</button>
+            </aside>
+
+            <section class="chat-main">
+                <header class="chat-header">
+                    <div>
+                        <h2 id="currentRoomName">ルームを選択</h2>
+                        <p id="connectionStatus" class="muted">接続待機中</p>
+                    </div>
+                </header>
+
+                <div id="messageList" class="message-list" aria-live="polite"></div>
+
+                <form id="messageForm" class="message-form">
+                    <input id="messageInput" maxlength="2000" placeholder="メッセージを入力..." autocomplete="off" required>
+                    <button id="sendButton" type="submit">送信</button>
+                </form>
+            </section>
+        </section>
+
+        <div id="statusMessage" class="status-message" role="status" aria-live="polite"></div>
+        <footer>ARE · CONNECT WITH EVERYONE</footer>
     </main>
 
-    <script>
-        /* Supabase接続設定 */
-        const SUPABASE_URL = "https://xawevnvzkcoijswmujah.supabase.co";
-        const SUPABASE_ANON_KEY = "sb_publishable_VWeGzACdSzM80biRbTtaog_diIE_AEj";
-
-        /* ログインAPI */
-        const LOGIN_URL = `${SUPABASE_URL}/functions/v1/login-user`;
-
-        const loginForm = document.getElementById("loginForm");
-        const loginButton = document.getElementById("loginButton");
-        const statusText = document.getElementById("status");
-
-        /* ログイン処理 */
-        loginForm.addEventListener("submit", async (event) => {
-            event.preventDefault();
-
-            const loginId = document.getElementById("loginId").value.trim();
-            const password = document.getElementById("password").value;
-
-            if (!loginId || !password) {
-                statusText.textContent = "ログインIDとパスワードを入力してください。";
-                return;
-            }
-
-            loginButton.disabled = true;
-            loginButton.textContent = "CONNECTING...";
-            statusText.textContent = "サーバーに接続しています...";
-
-            try {
-                const response = await fetch(LOGIN_URL, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "apikey": SUPABASE_ANON_KEY
-                    },
-                    body: JSON.stringify({
-                        loginId: loginId,
-                        password: password
-                    })
-                });
-
-                const result = await response.json().catch(() => ({}));
-
-                if (!response.ok) {
-                    throw new Error(
-                        result.message || result.error || "ログインに失敗しました。"
-                    );
-                }
-
-                statusText.textContent =
-                    result.message || "ログインAPIから正常な応答を受信しました。";
-
-                /* 認証成功後のチャット画面は次の段階で実装 */
-            } catch (error) {
-                statusText.textContent =
-                    error.message || "サーバーに接続できませんでした。";
-            } finally {
-                loginButton.disabled = false;
-                loginButton.textContent = "LOGIN";
-            }
-        });
-    </script>
+    <script src="config.js"></script>
+    <script src="supabase-client.js"></script>
+    <script src="utils.js"></script>
+    <script src="auth.js"></script>
+    <script src="rooms.js"></script>
+    <script src="messages.js"></script>
+    <script src="realtime.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

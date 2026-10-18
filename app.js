@@ -88,12 +88,14 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 showStatus("アカウントを作成しています...");
 
-                const result = await AREAuth.register(
-                    String(formData.get("displayName") || "").trim(),
-                    String(formData.get("loginId") || "").trim(),
-                    String(formData.get("password") || ""),
-                    String(formData.get("phoneNumber") || "").trim()
-                );
+
+            const result = await AREAuth.register(
+                String(formData.get("displayName") || "").trim(),
+                String(formData.get("loginId") || "").trim(),
+                String(formData.get("password") || ""),
+                String(formData.get("phone") || "").trim()
+            );
+
 
                 showStatus(
                     result.recoveryCode

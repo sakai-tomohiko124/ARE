@@ -1,30 +1,31 @@
-
 (function () {
     "use strict";
 
-    const CONFIG = Object.freeze({
-        supabaseUrl: "https://xawevnvzkcoijswmujah.supabase.co",
-        supabasePublishableKey: "sb_publishable_VWeGzACdSzM80biRbTtaog_diIE_AEj",
-        functions: Object.freeze({
-            register: "register-user",
-            login: "login-user",
-            recovery: "recover-account"
-        }),
+    const DEFAULTS = Object.freeze({
         requestTimeoutMs: 20000
     });
 
     let supabaseClient = null;
 
     function getConfig() {
-        const existingConfig = window.ARE_CONFIG || {};
+        const config = window.ARE_CONFIG;
+
+        if (!config) {
+            throw new Error("Supabaseの設定が読み込まれていません。apikey.jsをsystem.jsより先に読み込んでください。");
+        }
+
+        if (!config.supabaseUrl || !config.supabasePublishableKey) {
+            throw new Error("SupabaseのURLまたはPublishable Keyが未設定です。apikey.jsを確認してください。");
+        }
 
         return {
-            ...CONFIG,
-            ...existingConfig,
+            ...config,
             functions: {
-                ...CONFIG.functions,
-                ...(existingConfig.functions || {})
-            }
+                ...(config.functions || {})
+            },
+            requestTimeoutMs: Number(config.requestTimeoutMs) > 0
+                ? Number(config.requestTimeoutMs)
+                : DEFAULTS.requestTimeoutMs
         };
     }
 
@@ -44,10 +45,6 @@
 
         const config = getConfig();
 
-        if (!config.supabaseUrl || !config.supabasePublishableKey) {
-            throw new Error("Supabaseの接続設定が不足しています。");
-        }
-
         supabaseClient = window.supabase.createClient(
             config.supabaseUrl,
             config.supabasePublishableKey,
@@ -61,13 +58,40 @@
         );
 
         window.areSupabase = supabaseClient;
-
         return supabaseClient;
     }
 
     function getFunctionUrl(functionName) {
         const config = getConfig();
+
+        if (!functionName || typeof functionName !== "string") {
+            throw new Error("Edge Function名が未設定です。");
+        }
+
         return `${config.supabaseUrl}/functions/v1/${functionName}`;
+    }
+
+    async function parseResponse(response) {
+        const responseText = await response.text();
+        let result = {};
+
+        if (responseText) {
+            try {
+                result = JSON.parse(responseText);
+            } catch {
+                result = { message: responseText };
+            }
+        }
+
+        if (!response.ok) {
+            throw new Error(result.error || result.message || `APIリクエストに失敗しました（HTTP ${response.status}）。`);
+        }
+
+        if (result && result.error) {
+            throw new Error(result.error);
+        }
+
+        return result;
     }
 
     async function callFunction(functionName, payload) {
@@ -82,31 +106,11 @@
                     "Content-Type": "application/json",
                     "apikey": config.supabasePublishableKey
                 },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(payload || {}),
                 signal: controller.signal
             });
 
-            const responseText = await response.text();
-            let result = {};
-
-            if (responseText) {
-                try {
-                    result = JSON.parse(responseText);
-                } catch {
-                    result = { message: responseText };
-                }
-            }
-
-            if (!response.ok) {
-                const errorMessage = result.error || result.message || `APIリクエストに失敗しました（HTTP ${response.status}）。`;
-                throw new Error(errorMessage);
-            }
-
-            if (result && result.error) {
-                throw new Error(result.error);
-            }
-
-            return result;
+            return await parseResponse(response);
         } catch (error) {
             if (error.name === "AbortError") {
                 throw new Error("サーバーからの応答がタイムアウトしました。時間をおいて再試行してください。");
@@ -130,6 +134,11 @@
         }
 
         const config = getConfig();
+
+        if (!config.functions.login) {
+            throw new Error("ログイン用Edge Function名が未設定です。apikey.jsのfunctions.loginを設定してください。");
+        }
+
         const result = await callFunction(config.functions.login, {
             loginId: normalizedLoginId,
             password: password
@@ -177,6 +186,10 @@
 
         const config = getConfig();
 
+        if (!config.functions.register) {
+            throw new Error("登録用Edge Function名が未設定です。apikey.jsのfunctions.registerを設定してください。");
+        }
+
         return callFunction(config.functions.register, {
             displayName: normalizedDisplayName,
             loginId: normalizedLoginId,
@@ -199,6 +212,10 @@
 
         const config = getConfig();
 
+        if (!config.functions.recovery) {
+            throw new Error("復旧用Edge Function名が未設定です。apikey.jsのfunctions.recoveryを設定してください。");
+        }
+
         return callFunction(config.functions.recovery, {
             loginId: normalizedLoginId,
             recoveryCode: normalizedRecoveryCode,
@@ -218,19 +235,17 @@
     }
 
     async function getSession() {
-        const client = getClient();
-        const result = await client.auth.getSession();
+        const result = await getClient().auth.getSession();
 
         if (result.error) {
             throw result.error;
         }
 
-        return result.data.session;
+        return result.data.session || null;
     }
 
     async function getCurrentUser() {
-        const client = getClient();
-        const result = await client.auth.getUser();
+        const result = await getClient().auth.getUser();
 
         if (result.error) {
             if (result.error.name === "AuthSessionMissingError") {
@@ -269,8 +284,9 @@
         return result.data.subscription;
     }
 
-    function getCurrentAccessToken() {
-        return getSession().then((session) => session?.access_token || null);
+    async function getCurrentAccessToken() {
+        const session = await getSession();
+        return session?.access_token || null;
     }
 
     async function callAuthenticatedFunction(functionName, payload) {
@@ -296,29 +312,14 @@
                 signal: controller.signal
             });
 
-            const responseText = await response.text();
-            let result = {};
-
-            if (responseText) {
-                try {
-                    result = JSON.parse(responseText);
-                } catch {
-                    result = { message: responseText };
-                }
-            }
-
-            if (!response.ok) {
-                throw new Error(result.error || result.message || `APIリクエストに失敗しました（HTTP ${response.status}）。`);
-            }
-
-            if (result && result.error) {
-                throw new Error(result.error);
-            }
-
-            return result;
+            return await parseResponse(response);
         } catch (error) {
             if (error.name === "AbortError") {
                 throw new Error("サーバーからの応答がタイムアウトしました。");
+            }
+
+            if (error instanceof TypeError) {
+                throw new Error("サーバーに接続できませんでした。通信状態とEdge Functionの設定を確認してください。");
             }
 
             throw error;
@@ -327,29 +328,269 @@
         }
     }
 
+    function getTable(tableName) {
+        if (!tableName || typeof tableName !== "string") {
+            throw new Error("テーブル名が未設定です。利用するテーブル名を指定してください。");
+        }
+
+        return getClient().from(tableName);
+    }
+
+    async function selectRows(tableName, options) {
+        const settings = options || {};
+        let query = getTable(tableName).select(settings.columns || "*");
+
+        if (settings.filters && typeof settings.filters === "function") {
+            query = settings.filters(query);
+        }
+
+        if (settings.orderBy) {
+            query = query.order(settings.orderBy, { ascending: settings.ascending !== false });
+        }
+
+        if (Number.isInteger(settings.limit) && settings.limit > 0) {
+            query = query.limit(settings.limit);
+        }
+
+        const result = await query;
+
+        if (result.error) {
+            throw result.error;
+        }
+
+        return result.data || [];
+    }
+
+    async function insertRow(tableName, values, options) {
+        if (!values || typeof values !== "object") {
+            throw new Error("登録するデータが未設定です。");
+        }
+
+        const settings = options || {};
+        let query = getTable(tableName).insert(values);
+
+        if (settings.returning !== false) {
+            query = query.select(settings.columns || "*");
+        }
+
+        const result = await query;
+
+        if (result.error) {
+            throw result.error;
+        }
+
+        return result.data || null;
+    }
+
+    async function updateRows(tableName, values, filters, options) {
+        if (!values || typeof values !== "object") {
+            throw new Error("更新するデータが未設定です。");
+        }
+
+        if (typeof filters !== "function") {
+            throw new Error("更新対象を指定するfilters関数が未設定です。安全のため更新を中止しました。");
+        }
+
+        let query = getTable(tableName).update(values);
+        query = filters(query);
+
+        const settings = options || {};
+
+        if (settings.returning !== false) {
+            query = query.select(settings.columns || "*");
+        }
+
+        const result = await query;
+
+        if (result.error) {
+            throw result.error;
+        }
+
+        return result.data || null;
+    }
+
+    async function deleteRows(tableName, filters, options) {
+        if (typeof filters !== "function") {
+            throw new Error("削除対象を指定するfilters関数が未設定です。安全のため削除を中止しました。");
+        }
+
+        let query = getTable(tableName).delete();
+        query = filters(query);
+
+        const settings = options || {};
+
+        if (settings.returning !== false) {
+            query = query.select(settings.columns || "*");
+        }
+
+        const result = await query;
+
+        if (result.error) {
+            throw result.error;
+        }
+
+        return result.data || null;
+    }
+
+    function getStorageBucket(bucketName) {
+        if (!bucketName || typeof bucketName !== "string") {
+            // TODO：未設定。実際に作成するStorageバケット名を確認し、呼び出し側から指定してください。
+            throw new Error("Storageバケット名が未設定です。Supabase Storageのバケット名を指定してください。");
+        }
+
+        return getClient().storage.from(bucketName);
+    }
+
+    async function uploadFile(bucketName, filePath, file, options) {
+        if (!file) {
+            throw new Error("アップロードするファイルが未設定です。");
+        }
+
+        if (!filePath || typeof filePath !== "string") {
+            throw new Error("アップロード先のファイルパスが未設定です。");
+        }
+
+        const settings = options || {};
+        const result = await getStorageBucket(bucketName).upload(filePath, file, {
+            cacheControl: settings.cacheControl || "3600",
+            upsert: settings.upsert === true,
+            contentType: settings.contentType || file.type || undefined
+        });
+
+        if (result.error) {
+            throw result.error;
+        }
+
+        return result.data;
+    }
+
+    async function removeStorageFiles(bucketName, filePaths) {
+        if (!Array.isArray(filePaths) || filePaths.length === 0) {
+            throw new Error("削除するStorageファイルのパスが未設定です。");
+        }
+
+        const result = await getStorageBucket(bucketName).remove(filePaths);
+
+        if (result.error) {
+            throw result.error;
+        }
+
+        return result.data || [];
+    }
+
+    async function createSignedUrl(bucketName, filePath, expiresInSeconds, options) {
+        if (!filePath || typeof filePath !== "string") {
+            throw new Error("署名付きURLを作成するファイルパスが未設定です。");
+        }
+
+        const expiresIn = Number(expiresInSeconds);
+
+        if (!Number.isInteger(expiresIn) || expiresIn <= 0) {
+            throw new Error("署名付きURLの有効秒数が未設定、または不正です。");
+        }
+
+        const settings = options || {};
+        const result = await getStorageBucket(bucketName).createSignedUrl(filePath, expiresIn, {
+            download: settings.download === true
+        });
+
+        if (result.error) {
+            throw result.error;
+        }
+
+        return result.data?.signedUrl || null;
+    }
+
+    function subscribeToTable(options, callback) {
+        const settings = options || {};
+
+        if (!settings.channelName) {
+            // TODO：未設定。画面ごとに重複しないチャンネル名を指定してください。
+            throw new Error("Realtimeチャンネル名が未設定です。");
+        }
+
+        if (!settings.table) {
+            // TODO：未設定。監視するテーブル名を確認して指定してください。
+            throw new Error("Realtime監視対象テーブルが未設定です。");
+        }
+
+        if (typeof callback !== "function") {
+            throw new Error("Realtimeイベントを受け取るコールバックが未設定です。");
+        }
+
+        const event = settings.event || "*";
+        const schema = settings.schema || "public";
+        const filter = settings.filter;
+
+        let channel = getClient().channel(settings.channelName);
+
+        channel = channel.on("postgres_changes", {
+            event: event,
+            schema: schema,
+            table: settings.table,
+            ...(filter ? { filter: filter } : {})
+        }, callback);
+
+        channel.subscribe();
+        return channel;
+    }
+
+    async function removeRealtimeChannel(channel) {
+        if (!channel) {
+            return false;
+        }
+
+        const result = await getClient().removeChannel(channel);
+
+        if (result && result.error) {
+            throw result.error;
+        }
+
+        return true;
+    }
+
+    function getDisplayError(error, fallbackMessage) {
+        if (error && typeof error.message === "string" && error.message.trim()) {
+            return error.message;
+        }
+
+        return fallbackMessage || "予期しないエラーが発生しました。";
+    }
+
     const AREAuth = Object.freeze({
-        login,
-        register,
-        recover,
-        logout,
-        getSession,
-        getCurrentUser,
-        requireSession,
-        onAuthStateChange,
-        getCurrentAccessToken
+        login: login,
+        register: register,
+        recover: recover,
+        logout: logout,
+        getSession: getSession,
+        getCurrentUser: getCurrentUser,
+        requireSession: requireSession,
+        onAuthStateChange: onAuthStateChange,
+        getCurrentAccessToken: getCurrentAccessToken
     });
 
     const ARESystem = Object.freeze({
         get client() {
             return getClient();
         },
-        getConfig,
-        callFunction,
-        callAuthenticatedFunction,
-        getSession,
-        getCurrentUser,
-        requireSession,
-        onAuthStateChange
+        getConfig: getConfig,
+        callFunction: callFunction,
+        callAuthenticatedFunction: callAuthenticatedFunction,
+        getSession: getSession,
+        getCurrentUser: getCurrentUser,
+        requireSession: requireSession,
+        onAuthStateChange: onAuthStateChange,
+        getCurrentAccessToken: getCurrentAccessToken,
+        selectRows: selectRows,
+        insertRow: insertRow,
+        updateRows: updateRows,
+        deleteRows: deleteRows,
+        uploadFile: uploadFile,
+        removeStorageFiles: removeStorageFiles,
+        createSignedUrl: createSignedUrl,
+        subscribeToTable: subscribeToTable,
+        removeRealtimeChannel: removeRealtimeChannel,
+        getDisplayError: getDisplayError
     });
 
     window.AREAuth = AREAuth;

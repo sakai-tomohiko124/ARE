@@ -1,18 +1,62 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#050817">
-    <title>ARE | Welcome</title>
-    <link rel="stylesheet" href="index.css">
-    <script src="index.js" defer></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2563eb">
+  <title>かんたんチャット</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
 </head>
 <body>
-    <main class="splash" aria-label="ARE 起動画面">
-        <img class="space-background" src="space-background.png" alt="">
-        <div class="splash-overlay" aria-hidden="true"></div>
-        <p class="redirect-message">ログイン画面へ移動しています…</p>
-    </main>
+  <main class="app">
+    <header class="app-header">
+      <div class="brand-mark" aria-hidden="true">💬</div>
+      <div>
+        <h1>かんたんチャット</h1>
+        <p>気軽にメッセージを書いてみよう</p>
+      </div>
+      <span class="demo-badge">デモ版</span>
+    </header>
+
+    <section class="name-panel" aria-label="ユーザー設定">
+      <label for="userName">あなたの名前</label>
+      <input id="userName" type="text" maxlength="24" placeholder="例：なぞひこ" autocomplete="nickname">
+      <button id="saveNameButton" class="secondary-button" type="button">名前を保存</button>
+    </section>
+
+    <section class="chat-panel" aria-label="チャット">
+      <div class="chat-toolbar">
+        <div>
+          <h2>メッセージ</h2>
+          <p id="messageCount">0件のメッセージ</p>
+        </div>
+        <button id="clearButton" class="clear-button" type="button" title="このブラウザーに保存されたメッセージを削除">履歴を消去</button>
+      </div>
+
+      <div id="messageList" class="message-list" role="log" aria-live="polite" aria-relevant="additions text">
+        <div id="emptyState" class="empty-state">
+          <span aria-hidden="true">✉️</span>
+          <strong>まだメッセージはありません</strong>
+          <p>最初のメッセージを送ってみましょう！</p>
+        </div>
+      </div>
+
+      <form id="messageForm" class="composer">
+        <label class="visually-hidden" for="messageInput">メッセージ</label>
+        <textarea id="messageInput" rows="2" maxlength="500" placeholder="メッセージを入力…（Enterで送信、Shift+Enterで改行）" required></textarea>
+        <div class="composer-footer">
+          <span id="charCount">0 / 500</span>
+          <button id="sendButton" class="send-button" type="submit"><span>送信</span><span aria-hidden="true">➤</span></button>
+        </div>
+      </form>
+    </section>
+
+    <footer class="app-footer">
+      <p>このデモ版のメッセージは、現在のブラウザー内に保存されます。</p>
+      <p>複数人・複数端末で共有するには、別途データベースや認証サービスが必要です。</p>
+    </footer>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </main>
 </body>
 </html>

@@ -3,7 +3,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="#0b1020">
 <meta name="theme-color" content="#111827">
 <title>ARE | チャット</title>
 <style>
@@ -88,8 +89,6 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10;padding:12px 16px;border-radius:10px;background:#26344d;color:white;box-shadow:0 10px 35px #0008;max-width:90vw;display:none}
 .toast.show{display:block}
 .loading{opacity:.65;pointer-events:none}
-@media(max-width:800px){.app{grid-template-columns:minmax(0,1fr)}.sidebar{position:absolute;inset:0;z-index:2;display:flex}.main{display:none}.app.chat-open .sidebar{display:none}.app.chat-open .main{display:flex}.mobile-back{display:inline-block}.messages{padding:18px 12px}.message-row{max-width:92%}.chat-header{padding:12px}.composer{padding:12px}}
-@media(min-width:801px){.app{height:100dvh}.sidebar{width:320px}}
 .status-select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px;max-width:122px}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:#6b7893}
 .dot.online{background:#5de0b0}.dot.busy{background:#ff7777}.dot.in_call{background:#b388ff}.dot.away{background:#ffcc66}
@@ -113,28 +112,117 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .admin-card .meta{color:var(--muted);font-size:12px}.admin-card .row{display:flex;gap:8px;margin-top:8px}
 button.admin-card{text-align:left;color:var(--text);width:100%}
 .admin-msg.deleted{opacity:.55}
+/* ===== レスポンシブ：スマホ=LINE/Instagram風、タブレット=2ペイン、PC=Teams/Slack風 ===== */
+html,body{height:100%}
+.rail{display:flex}
+.rail-logo{font-weight:800;letter-spacing:2px;margin-bottom:10px}
+.rail-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:none;color:var(--muted);font-size:10px;border-radius:12px}
+.rail-btn .ico{font-size:22px;line-height:1}.rail-btn.active{background:var(--panel2);color:var(--text)}
+.sidebar[data-tab="chats"] .pane-users,.sidebar[data-tab="chats"] .pane-me,
+.sidebar[data-tab="users"] .pane-chats,.sidebar[data-tab="users"] .pane-me,
+.sidebar[data-tab="me"] .pane-chats,.sidebar[data-tab="me"] .pane-users{display:none}
+.me-note{color:var(--muted);font-size:12px;line-height:1.7;margin:4px 0 0}
+.message-body{max-width:100%}
+@media(min-width:701px){
+ .app{grid-template-columns:64px 300px minmax(0,1fr);height:100dvh}
+ .rail{flex-direction:column;align-items:center;gap:6px;padding:12px 0;background:#080d1a;border-right:1px solid var(--line)}
+ .rail-btn{width:56px;padding:8px 0}
+ .brand small{display:none}
+}
+@media(min-width:1100px){
+ .app{grid-template-columns:76px 340px minmax(0,1fr)}
+ .rail-btn{width:64px}
+ .messages{padding:24px clamp(20px,3vw,48px);gap:4px}
+ .message-row,.message-row.own{max-width:100%;align-self:stretch;flex-direction:row;align-items:flex-start;padding:6px 8px;border-radius:8px}
+ .message-row:hover{background:#ffffff0a}
+ .message-avatar{width:36px;height:36px;flex:0 0 36px;font-size:13px}
+ .message-body{flex:1;min-width:0}
+ .message-sender,.message-row.own .message-sender{text-align:left;font-size:13px;font-weight:700;color:var(--text);margin:0 0 2px}
+ .bubble,.message-row.own .bubble{background:transparent;border:0;border-radius:0;padding:2px 0}
+ .bubble.edit{border:1px solid var(--line);border-radius:10px;padding:8px}
+ .message-time,.message-row.own .message-time{text-align:left;margin-top:2px}
+ .message-row.own .message-actions{justify-content:flex-start}
+ .message-actions{opacity:.0;transition:opacity .15s}.message-row:hover .message-actions,.message-row:focus-within .message-actions{opacity:1}
+ .composer{padding:14px 32px 20px}
+ .composer textarea{border-radius:10px}
+}
+@media(max-width:700px){
+ html,body{overscroll-behavior:none}
+ input,textarea,select{font-size:16px}
+ .app{display:flex;flex-direction:column;height:100dvh;min-height:0}
+ .sidebar{order:1;flex:1;min-height:0;border-right:0;background:var(--bg)}
+ .main{order:2;display:none;flex:1;min-height:0}
+ .rail{order:3;flex:0 0 auto;flex-direction:row;justify-content:space-around;background:#0f1627;border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
+ .rail-logo{display:none}
+ .rail-btn{flex:1;min-height:52px}
+ .app.chat-open .sidebar,.app.chat-open .rail{display:none}
+ .app.chat-open .main{display:flex}
+ .brand{padding:calc(12px + env(safe-area-inset-top)) 16px 12px}.brand small{display:none}.brand h1{font-size:22px}
+ .userbar{padding:18px 16px}.userbar .avatar{width:56px;height:56px;flex-basis:56px;font-size:22px}
+ .status-select{max-width:none;min-height:44px}
+ .sidebar-content{padding:0 0 12px}
+ .section-heading{padding:12px 16px 4px;margin:0}
+ .search{width:calc(100% - 32px);margin:8px 16px;border-radius:22px;min-height:44px}
+ .user-list,.room-list{gap:0}
+ .person,.room-item{border-radius:0;padding:12px 16px;border:0;border-bottom:1px solid var(--line)}
+ .person .avatar,.room-item .avatar{width:52px;height:52px;flex-basis:52px;font-size:20px}
+ .person strong,.room-item strong{font-size:16px}
+ .admin-tab{width:calc(100% - 32px);margin:12px 16px;min-height:48px}
+ .me-note{padding:0 16px}
+ .mobile-back{display:inline-flex;align-items:center;min-height:44px;padding:8px 12px}
+ .chat-header{min-height:60px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;gap:10px}
+ #refreshMessagesButton{display:none}
+ .messages{padding:12px 10px;gap:10px}
+ .message-row{max-width:90%}.message-row.own .message-avatar{display:none}
+ .bubble{font-size:15px}
+ .attachment{max-width:100%}
+ .composer{padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
+ .composer-tools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-bottom:6px}
+ .composer-tools::-webkit-scrollbar{display:none}
+ .tool-button{white-space:nowrap;flex:0 0 auto;min-height:36px}
+ .composer textarea{min-height:44px;resize:none;border-radius:22px;padding:11px 14px}
+ .composer .button{min-height:44px;border-radius:22px;padding:0 18px}
+ .char-count{display:none}
+ .schedule-panel{flex-direction:column;align-items:stretch}
+ .admin-panel>header{padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
+ .admin-body{padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
+ .toast{bottom:84px}
+}
+@media(max-height:500px) and (max-width:950px){
+ .chat-header{min-height:44px;padding:4px 12px}.messages{padding:8px 12px}.composer{padding:6px 12px}.composer-tools{display:none}
+}
 </style>
 </head>
 <body>
 <div class="app" id="app">
-    <aside class="sidebar">
+    <nav class="rail" id="rail" aria-label="メインメニュー">
+        <div class="rail-logo">ARE</div>
+        <button class="rail-btn active" data-tab="chats" type="button"><span class="ico">💬</span><span>チャット</span></button>
+        <button class="rail-btn" data-tab="users" type="button"><span class="ico">👥</span><span>ユーザー</span></button>
+        <button class="rail-btn" data-tab="me" type="button"><span class="ico">👤</span><span>マイページ</span></button>
+    </nav>
+    <aside class="sidebar" id="sidebar" data-tab="chats">
         <div class="brand">
             <div><h1>ARE</h1><small>CONNECT YOUR WORLD</small></div>
             <button class="button-secondary" id="logoutButton" type="button">ログアウト</button>
         </div>
-        <div class="userbar">
+        <div class="userbar pane-me">
             <div class="avatar" id="myAvatar">A</div>
             <div class="user-info"><strong id="myName">読み込み中...</strong><small id="myLoginStatus">接続を確認しています</small></div>
             <select id="myStatus" class="status-select" aria-label="ステータス"><option value="online">🟢 オンライン</option><option value="busy">🔴 取り込み中</option><option value="in_call">📞 通話中</option><option value="away">🟡 待機中</option></select>
         </div>
         <div class="sidebar-content">
-            <button class="button admin-tab" id="adminTabButton" type="button" hidden>🛡️ 管理者パネル <span id="adminBadge" class="badge"></span></button>
+            <button class="button admin-tab pane-me" id="adminTabButton" type="button" hidden>🛡️ 管理者パネル <span id="adminBadge" class="badge"></span></button>
+            <p class="me-note pane-me">ご注意：運営管理者は、安全管理・不正対策のため会話内容を閲覧できます。個人情報や機密情報は送信しないでください。</p>
+            <div class="pane pane-users">
             <div class="section-heading"><h2>🔎 おすすめユーザー</h2><button class="button-secondary" id="refreshUsersButton" type="button">更新</button></div>
             <input class="search" id="userSearch" type="search" placeholder="ユーザー名を検索..." autocomplete="off">
             <div class="user-list" id="recommendedUsers"><div class="empty-list">ユーザーを読み込んでいます...</div></div>
-            <div class="section-divider"></div>
+            </div>
+            <div class="pane pane-chats">
             <div class="section-heading"><h2>💬 チャット</h2><button class="button-secondary" id="refreshRoomsButton" type="button">更新</button></div>
             <div class="room-list" id="roomList"><div class="empty-list">チャットを読み込んでいます...</div></div>
+            </div>
         </div>
     </aside>
 
@@ -248,7 +336,7 @@ button.admin-card{text-align:left;color:var(--text);width:100%}
             "refreshUsersButton","userSearch","recommendedUsers","refreshRoomsButton",
             "roomList","backButton","chatAvatar","chatTitle","chatSubtitle",
             "refreshMessagesButton","pageStatus","messages","imageInput","fileInput",
-            "videoInput","attachmentStatus","messageInput","sendButton","charCount","toast","myStatus","scheduleButton","schedulePanel","scheduleAt","scheduleSubmit","scheduleList","scheduleClose","adminTabButton","adminBadge","adminPanel","adminBody","adminClose"
+            "videoInput","attachmentStatus","messageInput","sendButton","charCount","toast","sidebar","rail","myStatus","scheduleButton","schedulePanel","scheduleAt","scheduleSubmit","scheduleList","scheduleClose","adminTabButton","adminBadge","adminPanel","adminBody","adminClose"
         ].forEach((id) => el[id] = $(id));
     }
 
@@ -346,6 +434,11 @@ button.admin-card{text-align:left;color:var(--text);width:100%}
         }
     }
 
+    function setTab(tab){
+        el.sidebar.dataset.tab = tab;
+        el.rail.querySelectorAll("[data-tab]").forEach((b) => b.classList.toggle("active",b.dataset.tab === tab));
+    }
+
     function setChatEnabled(enabled){
         el.messageInput.disabled = !enabled;
         el.sendButton.disabled = !enabled;
@@ -360,6 +453,8 @@ button.admin-card{text-align:left;color:var(--text);width:100%}
         const length = Array.from(el.messageInput.value).length;
         el.charCount.textContent = String(length);
         el.charCount.style.color = length > MAX_TEXT_LENGTH ? "var(--danger)" : "var(--muted)";
+        el.messageInput.style.height = "auto";
+        el.messageInput.style.height = Math.min(el.messageInput.scrollHeight,140) + "px";
         el.sendButton.disabled = !state.currentRoom || state.sending || length > MAX_TEXT_LENGTH;
     }
 
@@ -426,6 +521,20 @@ button.admin-card{text-align:left;color:var(--text);width:100%}
         el.fileInput.addEventListener("change",() => handleFiles(el.fileInput.files,"file"));
         el.videoInput.addEventListener("change",() => handleFiles(el.videoInput.files,"video"));
         el.backButton.addEventListener("click",() => el.app.classList.remove("chat-open"));
+        el.rail.addEventListener("click",(event) => {
+            const tab = event.target.closest("[data-tab]");
+            if(tab) setTab(tab.dataset.tab);
+        });
+        if(window.visualViewport){
+            const mobile = window.matchMedia("(max-width:700px)");
+            const fit = () => {
+                el.app.style.height = mobile.matches ? window.visualViewport.height + "px" : "";
+                if(mobile.matches) window.scrollTo(0,0);
+            };
+            window.visualViewport.addEventListener("resize",fit);
+            window.visualViewport.addEventListener("scroll",fit);
+            fit();
+        }
         window.addEventListener("beforeunload",cleanupSubscription);
     }
 
@@ -580,6 +689,7 @@ button.admin-card{text-align:left;color:var(--text);width:100%}
     async function selectRoom(room,partner){
         if(!room?.id) return;
         cleanupSubscription();
+        setTab("chats");
 
         state.currentRoom = room;
         state.currentPartner = partner || room.partner || null;

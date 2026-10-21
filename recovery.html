@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b1020">
+    <title>ARE | アカウント復旧</title>
+    <link rel="stylesheet" href="recovery.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+    <script src="apikey.js"></script>
+    <script src="system.js"></script>
+    <script src="recovery.js" defer></script>
+</head>
+<body>
+    <div class="background-glow" aria-hidden="true"></div>
+    <main class="app">
+        <header class="brand">
+            <div class="brand-logo" aria-hidden="true">A</div>
+            <div>
+                <h1>ARE</h1>
+                <p>REALTIME CHAT</p>
+            </div>
+        </header>
+
+        <section class="panel" aria-labelledby="pageTitle">
+            <h2 id="pageTitle">アカウント復旧</h2>
+            <p class="muted">登録時のログインIDと復旧コードを入力してください。</p>
+
+            <form id="recoveryForm">
+                <label for="loginId">ログインID</label>
+                <input id="loginId" name="loginId" autocomplete="username" maxlength="80" required>
+
+                <label for="recoveryCode">復旧コード</label>
+                <input id="recoveryCode" name="recoveryCode" autocomplete="off" maxlength="256" required>
+
+                <label for="newPassword">新しいパスワード</label>
+                <input id="newPassword" name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+                <p class="field-help">8文字以上で入力してください。</p>
+
+                <label for="confirmPassword">新しいパスワード（確認）</label>
+                <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+
+                <button id="recoveryButton" class="primary-button" type="submit">パスワードを再設定</button>
+            </form>
+
+            <p id="recoveryStatus" class="status-message" role="status" aria-live="polite"></p>
+
+            <section id="successPanel" class="success-panel" hidden>
+                <h3>復旧処理が完了しました</h3>
+                <p>新しいパスワードでログインしてください。</p>
+                <button id="goToLogin" class="primary-button" type="button">ログイン画面へ</button>
+            </section>
+
+            <div class="button-row">
+                <button id="backToLogin" class="button-secondary" type="button">ログイン画面に戻る</button>
+            </div>
+        </section>
+        <footer>ARE · CONNECT WITH EVERYONE</footer>
+    </main>
+</body>
+</html>

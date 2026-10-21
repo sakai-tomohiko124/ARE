@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARE 管理画面</title>
+<style>
+body{margin:0;font:14px/1.6 system-ui,"Hiragino Sans","Noto Sans JP",sans-serif;background:#0b1020;color:#e8ecf5}
+main{max-width:960px;margin:0 auto;padding:16px}h1{font-size:20px}
+input,button,select{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid #33405f;background:#141b33;color:inherit}
+button{cursor:pointer;background:#2a6df4;border:0}button.d{background:#b3261e}button:disabled{opacity:.5}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.card{background:#141b33;border:1px solid #26314f;border-radius:10px;padding:10px;margin:8px 0;overflow-wrap:anywhere}
+.m{color:#9aa7c7;font-size:12px}#st{min-height:1.4em}.err{color:#ff8a80}.warn{background:#3a2e10;border:1px solid #6b5416;border-radius:8px;padding:8px;font-size:12px}
+</style></head><body><main>
+<h1>ARE 管理画面</h1>
+<p class="warn">この画面の操作（会話の閲覧・検索・削除・停止）はすべて監査ログに記録されます。業務上必要な範囲でのみ使用してください。</p>
+<form id="lf" class="row"><input id="lid" placeholder="管理者ログインID" autocomplete="username" required><input id="lpw" type="password" placeholder="パスワード" autocomplete="current-password" required><button>ログイン</button></form>
+<p id="st" role="status"></p>
+<section id="panel" hidden>
+ <div class="row"><b id="who"></b><button id="out" type="button">ログアウト</button></div>
+ <form id="sf" class="row"><input id="q" placeholder="本文で検索" maxlength="200"><select id="user"><option value="">全ユーザー</option></select><input id="room" placeholder="ルームID(任意)" size="36"><button>検索</button></form>
+ <div class="row"><button id="prev" type="button">前へ</button><button id="next" type="button">次へ</button><button id="audit" type="button">監査ログ</button></div>
+ <div id="res"></div>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="apikey.js"></script><script src="system.js"></script><script src="admin.js"></script>
+</main></body></html>

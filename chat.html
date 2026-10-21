@@ -195,6 +195,27 @@ html,body{height:100%}
 .me-toggle input{margin-right:8px;width:18px;height:18px;vertical-align:middle}.me-toggle small{color:var(--muted);font-size:12px;margin-left:26px}
 .security-banner{margin:12px 16px 0;padding:10px 12px;border:1px solid #6b5416;background:#3a2e10;border-radius:10px;font-size:13px}
 .code-box{font-family:ui-monospace,Menlo,monospace;font-size:14px;word-break:break-all;background:#000;border:1px dashed #ffcc66;border-radius:8px;padding:12px;margin:8px 0}
+.sidebar[data-tab]:not([data-tab="posts"]) .pane-posts{display:none}
+.sidebar[data-tab="posts"] .pane-chats,.sidebar[data-tab="posts"] .pane-users,.sidebar[data-tab="posts"] .pane-me{display:none}
+.profile-card{margin:12px 16px 0;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.profile-text{margin-bottom:10px;font-size:14px;overflow-wrap:anywhere}.profile-text .sm{font-weight:700}.profile-text .bio{color:var(--muted);font-size:13px;margin-top:4px;white-space:pre-wrap}
+.status-msg{color:var(--muted);font-size:12px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.modal{position:fixed;inset:0;z-index:40;background:#000a;display:flex;align-items:center;justify-content:center;padding:16px}.modal[hidden]{display:none}
+.sheet{width:min(440px,100%);max-height:100%;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px}
+.sheet label{font-size:12px;color:var(--muted)}.sheet input[type=text],.sheet textarea{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
+.sheet .big-avatar{width:96px;height:96px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;margin:0 auto}
+.sheet .big-avatar img{width:100%;height:100%;object-fit:cover}.sheet .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.post-composer{margin:8px 16px;display:flex;flex-direction:column;gap:8px}
+.post-composer textarea{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:10px;resize:vertical;font:inherit}
+.post-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.post-tools .button{margin-left:auto}
+.post-feed{display:flex;flex-direction:column}
+.post{padding:12px 16px;border-bottom:1px solid var(--line)}
+.post-head{display:flex;gap:10px;align-items:center}.post-avatar{width:36px;height:36px;border-radius:50%;background:var(--panel2);display:inline-flex;align-items:center;justify-content:center;overflow:hidden;flex:0 0 36px;font-size:14px}
+.post-avatar img{width:100%;height:100%;object-fit:cover}
+.post-name{background:none;border:0;color:var(--text);font-weight:700;padding:0;text-align:left}.post-time{color:var(--muted);font-size:12px}
+.post-body{margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}.post-img{max-width:100%;border-radius:12px;display:block;margin:6px 0}
+.post-actions{display:flex;gap:12px;font-size:12px}.post-actions button{background:none;border:0;color:var(--muted);text-decoration:underline;padding:0}
+.post-more{margin:12px 16px;width:calc(100% - 32px)}
 </style>
 </head>
 <body>
@@ -203,6 +224,7 @@ html,body{height:100%}
         <div class="rail-logo">ARE</div>
         <button class="rail-btn active" data-tab="chats" type="button"><span class="ico">💬</span><span>チャット</span></button>
         <button class="rail-btn" data-tab="users" type="button"><span class="ico">👥</span><span>ユーザー</span></button>
+        <button class="rail-btn" data-tab="posts" type="button"><span class="ico">📷</span><span>投稿</span></button>
         <button class="rail-btn" data-tab="me" type="button"><span class="ico">👤</span><span>マイページ</span></button>
     </nav>
     <aside class="sidebar" id="sidebar" data-tab="chats">
@@ -216,6 +238,16 @@ html,body{height:100%}
             <select id="myStatus" class="status-select" aria-label="ステータス"><option value="online">🟢 オンライン</option><option value="busy">🔴 取り込み中</option><option value="in_call">📞 通話中</option><option value="away">🟡 待機中</option></select>
         </div>
         <div class="sidebar-content">
+            <div class="profile-card pane-me"><div class="profile-text" id="profileText"></div><button class="button" id="profileEditButton" type="button">✏️ プロフィールを編集</button></div>
+            <div class="pane pane-posts">
+                <div class="section-heading"><h2>📷 投稿</h2><button class="button-secondary" id="postsRefresh" type="button">更新</button></div>
+                <div class="post-composer">
+                    <textarea id="postBody" maxlength="500" rows="2" placeholder="いまどうしてる？（500文字まで）"></textarea>
+                    <div class="post-tools"><label class="tool-button">🖼️ 写真<input class="file-input" id="postImage" type="file" accept="image/*"></label><span id="postImageName" class="meta"></span><button class="button" id="postSubmit" type="button">投稿する</button></div>
+                </div>
+                <div id="postFeed" class="post-feed"><div class="empty-list">読み込み中...</div></div>
+                <button class="button-secondary post-more" id="postMore" type="button" hidden>さらに読み込む</button>
+            </div>
             <button class="button admin-tab pane-me" id="adminTabButton" type="button" hidden>🛡️ 管理者パネル <span id="adminBadge" class="badge"></span></button>
             <p class="me-note pane-me">ご注意：運営管理者は、安全管理・不正対策のため会話内容を閲覧できます。個人情報や機密情報は送信しないでください。</p>
             <p class="security-banner pane-me" id="securityBanner" hidden></p>
@@ -279,6 +311,7 @@ html,body{height:100%}
         <button class="button-secondary" id="adminClose" type="button">閉じる</button></header>
     <div class="admin-body" id="adminBody"></div>
 </section>
+<div class="modal" id="profileModal" hidden><div class="sheet" id="profileSheet"></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -343,7 +376,7 @@ html,body{height:100%}
             "refreshUsersButton","userSearch","recommendedUsers","refreshRoomsButton",
             "roomList","backButton","chatAvatar","chatTitle","chatSubtitle",
             "refreshMessagesButton","pageStatus","messages","imageInput","fileInput",
-            "videoInput","attachmentStatus","messageInput","sendButton","charCount","toast","sidebar","rail","readReceiptToggle","securityBanner","myStatus","scheduleButton","schedulePanel","scheduleAt","scheduleSubmit","scheduleList","scheduleClose","adminTabButton","adminBadge","adminPanel","adminBody","adminClose"
+            "videoInput","attachmentStatus","messageInput","sendButton","charCount","toast","postBody","postImage","postImageName","postSubmit","postFeed","postMore","postsRefresh","profileText","profileEditButton","profileModal","profileSheet","sidebar","rail","readReceiptToggle","securityBanner","myStatus","scheduleButton","schedulePanel","scheduleAt","scheduleSubmit","scheduleList","scheduleClose","adminTabButton","adminBadge","adminPanel","adminBody","adminClose"
         ].forEach((id) => el[id] = $(id));
     }
 
@@ -443,6 +476,7 @@ html,body{height:100%}
 
     function setTab(tab){
         el.sidebar.dataset.tab = tab;
+        if(tab === "posts" && typeof feat !== "undefined" && el.postFeed && Date.now() - feat.postsLoadedAt > 10000) loadPosts(true);
         el.rail.querySelectorAll("[data-tab]").forEach((b) => b.classList.toggle("active",b.dataset.tab === tab));
     }
 
@@ -584,7 +618,7 @@ html,body{height:100%}
 
             return '<button class="person" type="button" data-user-id="' + escapeHtml(profile.id) + '">' +
                 avatarHtml +
-                '<span class="person-text"><strong>' + escapeHtml(name) + '</strong><small>' + presenceHtml(profile) + '</small></span>' +
+                '<span class="person-text"><strong>' + escapeHtml(name) + '</strong><small>' + presenceHtml(profile) + '</small>' + statusLine(profile) + '</span>' +
                 '<span class="add" aria-hidden="true">＋</span></button>';
         }).join("");
 
@@ -657,7 +691,7 @@ html,body{height:100%}
             const active = state.currentRoom?.id === room.id ? " active" : "";
 
             return '<button class="room-item' + active + '" type="button" data-room-id="' + escapeHtml(room.id) + '">' +
-                avatarHtml + '<span class="person-text"><strong>' + escapeHtml(name) + '</strong><small>' + presenceHtml(room.partner) + '</small></span></button>';
+                avatarHtml + '<span class="person-text"><strong>' + escapeHtml(name) + '</strong><small>' + presenceHtml(room.partner) + '</small>' + statusLine(room.partner) + '</span></button>';
         }).join("");
 
         el.roomList.querySelectorAll("[data-room-id]").forEach((button) => {
@@ -1102,6 +1136,8 @@ html,body{height:100%}
         room_suspended:"このチャットは停止中です。", send_at_out_of_range:"送信日時は30秒後〜30日以内で指定してください。",
         too_many_scheduled:"予約は最大50件までです。", forbidden:"管理者権限がありません。", message_length_invalid:"メッセージの長さが正しくありません。",
         request_not_pending:"この申請はすでに処理されています。",
+        post_too_long:"投稿は500文字以内で入力してください。", post_empty:"投稿の内容を入力してください。", invalid_image_path:"画像の保存先が正しくありません。",
+        bio_too_long:"自己紹介は150文字以内です。", status_too_long:"ステータスメッセージは60文字以内です。", invalid_avatar_url:"アイコン画像のURLが正しくありません。", invalid_display_name:"表示名は1〜30文字で入力してください。",
         verification_note_required:"本人確認の方法を5文字以上で入力してください。", user_not_found:"対象のユーザーが見つかりません。",
         cannot_target_admin:"管理者アカウントは再発行の対象にできません。", rate_limited:"短時間に再発行しすぎです。時間をおいてください。"
     };
@@ -1147,10 +1183,10 @@ html,body{height:100%}
     async function refreshPresence(){
         const ids = [...new Set([...state.rooms.map((room) => room.partnerId),...state.recommendations.map((p) => p.id)].filter(Boolean))].slice(0,150);
         if(!ids.length) return;
-        const result = await requireClient().from(TABLES.profiles).select("id,presence_status,last_seen_at").in("id",ids);
+        const result = await requireClient().from(TABLES.profiles).select("id,presence_status,last_seen_at,status_message,avatar_url").in("id",ids);
         if(result.error) return;
         const map = new Map((result.data || []).map((p) => [p.id,p]));
-        const apply = (p) => { const n = p && map.get(p.id); if(n){ p.presence_status = n.presence_status; p.last_seen_at = n.last_seen_at; } };
+        const apply = (p) => { const n = p && map.get(p.id); if(n){ p.presence_status = n.presence_status; p.last_seen_at = n.last_seen_at; p.status_message = n.status_message; p.avatar_url = n.avatar_url; } };
         state.rooms.forEach((room) => apply(room.partner));
         state.recommendations.forEach(apply);
         apply(state.currentPartner);
@@ -1285,6 +1321,7 @@ html,body{height:100%}
         try{ const result = await requireClient().rpc("is_current_user_admin"); feat.isAdmin = result.data === true; }
         catch(_e){ feat.isAdmin = false; }
         el.adminTabButton.hidden = !feat.isAdmin;
+        if(feat.posts && feat.posts.length) renderPosts();
         if(feat.isAdmin){ refreshAdminBadge(); feat.timers.push(setInterval(refreshAdminBadge,30000)); }
     }
     async function refreshAdminBadge(){
@@ -1345,7 +1382,7 @@ html,body{height:100%}
         el.adminBody.innerHTML = '<div class="admin-card meta">復旧コードを失くした利用者に対する再発行です。必ず本人確認を行ってから実行してください。新しいコードは画面に1回だけ表示され、保存されません。旧コードは無効になり、利用者本人にも再発行の通知が表示されます。</div>' +
             (result.data.length ? result.data.map((u) =>
                 '<div class="admin-card"><b>' + escapeHtml(u.display_name || "ユーザー") + '</b> <span class="meta">ID：' + escapeHtml(u.login_id || "-") + (u.last_seen_at ? ' ・最終オンライン：' + escapeHtml(formatDate(u.last_seen_at)) : '') + '</span>' +
-                '<div class="row"><button class="button-secondary" data-contact="' + escapeHtml(u.user_id) + '" type="button">連絡先を表示（閲覧は記録されます）</button></div>' + (u.is_admin ? '<div class="meta">管理者アカウント（再発行不可）</div>' : '<div class="row"><button class="button-secondary" data-reissue="' + escapeHtml(u.user_id) + '" data-name="' + escapeHtml(u.display_name || "ユーザー") + '" type="button">復旧コードを再発行</button></div>') + '</div>').join("")
+                '<div class="row"><button class="button-secondary" data-contact="' + escapeHtml(u.user_id) + '" type="button">連絡先を表示（閲覧は記録されます）</button></div>' + (u.is_admin ? '<div class="meta">管理者アカウント（再発行不可）</div>' : '<div class="row"><button class="button-secondary" data-reissue="' + escapeHtml(u.user_id) + '" data-name="' + escapeHtml(u.display_name || "ユーザー") + '" type="button">復旧コードを再発行</button><button class="button-danger" data-deluser="' + escapeHtml(u.user_id) + '" data-name="' + escapeHtml(u.display_name || "ユーザー") + '" type="button">アカウントを削除</button></div>') + '</div>').join("")
                 : '<div class="empty-list">ユーザーがいません。</div>');
     }
     async function reissueRecovery(userId,name){
@@ -1379,6 +1416,7 @@ html,body{height:100%}
             }catch(error){ showToast(featError(error)); }
             return;
         }
+        if(target.dataset.deluser) return deleteAccount(target.dataset.deluser,target.dataset.name);
         if(target.dataset.reissue) return reissueRecovery(target.dataset.reissue,target.dataset.name);
         if(target.dataset.copycode){
             try{ await navigator.clipboard.writeText(target.dataset.copycode); showToast("コピーしました。"); }catch(_e){ showToast("コピーできませんでした。手動で選択してコピーしてください。"); }
@@ -1413,7 +1451,210 @@ html,body{height:100%}
         }catch(_e){}
     }
 
+
+    // ===== プロフィール / ステータスメッセージ / 投稿 / アカウント削除 =====
+    function statusLine(profile){
+        return profile?.status_message ? '<small class="status-msg">' + escapeHtml(profile.status_message) + '</small>' : '';
+    }
+    function miniAvatar(profile){
+        const url = safeHttpUrl(profile?.avatar_url || "");
+        return '<span class="post-avatar">' + (url ? '<img src="' + escapeHtml(url) + '" alt="">' : escapeHtml(shortName(profileDisplayName(profile)))) + '</span>';
+    }
+    function renderProfileText(){
+        const p = state.profile || {};
+        el.profileText.innerHTML = '<div class="sm">' + (p.status_message ? escapeHtml(p.status_message) : '<span class="meta">ステータスメッセージ未設定</span>') + '</div>' +
+            (p.bio ? '<div class="bio">' + escapeHtml(p.bio) + '</div>' : '');
+        el.myName.textContent = profileDisplayName(p);
+        setAvatar(el.myAvatar,p);
+    }
+    function resizeImage(file,maxSide,quality){
+        return new Promise((resolve,reject) => {
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                const scale = Math.min(1,maxSide / Math.max(img.width,img.height));
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.max(1,Math.round(img.width * scale)); canvas.height = Math.max(1,Math.round(img.height * scale));
+                canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
+                canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("画像を変換できませんでした。")),"image/jpeg",quality);
+            };
+            img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("この画像は読み込めません。JPEG・PNG・WebP・GIFを選んでください。")); };
+            img.src = url;
+        });
+    }
+    function openSheet(html){ el.profileSheet.innerHTML = html; el.profileModal.hidden = false; }
+    function closeSheet(){ el.profileModal.hidden = true; el.profileSheet.innerHTML = ""; feat.avatarBlob = null; }
+    function bigAvatar(profile){
+        const url = safeHttpUrl(profile?.avatar_url || "");
+        return '<div class="big-avatar" id="pmPreview">' + (url ? '<img src="' + escapeHtml(url) + '" alt="">' : escapeHtml(shortName(profileDisplayName(profile)))) + '</div>';
+    }
+    function openProfileEditor(){
+        const p = state.profile || {};
+        feat.avatarBlob = null;
+        openSheet(bigAvatar(p) + '<div class="row" style="justify-content:center"><label class="button-secondary" style="cursor:pointer;padding:8px 14px;border-radius:10px;color:var(--text)">写真を変更<input id="pmAvatar" class="file-input" type="file" accept="image/*"></label></div>' +
+            '<label for="pmName">表示名（30文字まで）</label><input id="pmName" type="text" maxlength="30" value="' + escapeHtml(p.display_name || "") + '">' +
+            '<label for="pmStatus">ステータスメッセージ（60文字まで）</label><input id="pmStatus" type="text" maxlength="60" value="' + escapeHtml(p.status_message || "") + '" placeholder="例：勉強中📚">' +
+            '<label for="pmBio">自己紹介（150文字まで）</label><textarea id="pmBio" rows="3" maxlength="150">' + escapeHtml(p.bio || "") + '</textarea>' +
+            '<div class="row"><button type="button" class="button-secondary" data-pm="close">キャンセル</button><button type="button" class="button" data-pm="save">保存</button></div>');
+    }
+    function openProfileView(profile){
+        if(!profile) return;
+        openSheet(bigAvatar(profile) + '<h3 style="margin:0;text-align:center">' + escapeHtml(profileDisplayName(profile)) + '</h3>' +
+            '<div style="text-align:center">' + presenceHtml(profile) + '</div>' +
+            (profile.status_message ? '<div style="text-align:center;font-weight:700">' + escapeHtml(profile.status_message) + '</div>' : '') +
+            (profile.bio ? '<div style="white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted)">' + escapeHtml(profile.bio) + '</div>' : '') +
+            '<div class="row"><button type="button" class="button-secondary" data-pm="close">閉じる</button></div>');
+    }
+    async function saveProfile(button){
+        const name = document.getElementById("pmName").value.trim();
+        if(!name){ showToast("表示名を入力してください。"); return; }
+        const client = requireClient();
+        button.disabled = true;
+        try{
+            let avatarUrl = null, uploaded = null;
+            if(feat.avatarBlob){
+                uploaded = state.user.id + "/" + crypto.randomUUID() + ".jpg";
+                const up = await client.storage.from("avatars").upload(uploaded,feat.avatarBlob,{contentType:"image/jpeg",upsert:false});
+                if(up.error) throw up.error;
+                avatarUrl = client.storage.from("avatars").getPublicUrl(uploaded).data.publicUrl;
+            }
+            const result = await client.rpc("update_my_profile",{
+                p_display_name:name,p_bio:document.getElementById("pmBio").value,p_status_message:document.getElementById("pmStatus").value,
+                p_avatar_url:avatarUrl,p_clear_avatar:false});
+            if(result.error){ if(uploaded) client.storage.from("avatars").remove([uploaded]); throw result.error; }
+            const old = state.profile?.avatar_url;
+            const fresh = await client.from(TABLES.profiles).select("*").eq("id",state.user.id).maybeSingle();
+            if(!fresh.error && fresh.data) state.profile = fresh.data;
+            if(avatarUrl && old && old.includes("/avatars/")){ client.storage.from("avatars").remove([decodeURIComponent(old.split("/avatars/")[1])]); }
+            renderProfileText(); closeSheet(); showToast("プロフィールを更新しました。");
+        }catch(error){ button.disabled = false; showToast(featError(error)); }
+    }
+    async function onSheetClick(event){
+        if(event.target === el.profileModal){ closeSheet(); return; }
+        const button = event.target.closest("[data-pm]");
+        if(!button) return;
+        if(button.dataset.pm === "close") closeSheet();
+        else if(button.dataset.pm === "save") await saveProfile(button);
+    }
+    async function onSheetChange(event){
+        if(event.target.id !== "pmAvatar" || !event.target.files[0]) return;
+        try{
+            feat.avatarBlob = await resizeImage(event.target.files[0],384,0.88);
+            document.getElementById("pmPreview").innerHTML = '<img src="' + URL.createObjectURL(feat.avatarBlob) + '" alt="">';
+        }catch(error){ feat.avatarBlob = null; showToast(error.message); }
+        event.target.value = "";
+    }
+
+    feat.posts = []; feat.postProfiles = new Map(); feat.postImageFile = null; feat.postsLoadedAt = 0;
+    async function loadPosts(reset){
+        const client = requireClient();
+        try{
+            let query = client.from("posts").select("id,author_id,body,image_path,created_at").order("created_at",{ascending:false}).limit(20);
+            if(!reset && feat.posts.length) query = query.lt("created_at",feat.posts[feat.posts.length - 1].created_at);
+            const result = await query;
+            if(result.error) throw result.error;
+            const rows = result.data || [];
+            feat.posts = reset ? rows : feat.posts.concat(rows);
+            el.postMore.hidden = rows.length < 20;
+            const need = [...new Set(rows.map((r) => r.author_id))].filter((id) => !feat.postProfiles.has(id) || reset);
+            if(need.length){
+                const profiles = await client.from(TABLES.profiles).select("*").in("id",need);
+                (profiles.data || []).forEach((p) => feat.postProfiles.set(p.id,p));
+            }
+            const paths = rows.map((r) => r.image_path).filter(Boolean);
+            if(paths.length){
+                const signed = await client.storage.from("post-images").createSignedUrls(paths,3600);
+                (signed.data || []).forEach((s) => { if(s.signedUrl) feat.signed.set(s.path,s.signedUrl); });
+            }
+            feat.postsLoadedAt = Date.now();
+            renderPosts();
+        }catch(error){ el.postFeed.innerHTML = '<div class="empty-list">' + escapeHtml(featError(error)) + '</div>'; }
+    }
+    feat.signed = new Map();
+    function renderPosts(){
+        if(!feat.posts.length){ el.postFeed.innerHTML = '<div class="empty-list">まだ投稿がありません。最初の投稿をしてみましょう。</div>'; return; }
+        el.postFeed.innerHTML = feat.posts.map((post) => {
+            const author = feat.postProfiles.get(post.author_id) || {};
+            const own = post.author_id === state.user.id;
+            const img = post.image_path ? safeHttpUrl(feat.signed.get(post.image_path) || "") : "";
+            return '<article class="post"><div class="post-head">' + miniAvatar(author) +
+                '<div><button class="post-name" type="button" data-author="' + escapeHtml(post.author_id) + '">' + escapeHtml(profileDisplayName(author)) + '</button><div class="post-time">' + escapeHtml(formatDate(post.created_at)) + '</div></div></div>' +
+                (post.body ? '<div class="post-body">' + escapeHtml(post.body) + '</div>' : '') +
+                (img ? '<a href="' + escapeHtml(img) + '" target="_blank" rel="noopener noreferrer"><img class="post-img" src="' + escapeHtml(img) + '" alt="投稿画像" loading="lazy"></a>' : '') +
+                '<div class="post-actions">' + (own ? '<button type="button" data-postdel="' + escapeHtml(post.id) + '">削除</button>' : (feat.isAdmin ? '<button type="button" data-postadmin="' + escapeHtml(post.id) + '">管理者として削除</button>' : '')) + '</div></article>';
+        }).join("");
+    }
+    async function submitPost(){
+        const body = el.postBody.value;
+        if(!body.trim() && !feat.postImageFile){ showToast("投稿の内容か写真を入力してください。"); return; }
+        if(Array.from(body).length > 500){ showToast("投稿は500文字以内で入力してください。"); return; }
+        el.postSubmit.disabled = true;
+        const client = requireClient();
+        let uploaded = null;
+        try{
+            if(feat.postImageFile){
+                const blob = await resizeImage(feat.postImageFile,1280,0.85);
+                uploaded = state.user.id + "/" + crypto.randomUUID() + ".jpg";
+                const up = await client.storage.from("post-images").upload(uploaded,blob,{contentType:"image/jpeg",upsert:false});
+                if(up.error) throw up.error;
+            }
+            const result = await client.rpc("create_post",{p_body:body,p_image_path:uploaded});
+            if(result.error) throw result.error;
+            el.postBody.value = ""; el.postImage.value = ""; feat.postImageFile = null; el.postImageName.textContent = "";
+            showToast("投稿しました。");
+            await loadPosts(true);
+        }catch(error){
+            if(uploaded) client.storage.from("post-images").remove([uploaded]);
+            showToast(featError(error));
+        }finally{ el.postSubmit.disabled = false; }
+    }
+    async function onFeedClick(event){
+        const author = event.target.closest("[data-author]");
+        if(author){ openProfileView(feat.postProfiles.get(author.dataset.author)); return; }
+        const del = event.target.closest("[data-postdel]");
+        const adm = event.target.closest("[data-postadmin]");
+        try{
+            if(del){
+                if(!window.confirm("この投稿を削除しますか？")) return;
+                const result = await requireClient().rpc("delete_my_post",{p_post_id:del.dataset.postdel});
+                if(result.error) throw result.error;
+                if(result.data) requireClient().storage.from("post-images").remove([result.data]);
+                await loadPosts(true);
+            }else if(adm){
+                const reason = window.prompt("管理者として投稿を削除します。理由を入力してください（記録されます）。","");
+                if(reason === null) return;
+                const result = await requireClient().rpc("admin_delete_post",{p_post_id:adm.dataset.postadmin,p_reason:reason});
+                if(result.error) throw result.error;
+                await loadPosts(true);
+            }
+        }catch(error){ showToast(featError(error)); }
+    }
+    async function deleteAccount(userId,name){
+        const typed = window.prompt("⚠️ " + name + " さんのアカウントを完全に削除します。\n・プロフィール、投稿、この人とのすべての会話（相手側からも消えます）、添付ファイルが削除されます\n・元に戻せません\n\n確認のため、表示名「" + name + "」をそのまま入力してください。","");
+        if(typed === null) return;
+        if(typed !== name){ showToast("表示名が一致しないため、削除を中止しました。"); return; }
+        const reason = window.prompt("削除の理由を入力してください（5文字以上・監査ログに記録されます）。","");
+        if(reason === null) return;
+        try{
+            await window.ARESystem.callAuthenticatedFunction("admin-delete-user",{userId:userId,confirmName:name,reason:reason});
+            showToast(name + " さんのアカウントを削除しました。");
+            renderAdmin();
+        }catch(error){ showToast(error?.message || "削除に失敗しました。"); }
+    }
+
     function startFeatures(){
+        renderProfileText();
+        el.profileEditButton.addEventListener("click",openProfileEditor);
+        el.profileModal.addEventListener("click",onSheetClick);
+        el.profileModal.addEventListener("change",onSheetChange);
+        el.postsRefresh.addEventListener("click",() => loadPosts(true));
+        el.postMore.addEventListener("click",() => loadPosts(false));
+        el.postSubmit.addEventListener("click",submitPost);
+        el.postFeed.addEventListener("click",onFeedClick);
+        el.postImage.addEventListener("change",() => { feat.postImageFile = el.postImage.files[0] || null; el.postImageName.textContent = feat.postImageFile ? feat.postImageFile.name : ""; });
+        el.chatTitle.style.cursor = "pointer";
+        el.chatTitle.addEventListener("click",() => { if(state.currentPartner) openProfileView(state.currentPartner); });
         loadMySettings();
         el.readReceiptToggle.addEventListener("change",async () => {
             const wanted = el.readReceiptToggle.checked;

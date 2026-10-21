@@ -37,6 +37,7 @@
                     maxlength="80"
                     required
                 >
+                <p style="font-size:12px;opacity:.8;margin:4px 0 12px">ログインID：登録したときに決めたIDです（表示名とは別です）。</p>
 
                 <label for="loginPassword">パスワード</label>
                 <input
@@ -46,6 +47,7 @@
                     autocomplete="current-password"
                     required
                 >
+                <p style="font-size:12px;opacity:.8;margin:4px 0 12px">パスワード：登録したときに決めたパスワードです（復旧コードではありません）。右の目のボタンで、入力内容を表示して確認できます。</p>
 
                 <button id="loginButton" class="primary-button" type="submit">
                     ログイン
@@ -75,5 +77,6 @@
     <script src="apikey.js"></script>
     <script src="system.js"></script>
     <script src="login.js"></script>
+<script src="./password-toggle.js"></script>
 </body>
 </html>

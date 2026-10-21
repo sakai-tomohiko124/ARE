@@ -191,6 +191,10 @@ html,body{height:100%}
 @media(max-height:500px) and (max-width:950px){
  .chat-header{min-height:44px;padding:4px 12px}.messages{padding:8px 12px}.composer{padding:6px 12px}.composer-tools{display:none}
 }
+.me-toggle{display:flex;flex-direction:column;gap:2px;margin:14px 16px 0;font-size:14px}
+.me-toggle input{margin-right:8px;width:18px;height:18px;vertical-align:middle}.me-toggle small{color:var(--muted);font-size:12px;margin-left:26px}
+.security-banner{margin:12px 16px 0;padding:10px 12px;border:1px solid #6b5416;background:#3a2e10;border-radius:10px;font-size:13px}
+.code-box{font-family:ui-monospace,Menlo,monospace;font-size:14px;word-break:break-all;background:#000;border:1px dashed #ffcc66;border-radius:8px;padding:12px;margin:8px 0}
 </style>
 </head>
 <body>
@@ -214,6 +218,8 @@ html,body{height:100%}
         <div class="sidebar-content">
             <button class="button admin-tab pane-me" id="adminTabButton" type="button" hidden>🛡️ 管理者パネル <span id="adminBadge" class="badge"></span></button>
             <p class="me-note pane-me">ご注意：運営管理者は、安全管理・不正対策のため会話内容を閲覧できます。個人情報や機密情報は送信しないでください。</p>
+            <p class="security-banner pane-me" id="securityBanner" hidden></p>
+            <label class="me-toggle pane-me"><input type="checkbox" id="readReceiptToggle" checked> 既読を相手に表示する<small>オフにすると、あなたが読んでも相手には「既読」と表示されません。</small></label>
             <div class="pane pane-users">
             <div class="section-heading"><h2>🔎 おすすめユーザー</h2><button class="button-secondary" id="refreshUsersButton" type="button">更新</button></div>
             <input class="search" id="userSearch" type="search" placeholder="ユーザー名を検索..." autocomplete="off">
@@ -269,6 +275,7 @@ html,body{height:100%}
     <header><b>🛡️ 管理者パネル</b><span class="admin-note">閲覧・承認の操作はすべて監査ログに記録されます</span>
         <button class="button-secondary" data-admin-view="rooms" type="button">会話一覧</button>
         <button class="button-secondary" data-admin-view="requests" type="button">削除申請</button>
+        <button class="button-secondary" data-admin-view="users" type="button">復旧コード</button>
         <button class="button-secondary" id="adminClose" type="button">閉じる</button></header>
     <div class="admin-body" id="adminBody"></div>
 </section>
@@ -336,7 +343,7 @@ html,body{height:100%}
             "refreshUsersButton","userSearch","recommendedUsers","refreshRoomsButton",
             "roomList","backButton","chatAvatar","chatTitle","chatSubtitle",
             "refreshMessagesButton","pageStatus","messages","imageInput","fileInput",
-            "videoInput","attachmentStatus","messageInput","sendButton","charCount","toast","sidebar","rail","myStatus","scheduleButton","schedulePanel","scheduleAt","scheduleSubmit","scheduleList","scheduleClose","adminTabButton","adminBadge","adminPanel","adminBody","adminClose"
+            "videoInput","attachmentStatus","messageInput","sendButton","charCount","toast","sidebar","rail","readReceiptToggle","securityBanner","myStatus","scheduleButton","schedulePanel","scheduleAt","scheduleSubmit","scheduleList","scheduleClose","adminTabButton","adminBadge","adminPanel","adminBody","adminClose"
         ].forEach((id) => el[id] = $(id));
     }
 
@@ -1094,7 +1101,9 @@ html,body{height:100%}
         already_requested:"すでに削除を申請済みです。", not_allowed:"この操作はできません。", only_text_editable:"テキストのメッセージのみ編集できます。",
         room_suspended:"このチャットは停止中です。", send_at_out_of_range:"送信日時は30秒後〜30日以内で指定してください。",
         too_many_scheduled:"予約は最大50件までです。", forbidden:"管理者権限がありません。", message_length_invalid:"メッセージの長さが正しくありません。",
-        request_not_pending:"この申請はすでに処理されています。"
+        request_not_pending:"この申請はすでに処理されています。",
+        verification_note_required:"本人確認の方法を5文字以上で入力してください。", user_not_found:"対象のユーザーが見つかりません。",
+        cannot_target_admin:"管理者アカウントは再発行の対象にできません。", rate_limited:"短時間に再発行しすぎです。時間をおいてください。"
     };
     const feat = {manual:"online",lastActivity:Date.now(),timers:[],partnerReadAt:null,pending:new Set(),editingId:null,isAdmin:false,adminView:"rooms"};
     try{ const saved = localStorage.getItem("are_manual_status"); if(STATUS_LABELS[saved]) feat.manual = saved; }catch(_e){}
@@ -1160,9 +1169,9 @@ html,body{height:100%}
     async function loadPartnerRead(){
         if(!state.currentRoom || !state.currentPartner?.id) return;
         const roomId = state.currentRoom.id;
-        const result = await requireClient().from(TABLES.members).select("last_read_at").eq("room_id",roomId).eq("user_id",state.currentPartner.id).maybeSingle();
+        const result = await requireClient().rpc("get_partner_read_at",{p_room_id:roomId});
         if(result.error || state.currentRoom?.id !== roomId) return;
-        const value = result.data?.last_read_at || null;
+        const value = result.data || null;
         if(value !== feat.partnerReadAt){ feat.partnerReadAt = value; if(feat.editingId === null) renderMessages(false); }
     }
     async function loadPending(roomId){
@@ -1287,7 +1296,9 @@ html,body{height:100%}
         document.querySelectorAll("[data-admin-view]").forEach((b) => b.classList.toggle("active",b.dataset.adminView === feat.adminView));
         try{
             const client = requireClient();
-            if(feat.adminView === "requests"){
+            if(feat.adminView === "users"){
+                await renderAdminUsers(client);
+            }else if(feat.adminView === "requests"){
                 const result = await client.rpc("admin_list_delete_requests",{p_status:"pending"});
                 if(result.error) throw result.error;
                 el.adminBody.innerHTML = result.data.length ? result.data.map((r) =>
@@ -1315,16 +1326,53 @@ html,body{height:100%}
             const result = await requireClient().rpc("admin_get_room_messages",{p_room_id:roomId,p_limit:300});
             if(result.error) throw result.error;
             const rows = result.data.slice().reverse();
+            const readsResult = await requireClient().rpc("admin_get_room_reads",{p_room_id:roomId});
+            const reads = readsResult.error ? [] : readsResult.data;
+            const readLabel = (m) => {
+                const partner = reads.find((x) => x.user_id !== m.sender_id);
+                if(!partner) return "";
+                const read = partner.last_read_at && new Date(partner.last_read_at).getTime() >= new Date(m.created_at).getTime();
+                return read ? " ・既読" + (partner.read_receipts_enabled === false ? "（相手に既読を表示しない設定）" : "") : " ・未読";
+            };
             el.adminBody.innerHTML = '<button class="button-secondary" data-back="1" type="button">← 一覧へ戻る</button><b>' + escapeHtml(title || "会話") + '</b>' +
                 (rows.length ? rows.map((m) => '<div class="admin-card admin-msg' + (m.deleted_at ? ' deleted' : '') + '"><div class="meta">' + escapeHtml(m.sender_name || "ユーザー") + ' ・ ' + escapeHtml(formatDate(m.created_at)) +
-                    (m.edited_at ? ' ・編集済み' : '') + (m.deleted_at ? ' ・削除済み' : '') + '</div><div>' + attachmentText(m.content) + '</div></div>').join("") : '<div class="empty-list">メッセージはありません。</div>');
+                    (m.edited_at ? ' ・編集済み' : '') + (m.deleted_at ? ' ・削除済み' : '') + readLabel(m) + '</div><div>' + attachmentText(m.content) + '</div></div>').join("") : '<div class="empty-list">メッセージはありません。</div>');
         }catch(error){ el.adminBody.innerHTML = '<div class="empty-list">' + escapeHtml(featError(error)) + '</div>'; }
     }
+    async function renderAdminUsers(client){
+        const result = await client.rpc("admin_list_profiles");
+        if(result.error) throw result.error;
+        el.adminBody.innerHTML = '<div class="admin-card meta">復旧コードを失くした利用者に対する再発行です。必ず本人確認を行ってから実行してください。新しいコードは画面に1回だけ表示され、保存されません。旧コードは無効になり、利用者本人にも再発行の通知が表示されます。</div>' +
+            (result.data.length ? result.data.map((u) =>
+                '<div class="admin-card"><b>' + escapeHtml(u.display_name || "ユーザー") + '</b> <span class="meta">ID：' + escapeHtml(u.login_id || "-") + (u.last_seen_at ? ' ・最終オンライン：' + escapeHtml(formatDate(u.last_seen_at)) : '') + '</span>' +
+                (u.is_admin ? '<div class="meta">管理者アカウント（再発行不可）</div>' : '<div class="row"><button class="button-secondary" data-reissue="' + escapeHtml(u.user_id) + '" data-name="' + escapeHtml(u.display_name || "ユーザー") + '" type="button">復旧コードを再発行</button></div>') + '</div>').join("")
+                : '<div class="empty-list">ユーザーがいません。</div>');
+    }
+    async function reissueRecovery(userId,name){
+        const note = window.prompt(name + " さんの復旧コードを再発行します。\n本人確認の方法を入力してください（5文字以上・監査ログに記録されます）。\n例：登録電話番号に電話して確認","");
+        if(note === null) return;
+        if(!window.confirm("本当に再発行しますか？\n・旧い復旧コードは使えなくなります\n・新しいコードは1回しか表示されません")) return;
+        try{
+            const result = await requireClient().rpc("admin_reissue_recovery_code",{p_user_id:userId,p_verification_note:note});
+            if(result.error) throw result.error;
+            const code = String(result.data);
+            el.adminBody.innerHTML = '<div class="admin-card"><b>' + escapeHtml(name) + ' さんの新しい復旧コード</b><div class="code-box">' + escapeHtml(code) + '</div>' +
+                '<div class="meta">この画面を閉じると二度と表示できません。本人確認が済んだ本人にだけ、安全な方法で伝えてください。このコードで対象アカウントのパスワードを変更できます。</div>' +
+                '<div class="row"><button class="button" data-copycode="' + escapeHtml(code) + '" type="button">コピー</button><button class="button-secondary" data-codeclose="1" type="button">閉じる（再表示不可）</button></div></div>';
+        }catch(error){ showToast(featError(error)); }
+    }
+
     async function onAdminClick(event){
         const target = event.target.closest("button");
         if(!target) return;
         if(target.dataset.back) return renderAdmin();
         if(target.dataset.adminRoom) return openAdminRoom(target.dataset.adminRoom,target.dataset.title);
+        if(target.dataset.reissue) return reissueRecovery(target.dataset.reissue,target.dataset.name);
+        if(target.dataset.copycode){
+            try{ await navigator.clipboard.writeText(target.dataset.copycode); showToast("コピーしました。"); }catch(_e){ showToast("コピーできませんでした。手動で選択してコピーしてください。"); }
+            return;
+        }
+        if(target.dataset.codeclose){ feat.adminView = "users"; return renderAdmin(); }
         if(target.dataset.decide){
             const approve = target.dataset.decide === "approve";
             const note = window.prompt(approve ? "削除の理由メモ（任意）" : "却下の理由（任意）","");
@@ -1339,7 +1387,30 @@ html,body{height:100%}
         }
     }
 
+    async function loadMySettings(){
+        try{
+            const mine = await requireClient().from(TABLES.profiles).select("read_receipts_enabled").eq("id",state.user.id).maybeSingle();
+            if(!mine.error && mine.data) el.readReceiptToggle.checked = mine.data.read_receipts_enabled !== false;
+            const notices = await requireClient().rpc("get_my_security_notices");
+            if(!notices.error && notices.data && notices.data.length){
+                const when = formatDate(notices.data[0].occurred_at);
+                el.securityBanner.textContent = "⚠️ " + when + " に、管理者があなたの復旧コードを再発行しました。心当たりがない場合は、すぐにパスワードを変更して運営に連絡してください。以前の復旧コードは使えません。";
+                el.securityBanner.hidden = false;
+                showToast("管理者により復旧コードが再発行されました（マイページで確認）。");
+            }
+        }catch(_e){}
+    }
+
     function startFeatures(){
+        loadMySettings();
+        el.readReceiptToggle.addEventListener("change",async () => {
+            const wanted = el.readReceiptToggle.checked;
+            try{
+                const result = await requireClient().rpc("set_my_read_receipts",{p_enabled:wanted});
+                if(result.error) throw result.error;
+                showToast(wanted ? "既読を相手に表示します。" : "既読を相手に表示しません。");
+            }catch(error){ el.readReceiptToggle.checked = !wanted; setStatus(featError(error),"error"); }
+        });
         el.myStatus.value = feat.manual;
         el.myStatus.addEventListener("change",() => { feat.manual = el.myStatus.value; try{ localStorage.setItem("are_manual_status",feat.manual); }catch(_e){} sendPresence(); });
         el.messages.addEventListener("click",onMessageAction);

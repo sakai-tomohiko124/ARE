@@ -90,6 +90,29 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .loading{opacity:.65;pointer-events:none}
 @media(max-width:800px){.app{grid-template-columns:minmax(0,1fr)}.sidebar{position:absolute;inset:0;z-index:2;display:flex}.main{display:none}.app.chat-open .sidebar{display:none}.app.chat-open .main{display:flex}.mobile-back{display:inline-block}.messages{padding:18px 12px}.message-row{max-width:92%}.chat-header{padding:12px}.composer{padding:12px}}
 @media(min-width:801px){.app{height:100dvh}.sidebar{width:320px}}
+.status-select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px;max-width:122px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:#6b7893}
+.dot.online{background:#5de0b0}.dot.busy{background:#ff7777}.dot.in_call{background:#b388ff}.dot.away{background:#ffcc66}
+.admin-tab{width:100%;margin-bottom:14px;background:#7a3d8f}.badge{background:#ff7777;color:#111;border-radius:99px;padding:0 7px;font-size:12px;margin-left:6px}.badge:empty{display:none}
+.message-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px;font-size:11px}
+.message-actions button{background:none;border:0;color:var(--muted);text-decoration:underline;padding:0}
+.message-actions .pending{color:#ffcc66}
+.bubble.edit{display:flex;flex-direction:column;gap:8px;white-space:normal}
+.edit-box{width:100%;min-height:70px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px}
+.edit-actions{display:flex;gap:8px;justify-content:flex-end}
+.schedule-panel{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px;margin-bottom:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.schedule-panel[hidden],.admin-panel[hidden],.admin-tab[hidden]{display:none}
+.schedule-panel input{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px}
+.schedule-list{flex-basis:100%;font-size:12px}.sched-item{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:4px 0}
+.admin-panel{position:fixed;inset:0;z-index:30;background:#0b1020;display:flex;flex-direction:column}
+.admin-panel>header{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
+.admin-note{flex:1;color:var(--muted);font-size:12px}
+.admin-panel [data-admin-view].active{border-color:var(--accent);color:var(--accent)}
+.admin-body{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.admin-card{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:10px 12px;overflow-wrap:anywhere}
+.admin-card .meta{color:var(--muted);font-size:12px}.admin-card .row{display:flex;gap:8px;margin-top:8px}
+button.admin-card{text-align:left;color:var(--text);width:100%}
+.admin-msg.deleted{opacity:.55}
 </style>
 </head>
 <body>
@@ -102,8 +125,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
         <div class="userbar">
             <div class="avatar" id="myAvatar">A</div>
             <div class="user-info"><strong id="myName">読み込み中...</strong><small id="myLoginStatus">接続を確認しています</small></div>
+            <select id="myStatus" class="status-select" aria-label="ステータス"><option value="online">🟢 オンライン</option><option value="busy">🔴 取り込み中</option><option value="in_call">📞 通話中</option><option value="away">🟡 待機中</option></select>
         </div>
         <div class="sidebar-content">
+            <button class="button admin-tab" id="adminTabButton" type="button" hidden>🛡️ 管理者パネル <span id="adminBadge" class="badge"></span></button>
             <div class="section-heading"><h2>🔎 おすすめユーザー</h2><button class="button-secondary" id="refreshUsersButton" type="button">更新</button></div>
             <input class="search" id="userSearch" type="search" placeholder="ユーザー名を検索..." autocomplete="off">
             <div class="user-list" id="recommendedUsers"><div class="empty-list">ユーザーを読み込んでいます...</div></div>
@@ -135,16 +160,30 @@ button:disabled{opacity:.45;cursor:not-allowed}
                 <input class="file-input" id="fileInput" type="file" multiple accept=".pdf,.docx,.xlsx,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation">
                 <label class="tool-button" for="videoInput">🎬 動画を選択</label>
                 <input class="file-input" id="videoInput" type="file" accept="video/*">
+                <button class="tool-button" id="scheduleButton" type="button" disabled>🕒 予約送信</button>
                 <span id="attachmentStatus" style="font-size:11px;color:var(--muted)"></span>
             </div>
+            <div class="schedule-panel" id="schedulePanel" hidden>
+                <label>送信日時 <input type="datetime-local" id="scheduleAt"></label>
+                <button class="button" id="scheduleSubmit" type="button">この日時に予約</button>
+                <button class="button-secondary" id="scheduleClose" type="button">閉じる</button>
+                <div id="scheduleList" class="schedule-list"></div>
+            </div>
             <div class="composer-bottom">
-                <textarea id="messageInput" maxlength="10000" placeholder="メッセージを入力...（Enterで送信、Shift+Enterで改行）" disabled></textarea>
+                <textarea id="messageInput" maxlength="2000" placeholder="メッセージを入力...（Enterで送信、Shift+Enterで改行）" disabled></textarea>
                 <button class="button" id="sendButton" type="button" disabled>送信</button>
             </div>
-            <div class="char-count"><span id="charCount">0</span> / 10,000文字</div>
+            <div class="char-count"><span id="charCount">0</span> / 2,000文字</div>
         </section>
     </main>
 </div>
+<section class="admin-panel" id="adminPanel" hidden aria-label="管理者パネル">
+    <header><b>🛡️ 管理者パネル</b><span class="admin-note">閲覧・承認の操作はすべて監査ログに記録されます</span>
+        <button class="button-secondary" data-admin-view="rooms" type="button">会話一覧</button>
+        <button class="button-secondary" data-admin-view="requests" type="button">削除申請</button>
+        <button class="button-secondary" id="adminClose" type="button">閉じる</button></header>
+    <div class="admin-body" id="adminBody"></div>
+</section>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
@@ -209,7 +248,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
             "refreshUsersButton","userSearch","recommendedUsers","refreshRoomsButton",
             "roomList","backButton","chatAvatar","chatTitle","chatSubtitle",
             "refreshMessagesButton","pageStatus","messages","imageInput","fileInput",
-            "videoInput","attachmentStatus","messageInput","sendButton","charCount","toast"
+            "videoInput","attachmentStatus","messageInput","sendButton","charCount","toast","myStatus","scheduleButton","schedulePanel","scheduleAt","scheduleSubmit","scheduleList","scheduleClose","adminTabButton","adminBadge","adminPanel","adminBody","adminClose"
         ].forEach((id) => el[id] = $(id));
     }
 
@@ -311,6 +350,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
         el.messageInput.disabled = !enabled;
         el.sendButton.disabled = !enabled;
         el.refreshMessagesButton.disabled = !enabled;
+        el.scheduleButton.disabled = !enabled;
+        if(!enabled) el.schedulePanel.hidden = true;
         if(!enabled) el.messageInput.value = "";
         updateCharCount();
     }
@@ -348,6 +389,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
             bindEvents();
             await Promise.all([loadRecommendations(),loadRooms()]);
             setStatus("チャットの準備ができました。ユーザーを選択してください。","success");
+            startFeatures();
 
             state.authSubscription = window.AREAuth.onAuthStateChange((event, sessionValue) => {
                 if(event === "SIGNED_OUT" || !sessionValue){
@@ -426,7 +468,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
             return '<button class="person" type="button" data-user-id="' + escapeHtml(profile.id) + '">' +
                 avatarHtml +
-                '<span class="person-text"><strong>' + escapeHtml(name) + '</strong><small>ユーザーを追加してチャット</small></span>' +
+                '<span class="person-text"><strong>' + escapeHtml(name) + '</strong><small>' + presenceHtml(profile) + '</small></span>' +
                 '<span class="add" aria-hidden="true">＋</span></button>';
         }).join("");
 
@@ -499,7 +541,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
             const active = state.currentRoom?.id === room.id ? " active" : "";
 
             return '<button class="room-item' + active + '" type="button" data-room-id="' + escapeHtml(room.id) + '">' +
-                avatarHtml + '<span class="person-text"><strong>' + escapeHtml(name) + '</strong><small>チャットを開く</small></span></button>';
+                avatarHtml + '<span class="person-text"><strong>' + escapeHtml(name) + '</strong><small>' + presenceHtml(room.partner) + '</small></span></button>';
         }).join("");
 
         el.roomList.querySelectorAll("[data-room-id]").forEach((button) => {
@@ -542,10 +584,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
         state.currentRoom = room;
         state.currentPartner = partner || room.partner || null;
         state.messages = [];
+        feat.partnerReadAt = null; feat.pending = new Set(); feat.editingId = null; el.schedulePanel.hidden = true;
 
         const name = profileDisplayName(state.currentPartner);
         el.chatTitle.textContent = name;
-        el.chatSubtitle.textContent = room.suspended_at ? "このチャットは停止中です" : "1対1チャット";
+        if(room.suspended_at){ el.chatSubtitle.textContent = "このチャットは停止中です"; }else{ updateHeaderPresence(); }
         setAvatar(el.chatAvatar,state.currentPartner);
         el.app.classList.add("chat-open");
 
@@ -560,11 +603,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
         renderRooms();
         subscribeToMessages();
         await loadMessages(false);
+        markRead(); loadPartnerRead();
         setStatus(suspended ? "このチャットルームは停止中です。" : "チャットに接続しました。",suspended ? "error" : "success");
         el.messageInput.focus();
     }
 
-    async function loadMessages(showFeedback){
+    async function loadMessages(showFeedback,quiet){
         if(!state.currentRoom || state.loadingMessages) return;
         state.loadingMessages = true;
         const requestedRoomId = state.currentRoom.id;
@@ -572,7 +616,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
         try{
             const result = await requireClient()
                 .from(TABLES.messages)
-                .select("id,room_id,sender_id,content,created_at")
+                .select("id,room_id,sender_id,content,created_at,edited_at")
                 .eq("room_id",state.currentRoom.id)
                 .order("created_at",{ascending:false})
                 .limit(500);
@@ -581,9 +625,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
             if(!state.currentRoom || state.currentRoom.id !== requestedRoomId) return;
             const loaded = (result.data || []).slice().reverse();
             const loadedIds = new Set(loaded.map((m) => m.id));
-            const arrived = state.messages.filter((m) => !loadedIds.has(m.id));
+            const newest = loaded.length ? new Date(loaded[loaded.length - 1].created_at).getTime() : 0;
+            const arrived = state.messages.filter((m) => !loadedIds.has(m.id) && new Date(m.created_at).getTime() > newest);
             state.messages = loaded.concat(arrived);
-            renderMessages(true);
+            await loadPending(requestedRoomId);
+            if(!state.currentRoom || state.currentRoom.id !== requestedRoomId) return;
+            renderMessages(!quiet);
             if(showFeedback) showToast("メッセージを更新しました。");
         }catch(error){
             console.error("Message loading error:",error);
@@ -611,7 +658,13 @@ button:disabled{opacity:.45;cursor:not-allowed}
                     state.messages.push(payload.new);
                     state.messages.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
                     renderMessages(true);
+                    markRead();
                 }
+            })
+            .on("postgres_changes",{event:"UPDATE",schema:"public",table:TABLES.messages,filter:"room_id=eq." + roomId},(payload) => {
+                if(!payload.new || feat.editingId !== null) return;
+                const index = state.messages.findIndex((message) => message.id === payload.new.id);
+                if(index >= 0 && !payload.new.deleted_at){ state.messages[index] = {...state.messages[index],...payload.new}; renderMessages(false); }
             })
             .subscribe((status) => {
                 if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
@@ -671,6 +724,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
             return;
         }
 
+        const prevTop = el.messages.scrollTop;
+        const stick = scrollToBottom || (el.messages.scrollHeight - prevTop - el.messages.clientHeight < 80);
+        const readAt = feat.partnerReadAt ? new Date(feat.partnerReadAt).getTime() : 0;
+
         el.messages.innerHTML = state.messages.map((message) => {
             const own = message.sender_id === state.user.id;
             const profile = own ? state.profile : state.currentPartner;
@@ -679,17 +736,33 @@ button:disabled{opacity:.45;cursor:not-allowed}
             const avatar = avatarUrl
                 ? '<div class="message-avatar"><img src="' + escapeHtml(safeHttpUrl(avatarUrl)) + '" alt=""></div>'
                 : '<div class="message-avatar">' + escapeHtml(shortName(name)) + '</div>';
+            const id = escapeHtml(message.id);
+            const item = parseMessageContent(message.content);
+            const editing = own && feat.editingId === message.id;
+
+            const body = editing
+                ? '<div class="bubble edit"><textarea class="edit-box" maxlength="2000">' + escapeHtml(item.text || "") + '</textarea><div class="edit-actions"><button type="button" class="button-secondary" data-act="cancel-edit" data-id="' + id + '">キャンセル</button><button type="button" class="button" data-act="save-edit" data-id="' + id + '">保存</button></div></div>'
+                : renderMessageContent(message.content);
+
+            let meta = escapeHtml(formatDate(message.created_at));
+            if(message.edited_at) meta += " ・編集済み";
+            if(own) meta += (readAt && readAt >= new Date(message.created_at).getTime()) ? " ・既読" : " ・送信済み";
+
+            let actions = "";
+            if(own && !editing){
+                actions = '<div class="message-actions">' +
+                    (item.type === "text" ? '<button type="button" data-act="edit" data-id="' + id + '">編集</button>' : '') +
+                    (feat.pending.has(message.id) ? '<span class="pending">削除申請中（管理者の承認待ち）</span>' : '<button type="button" data-act="del" data-id="' + id + '">削除申請</button>') +
+                    '</div>';
+            }
 
             return '<article class="message-row' + (own ? ' own' : '') + '">' +
                 avatar +
                 '<div class="message-body"><div class="message-sender">' + escapeHtml(name) + '</div>' +
-                renderMessageContent(message.content) +
-                '<div class="message-time">' + escapeHtml(formatDate(message.created_at)) + '</div></div></article>';
+                body + '<div class="message-time">' + meta + '</div>' + actions + '</div></article>';
         }).join("");
 
-        if(scrollToBottom){
-            el.messages.scrollTop = el.messages.scrollHeight;
-        }
+        el.messages.scrollTop = stick ? el.messages.scrollHeight : prevTop;
     }
 
     async function sendTextMessage(){
@@ -887,6 +960,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
         setBusy(el.logoutButton,true,"ログアウト中...");
         try{
+            feat.timers.forEach(clearInterval);
+            try{ await requireClient().rpc("set_my_presence",{p_status:"offline"}); }catch(_e){}
             cleanupSubscription();
             if(state.authSubscription){
                 state.authSubscription.unsubscribe();
@@ -899,6 +974,281 @@ button:disabled{opacity:.45;cursor:not-allowed}
             setStatus(getErrorMessage(error),"error");
             setBusy(el.logoutButton,false);
         }
+    }
+
+    // ===== 追加機能：在席状況 / 既読 / 編集・削除申請 / 予約送信 / 管理者パネル =====
+    const STATUS_LABELS = {online:"オンライン",busy:"取り込み中",in_call:"通話中",away:"待機中"};
+    const ONLINE_WINDOW_MS = 2 * 60 * 1000;
+    const IDLE_MS = 5 * 60 * 1000;
+    const FEAT_ERRORS = {
+        already_requested:"すでに削除を申請済みです。", not_allowed:"この操作はできません。", only_text_editable:"テキストのメッセージのみ編集できます。",
+        room_suspended:"このチャットは停止中です。", send_at_out_of_range:"送信日時は30秒後〜30日以内で指定してください。",
+        too_many_scheduled:"予約は最大50件までです。", forbidden:"管理者権限がありません。", message_length_invalid:"メッセージの長さが正しくありません。",
+        request_not_pending:"この申請はすでに処理されています。"
+    };
+    const feat = {manual:"online",lastActivity:Date.now(),timers:[],partnerReadAt:null,pending:new Set(),editingId:null,isAdmin:false,adminView:"rooms"};
+    try{ const saved = localStorage.getItem("are_manual_status"); if(STATUS_LABELS[saved]) feat.manual = saved; }catch(_e){}
+
+    function featError(error){
+        const text = String(error?.message || "");
+        for(const key in FEAT_ERRORS){ if(text.includes(key)) return FEAT_ERRORS[key]; }
+        return getErrorMessage(error);
+    }
+    function relativeAgo(ms){
+        const minutes = Math.floor(ms / 60000);
+        if(minutes < 1) return "1分未満前";
+        if(minutes < 60) return minutes + "分前";
+        const hours = Math.floor(minutes / 60);
+        return hours < 24 ? hours + "時間前" : Math.floor(hours / 24) + "日前";
+    }
+    function presenceOf(profile){
+        const seen = profile?.last_seen_at ? new Date(profile.last_seen_at).getTime() : 0;
+        const age = Date.now() - seen;
+        const status = profile?.presence_status;
+        if(!seen || age > ONLINE_WINDOW_MS || !STATUS_LABELS[status]){
+            return {cls:"offline",text:seen ? "オフライン（最終オンライン " + relativeAgo(age) + "）" : "オフライン"};
+        }
+        return {cls:status,text:STATUS_LABELS[status]};
+    }
+    function presenceHtml(profile){
+        const p = presenceOf(profile);
+        return '<span class="dot ' + p.cls + '"></span>' + escapeHtml(p.text);
+    }
+    function updateHeaderPresence(){
+        if(state.currentRoom && !state.currentRoom.suspended_at) el.chatSubtitle.innerHTML = presenceHtml(state.currentPartner);
+    }
+    async function sendPresence(){
+        let status = feat.manual;
+        if(status === "online" && Date.now() - feat.lastActivity > IDLE_MS) status = "away";
+        try{
+            const result = await requireClient().rpc("set_my_presence",{p_status:status});
+            if(result.error) throw result.error;
+        }catch(error){ console.warn("Presence update failed:",error); }
+    }
+    async function refreshPresence(){
+        const ids = [...new Set([...state.rooms.map((room) => room.partnerId),...state.recommendations.map((p) => p.id)].filter(Boolean))].slice(0,150);
+        if(!ids.length) return;
+        const result = await requireClient().from(TABLES.profiles).select("id,presence_status,last_seen_at").in("id",ids);
+        if(result.error) return;
+        const map = new Map((result.data || []).map((p) => [p.id,p]));
+        const apply = (p) => { const n = p && map.get(p.id); if(n){ p.presence_status = n.presence_status; p.last_seen_at = n.last_seen_at; } };
+        state.rooms.forEach((room) => apply(room.partner));
+        state.recommendations.forEach(apply);
+        apply(state.currentPartner);
+        renderRooms(); renderRecommendations(); updateHeaderPresence();
+    }
+    function onActivity(){
+        const wasIdle = Date.now() - feat.lastActivity > IDLE_MS;
+        feat.lastActivity = Date.now();
+        if(wasIdle) sendPresence();
+    }
+
+    async function markRead(){
+        if(!state.currentRoom || document.hidden) return;
+        try{ await requireClient().rpc("mark_room_read",{p_room_id:state.currentRoom.id}); }catch(_e){}
+    }
+    async function loadPartnerRead(){
+        if(!state.currentRoom || !state.currentPartner?.id) return;
+        const roomId = state.currentRoom.id;
+        const result = await requireClient().from(TABLES.members).select("last_read_at").eq("room_id",roomId).eq("user_id",state.currentPartner.id).maybeSingle();
+        if(result.error || state.currentRoom?.id !== roomId) return;
+        const value = result.data?.last_read_at || null;
+        if(value !== feat.partnerReadAt){ feat.partnerReadAt = value; if(feat.editingId === null) renderMessages(false); }
+    }
+    async function loadPending(roomId){
+        const result = await requireClient().from("message_delete_requests").select("message_id").eq("room_id",roomId).eq("requester_id",state.user.id).eq("status","pending");
+        if(!result.error && state.currentRoom?.id === roomId) feat.pending = new Set((result.data || []).map((row) => row.message_id));
+    }
+    async function pollRoom(){
+        if(!state.currentRoom || document.hidden) return;
+        if(feat.editingId === null) await loadMessages(false,true);
+        await Promise.all([loadPartnerRead(),loadScheduled()]);
+        markRead();
+    }
+
+    async function onMessageAction(event){
+        const button = event.target.closest("[data-act]");
+        if(!button) return;
+        const id = button.dataset.id, act = button.dataset.act;
+        const message = state.messages.find((m) => m.id === id);
+        if(!message || message.sender_id !== state.user.id) return;
+
+        if(act === "edit"){
+            feat.editingId = id; renderMessages(false);
+            const box = el.messages.querySelector("textarea.edit-box");
+            if(box){ box.focus(); box.setSelectionRange(box.value.length,box.value.length); }
+        }else if(act === "cancel-edit"){
+            feat.editingId = null; renderMessages(false);
+        }else if(act === "save-edit"){
+            const box = el.messages.querySelector("textarea.edit-box");
+            const text = box ? box.value : "";
+            if(!text.trim()){ showToast("メッセージを入力してください。"); return; }
+            if(Array.from(text).length > MAX_TEXT_LENGTH){ showToast("メッセージは2,000文字以内で入力してください。"); return; }
+            button.disabled = true;
+            try{
+                const result = await requireClient().rpc("edit_message",{p_message_id:id,p_content:JSON.stringify({type:"text",text})});
+                if(result.error) throw result.error;
+                feat.editingId = null;
+                await loadMessages(false,true);
+                showToast("編集しました。");
+            }catch(error){ button.disabled = false; setStatus(featError(error),"error"); }
+        }else if(act === "del"){
+            if(feat.pending.has(id)) return;
+            const reason = window.prompt("このメッセージの削除を管理者に申請します。\n理由（任意・500文字以内）を入力してください。","");
+            if(reason === null) return;
+            try{
+                const result = await requireClient().rpc("request_message_delete",{p_message_id:id,p_reason:reason.slice(0,500)});
+                if(result.error) throw result.error;
+                feat.pending.add(id); renderMessages(false);
+                showToast("削除を申請しました。管理者が承認すると削除されます。");
+            }catch(error){ setStatus(featError(error),"error"); }
+        }
+    }
+
+    function localInput(date){
+        const p = (n) => String(n).padStart(2,"0");
+        return date.getFullYear() + "-" + p(date.getMonth() + 1) + "-" + p(date.getDate()) + "T" + p(date.getHours()) + ":" + p(date.getMinutes());
+    }
+    function toggleSchedule(){
+        if(el.scheduleButton.disabled) return;
+        el.schedulePanel.hidden = !el.schedulePanel.hidden;
+        if(!el.schedulePanel.hidden){
+            el.scheduleAt.min = localInput(new Date(Date.now() + 60000));
+            if(!el.scheduleAt.value) el.scheduleAt.value = localInput(new Date(Date.now() + 10 * 60000));
+            loadScheduled();
+        }
+    }
+    async function scheduleSend(){
+        if(!state.currentRoom) return;
+        const text = el.messageInput.value;
+        if(!text.trim()){ showToast("予約するメッセージを入力欄に入力してください。"); return; }
+        if(Array.from(text).length > MAX_TEXT_LENGTH){ showToast("メッセージは2,000文字以内で入力してください。"); return; }
+        const when = new Date(el.scheduleAt.value);
+        if(isNaN(when.getTime()) || when.getTime() < Date.now() + 45000){ showToast("送信日時は1分以上先を指定してください。"); return; }
+        el.scheduleSubmit.disabled = true;
+        try{
+            const result = await requireClient().rpc("schedule_message",{p_room_id:state.currentRoom.id,p_content:JSON.stringify({type:"text",text}),p_send_at:when.toISOString()});
+            if(result.error) throw result.error;
+            el.messageInput.value = ""; updateCharCount();
+            showToast(formatDate(when.toISOString()) + " に送信を予約しました。");
+            await loadScheduled();
+        }catch(error){ setStatus(featError(error),"error"); }
+        finally{ el.scheduleSubmit.disabled = false; }
+    }
+    async function loadScheduled(){
+        if(!state.currentRoom) return;
+        const roomId = state.currentRoom.id;
+        const result = await requireClient().from("scheduled_messages").select("id,content,send_at").eq("room_id",roomId).eq("status","pending").order("send_at",{ascending:true});
+        if(result.error || state.currentRoom?.id !== roomId) return;
+        const rows = result.data || [];
+        el.scheduleList.innerHTML = rows.length
+            ? rows.map((row) => '<div class="sched-item"><span>' + escapeHtml(formatDate(row.send_at)) + '　' + escapeHtml(String(parseMessageContent(row.content).text || "").slice(0,40)) + '</span><button type="button" class="button-danger" data-cancel="' + escapeHtml(row.id) + '">取消</button></div>').join("")
+            : '<div class="empty-list">予約中のメッセージはありません。</div>';
+    }
+    async function onScheduleListClick(event){
+        const button = event.target.closest("[data-cancel]");
+        if(!button) return;
+        try{
+            const result = await requireClient().rpc("cancel_scheduled_message",{p_id:button.dataset.cancel});
+            if(result.error) throw result.error;
+            await loadScheduled();
+        }catch(error){ setStatus(featError(error),"error"); }
+    }
+
+    function attachmentText(content){
+        const item = parseMessageContent(content);
+        if(item.type === "text") return escapeHtml(item.text || "");
+        const url = safeHttpUrl(item.url);
+        const label = "[" + escapeHtml(item.type) + "] " + escapeHtml(item.name || "添付");
+        return url ? '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' + label + '</a>' : label;
+    }
+    async function checkAdmin(){
+        try{ const result = await requireClient().rpc("is_current_user_admin"); feat.isAdmin = result.data === true; }
+        catch(_e){ feat.isAdmin = false; }
+        el.adminTabButton.hidden = !feat.isAdmin;
+        if(feat.isAdmin){ refreshAdminBadge(); feat.timers.push(setInterval(refreshAdminBadge,30000)); }
+    }
+    async function refreshAdminBadge(){
+        const result = await requireClient().rpc("admin_list_delete_requests",{p_status:"pending"});
+        if(!result.error) el.adminBadge.textContent = result.data.length ? String(result.data.length) : "";
+    }
+    async function renderAdmin(){
+        el.adminBody.innerHTML = '<div class="empty-list">読み込み中...</div>';
+        document.querySelectorAll("[data-admin-view]").forEach((b) => b.classList.toggle("active",b.dataset.adminView === feat.adminView));
+        try{
+            const client = requireClient();
+            if(feat.adminView === "requests"){
+                const result = await client.rpc("admin_list_delete_requests",{p_status:"pending"});
+                if(result.error) throw result.error;
+                el.adminBody.innerHTML = result.data.length ? result.data.map((r) =>
+                    '<div class="admin-card"><div class="meta">' + escapeHtml(r.requester_name || "ユーザー") + ' ・ ' + escapeHtml(formatDate(r.created_at)) + '</div>' +
+                    '<div>' + attachmentText(r.message_content) + '</div><div class="meta">理由：' + escapeHtml(r.reason || "（なし）") + '</div>' +
+                    '<div class="row"><button class="button" data-decide="approve" data-id="' + escapeHtml(r.id) + '" type="button">承認して削除</button>' +
+                    '<button class="button-secondary" data-decide="reject" data-id="' + escapeHtml(r.id) + '" type="button">却下</button>' +
+                    '<button class="button-secondary" data-admin-room="' + escapeHtml(r.room_id) + '" type="button">会話を見る</button></div></div>').join("")
+                    : '<div class="empty-list">承認待ちの削除申請はありません。</div>';
+            }else{
+                const result = await client.rpc("admin_list_rooms",{p_limit:100});
+                if(result.error) throw result.error;
+                el.adminBody.innerHTML = result.data.length ? result.data.map((r) => {
+                    const title = (r.members || []).map((m) => m.name || "ユーザー").join(" ⇄ ");
+                    return '<button class="admin-card" data-admin-room="' + escapeHtml(r.room_id) + '" data-title="' + escapeHtml(title) + '" type="button"><b>' + escapeHtml(title) + '</b>' +
+                        (r.suspended_at ? ' <span class="pending">（停止中）</span>' : '') +
+                        '<div class="meta">' + escapeHtml(String(r.message_count)) + '件 ・ 最終：' + escapeHtml(r.last_message_at ? formatDate(r.last_message_at) : "なし") + '</div></button>';
+                }).join("") : '<div class="empty-list">会話はまだありません。</div>';
+            }
+        }catch(error){ el.adminBody.innerHTML = '<div class="empty-list">' + escapeHtml(featError(error)) + '</div>'; }
+    }
+    async function openAdminRoom(roomId,title){
+        el.adminBody.innerHTML = '<div class="empty-list">読み込み中...</div>';
+        try{
+            const result = await requireClient().rpc("admin_get_room_messages",{p_room_id:roomId,p_limit:300});
+            if(result.error) throw result.error;
+            const rows = result.data.slice().reverse();
+            el.adminBody.innerHTML = '<button class="button-secondary" data-back="1" type="button">← 一覧へ戻る</button><b>' + escapeHtml(title || "会話") + '</b>' +
+                (rows.length ? rows.map((m) => '<div class="admin-card admin-msg' + (m.deleted_at ? ' deleted' : '') + '"><div class="meta">' + escapeHtml(m.sender_name || "ユーザー") + ' ・ ' + escapeHtml(formatDate(m.created_at)) +
+                    (m.edited_at ? ' ・編集済み' : '') + (m.deleted_at ? ' ・削除済み' : '') + '</div><div>' + attachmentText(m.content) + '</div></div>').join("") : '<div class="empty-list">メッセージはありません。</div>');
+        }catch(error){ el.adminBody.innerHTML = '<div class="empty-list">' + escapeHtml(featError(error)) + '</div>'; }
+    }
+    async function onAdminClick(event){
+        const target = event.target.closest("button");
+        if(!target) return;
+        if(target.dataset.back) return renderAdmin();
+        if(target.dataset.adminRoom) return openAdminRoom(target.dataset.adminRoom,target.dataset.title);
+        if(target.dataset.decide){
+            const approve = target.dataset.decide === "approve";
+            const note = window.prompt(approve ? "削除の理由メモ（任意）" : "却下の理由（任意）","");
+            if(note === null) return;
+            target.disabled = true;
+            try{
+                const result = await requireClient().rpc("admin_decide_delete_request",{p_request_id:target.dataset.id,p_approve:approve,p_note:note});
+                if(result.error) throw result.error;
+                showToast(approve ? "削除しました。" : "却下しました。");
+                refreshAdminBadge(); renderAdmin();
+            }catch(error){ target.disabled = false; showToast(featError(error)); }
+        }
+    }
+
+    function startFeatures(){
+        el.myStatus.value = feat.manual;
+        el.myStatus.addEventListener("change",() => { feat.manual = el.myStatus.value; try{ localStorage.setItem("are_manual_status",feat.manual); }catch(_e){} sendPresence(); });
+        el.messages.addEventListener("click",onMessageAction);
+        el.scheduleButton.addEventListener("click",toggleSchedule);
+        el.scheduleClose.addEventListener("click",() => { el.schedulePanel.hidden = true; });
+        el.scheduleSubmit.addEventListener("click",scheduleSend);
+        el.scheduleList.addEventListener("click",onScheduleListClick);
+        el.adminTabButton.addEventListener("click",() => { el.adminPanel.hidden = false; renderAdmin(); });
+        el.adminClose.addEventListener("click",() => { el.adminPanel.hidden = true; });
+        el.adminPanel.addEventListener("click",(event) => {
+            const view = event.target.closest("[data-admin-view]");
+            if(view){ feat.adminView = view.dataset.adminView; renderAdmin(); return; }
+            onAdminClick(event);
+        });
+        ["mousemove","keydown","touchstart","click"].forEach((name) => window.addEventListener(name,onActivity,{passive:true}));
+        document.addEventListener("visibilitychange",() => { if(!document.hidden){ onActivity(); markRead(); } });
+        sendPresence(); refreshPresence();
+        feat.timers.push(setInterval(sendPresence,30000),setInterval(refreshPresence,30000),setInterval(pollRoom,8000));
+        checkAdmin();
     }
 
     initialize();

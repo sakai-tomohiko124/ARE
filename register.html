@@ -33,8 +33,12 @@
                 <label for="loginId">ログインID</label>
                 <input id="loginId" name="loginId" autocomplete="username" maxlength="80" required>
 
-                <label for="phoneNumber">電話番号（任意）</label>
+                <label for="phoneNumber">電話番号</label>
                 <input id="phoneNumber" name="phoneNumber" type="tel" autocomplete="tel" maxlength="30" placeholder="例：09012345678">
+
+                <label for="contactEmail">メールアドレス</label>
+                <input id="contactEmail" name="contactEmail" type="email" autocomplete="email" maxlength="254" placeholder="例：name@example.com">
+                <p class="field-help"><b>電話番号かメールアドレスのどちらか一方は必ず入力してください。</b>アカウントのトラブル時の本人確認・ご連絡にだけ使用し、他の利用者には表示されません（運営管理者のみ、必要時に確認できます）。</p>
 
                 <label for="password">パスワード</label>
                 <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>

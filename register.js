@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
         displayName: document.getElementById("displayName"),
         loginId: document.getElementById("loginId"),
         phoneNumber: document.getElementById("phoneNumber"),
+        contactEmail: document.getElementById("contactEmail"),
         password: document.getElementById("password"),
         confirmPassword: document.getElementById("confirmPassword"),
         button: document.getElementById("registerButton"),
@@ -38,12 +39,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const displayName = elements.displayName.value.trim();
         const loginId = elements.loginId.value.trim();
-        const phoneNumber = elements.phoneNumber.value.trim();
+        const phoneNumber = elements.phoneNumber.value.normalize("NFKC").replace(/[\s\-()]/g, "");
+        const contactEmail = elements.contactEmail.value.normalize("NFKC").trim().toLowerCase();
         const password = elements.password.value;
         const confirmPassword = elements.confirmPassword.value;
 
         if (!displayName || !loginId) {
             showStatus(elements.status, "表示名とログインIDを入力してください。", true);
+            return;
+        }
+
+        if (!phoneNumber && !contactEmail) {
+            showStatus(elements.status, "電話番号かメールアドレスのどちらか一方は必ず入力してください。", true);
+            elements.phoneNumber.focus();
+            return;
+        }
+
+        if (phoneNumber && !/^\+?[0-9]{9,15}$/.test(phoneNumber)) {
+            showStatus(elements.status, "電話番号の形式が正しくありません（例：09012345678）。", true);
+            elements.phoneNumber.focus();
+            return;
+        }
+
+        if (contactEmail && (contactEmail.length > 254 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contactEmail))) {
+            showStatus(elements.status, "メールアドレスの形式が正しくありません。", true);
+            elements.contactEmail.focus();
             return;
         }
 
@@ -68,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
         elements.recoveryPanel.hidden = true;
 
         try {
-            const result = await window.AREAuth.register(displayName, loginId, password, phoneNumber);
+            const result = await window.AREAuth.register(displayName, loginId, password, phoneNumber, contactEmail);
             const recoveryCode = findRecoveryCode(result);
 
             elements.password.value = "";

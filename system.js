@@ -167,10 +167,11 @@
         };
     }
 
-    async function register(displayName, loginId, password, phoneNumber) {
+    async function register(displayName, loginId, password, phoneNumber, contactEmail) {
         const normalizedDisplayName = String(displayName || "").trim();
         const normalizedLoginId = String(loginId || "").trim();
         const normalizedPhoneNumber = String(phoneNumber || "").trim();
+        const normalizedContactEmail = String(contactEmail || "").trim();
 
         if (!normalizedDisplayName) {
             throw new Error("表示名を入力してください。");
@@ -178,6 +179,10 @@
 
         if (!normalizedLoginId) {
             throw new Error("ログインIDを入力してください。");
+        }
+
+        if (!normalizedPhoneNumber && !normalizedContactEmail) {
+            throw new Error("電話番号かメールアドレスのどちらか一方は必ず入力してください。");
         }
 
         if (!password || String(password).length < 8) {
@@ -194,7 +199,8 @@
             displayName: normalizedDisplayName,
             loginId: normalizedLoginId,
             password: password,
-            phoneNumber: normalizedPhoneNumber
+            phoneNumber: normalizedPhoneNumber,
+            contactEmail: normalizedContactEmail
         });
     }
 

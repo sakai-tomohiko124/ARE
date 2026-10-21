@@ -848,8 +848,9 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
         try{
             const client = requireClient();
-            const safeName = file.name.replace(/[^\w.\-()ぁ-んァ-ヶ一-龠]/g,"_").slice(0,120) || "attachment";
-            const objectPath = state.currentRoom.id + "/" + state.user.id + "/" + crypto.randomUUID() + "-" + safeName;
+            // Storageのキーは英数字のみ（日本語などを含むと "Invalid key" になる）。表示名はメッセージ側に保持する。
+            const ext = fileExt(file);
+            const objectPath = state.currentRoom.id + "/" + state.user.id + "/" + crypto.randomUUID() + (ext ? "." + ext : "");
 
             const uploadResult = await client.storage.from(STORAGE_BUCKET).upload(objectPath,file,{
                 cacheControl:"3600",
@@ -864,7 +865,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
             const payload = {
                 type:kind,
-                name:file.name,
+                name:String(file.name || "attachment").slice(0,120),
                 url:signedResult.data.signedUrl,
                 path:objectPath,
                 mimeType:resolveMime(file),

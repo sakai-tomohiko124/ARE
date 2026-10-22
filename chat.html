@@ -213,6 +213,12 @@ html,body{height:100%}
 .person-wrap{display:flex;align-items:center;gap:6px}.person-wrap .person{flex:1;min-width:0}.person-wrap.is-hidden{opacity:.55}
 .hide-btn{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;white-space:nowrap}
 .chat-header #callAudioBtn,.chat-header #callVideoBtn{padding:8px 12px;min-width:44px}
+.grp-sec{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px}
+.grp-sec h4{margin:0;font-size:14px}.grp-item{display:flex;gap:8px;align-items:center;justify-content:space-between;font-size:14px;overflow-wrap:anywhere}
+.grp-bar{height:8px;border-radius:6px;background:var(--panel2);overflow:hidden}.grp-bar i{display:block;height:100%;background:var(--accent)}
+.grp-opt{display:flex;flex-direction:column;gap:2px;margin:4px 0}.grp-opt button{text-align:left}.sheet textarea{resize:vertical}
+.pick{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:8px}
+.pick label{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--text)}
 </style>
 </head>
 <body>
@@ -237,6 +243,10 @@ html,body{height:100%}
         </div>
         <div class="sidebar-content">
             <div class="profile-card pane-me"><div class="profile-text" id="profileText"></div><button class="button" id="profileEditButton" type="button">✏️ プロフィールを編集</button></div>
+            <div class="profile-card pane-me">
+                <div class="profile-text"><b>会話履歴の保存</b><div class="bio">30日を過ぎた会話は、ZIPファイルとしてこの端末に保存できます（添付ファイルの中身は含まれません）。</div></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="button" id="exportOldButton" type="button">30日より前をZIP保存</button><button class="button-secondary" id="exportAllButton" type="button">すべてZIP保存</button></div>
+            </div>
             <div class="pane pane-more">
                 <div class="section-heading"><h2>🧰 その他</h2></div>
                 <button class="admin-card more-item" data-extra="chatbot" type="button">🤖 AIチャットボット<small class="meta">よくある質問に自動で答えます</small></button>
@@ -253,7 +263,7 @@ html,body{height:100%}
                 <button class="button-secondary post-more" id="postMore" type="button" hidden>さらに読み込む</button>
             </div>
             <button class="button admin-tab pane-me" id="adminTabButton" type="button" hidden>🛡️ 管理者パネル <span id="adminBadge" class="badge"></span></button>
-            <p class="me-note pane-me">ご注意：運営管理者は、安全管理・不正対策のため会話内容を閲覧できます。個人情報や機密情報は送信しないでください。</p>
+            <p class="me-note pane-me">ご注意：運営管理者は、安全管理・不正対策のため会話内容を閲覧でき、バックアップとして保存する場合があります。個人情報や機密情報は送信しないでください。</p>
             <p class="security-banner pane-me" id="securityBanner" hidden></p>
             <label class="me-toggle pane-me"><input type="checkbox" id="readReceiptToggle" checked> 既読を相手に表示する<small>オフにすると、あなたが読んでも相手には「既読」と表示されません。</small></label>
             <div class="pane pane-users">
@@ -262,7 +272,7 @@ html,body{height:100%}
             <div class="user-list" id="recommendedUsers"><div class="empty-list">ユーザーを読み込んでいます...</div></div>
             </div>
             <div class="pane pane-chats">
-            <div class="section-heading"><h2>💬 チャット</h2><button class="button-secondary" id="refreshRoomsButton" type="button">更新</button></div>
+            <div class="section-heading"><h2>💬 チャット</h2><button class="button-secondary" id="newGroupButton" type="button">👥 グループ作成</button><button class="button-secondary" id="refreshRoomsButton" type="button">更新</button></div>
             <div class="room-list" id="roomList"><div class="empty-list">チャットを読み込んでいます...</div></div>
             </div>
         </div>
@@ -313,7 +323,8 @@ html,body{height:100%}
     <header><b>🛡️ 管理者パネル</b><span class="admin-note">閲覧・承認の操作はすべて監査ログに記録されます</span>
         <button class="button-secondary" data-admin-view="rooms" type="button">会話一覧</button>
         <button class="button-secondary" data-admin-view="requests" type="button">削除申請</button>
-        <button class="button-secondary" data-admin-view="users" type="button">復旧コード</button>
+        <button class="button-secondary" data-admin-view="users" type="button">ユーザー管理</button>
+        <button class="button-secondary" data-admin-view="backup" type="button">バックアップ</button>
         <button class="button-secondary" id="adminClose" type="button">閉じる</button></header>
     <div class="admin-body" id="adminBody"></div>
 </section>
@@ -384,7 +395,7 @@ html,body{height:100%}
             "refreshUsersButton","userSearch","recommendedUsers","refreshRoomsButton",
             "roomList","backButton","chatAvatar","chatTitle","chatSubtitle",
             "refreshMessagesButton","pageStatus","messages","imageInput","fileInput",
-            "videoInput","attachmentStatus","messageInput","sendButton","charCount","toast","postFilter","toggleHiddenUsers","postBody","postImage","postImageName","postSubmit","postFeed","postMore","postsRefresh","profileText","profileEditButton","profileModal","profileSheet","sidebar","rail","readReceiptToggle","securityBanner","myStatus","scheduleButton","schedulePanel","scheduleAt","scheduleSubmit","scheduleList","scheduleClose","adminTabButton","adminBadge","adminPanel","adminBody","adminClose"
+            "videoInput","attachmentStatus","messageInput","sendButton","charCount","toast","newGroupButton","exportOldButton","exportAllButton","postFilter","toggleHiddenUsers","postBody","postImage","postImageName","postSubmit","postFeed","postMore","postsRefresh","profileText","profileEditButton","profileModal","profileSheet","sidebar","rail","readReceiptToggle","securityBanner","myStatus","scheduleButton","schedulePanel","scheduleAt","scheduleSubmit","scheduleList","scheduleClose","adminTabButton","adminBadge","adminPanel","adminBody","adminClose"
         ].forEach((id) => el[id] = $(id));
     }
 
@@ -677,11 +688,12 @@ html,body{height:100%}
                 profiles = profilesResult.data || [];
             }
 
+            profiles.forEach((p) => feat.known.set(p.id,p));
             state.rooms = roomRows.map((room) => {
                 const memberIds = (membersResult.data || []).filter((row) => row.room_id === room.id).map((row) => row.user_id);
-                const partnerId = memberIds.find((id) => id !== state.user.id) || null;
-                const partner = profiles.find((profile) => profile.id === partnerId) || null;
-                return {...room,partner,partnerId};
+                const partnerId = room.is_group ? null : (memberIds.find((id) => id !== state.user.id) || null);
+                const partner = room.is_group ? null : (profiles.find((profile) => profile.id === partnerId) || null);
+                return {...room,partner,partnerId,memberIds};
             });
 
             renderRooms();
@@ -695,20 +707,22 @@ html,body{height:100%}
 
     function renderRooms(){
         if(!state.rooms.length){
-            el.roomList.innerHTML = '<div class="empty-list">まだチャットがありません。<br>おすすめユーザーから相手を選択してください。</div>';
+            el.roomList.innerHTML = '<div class="empty-list">まだチャットがありません。<br>おすすめユーザーから相手を選ぶか、グループを作成してください。</div>';
             return;
         }
 
         el.roomList.innerHTML = state.rooms.map((room) => {
-            const name = profileDisplayName(room.partner);
-            const avatar = room.partner?.avatar_url || room.partner?.avatarUrl || "";
-            const avatarHtml = avatar
-                ? '<div class="avatar"><img src="' + escapeHtml(avatar) + '" alt=""></div>'
-                : '<div class="avatar">' + escapeHtml(shortName(name)) + '</div>';
+            const group = Boolean(room.is_group);
+            const name = group ? (room.name || "グループ") : profileDisplayName(room.partner);
+            const avatar = group ? "" : safeHttpUrl(room.partner?.avatar_url || room.partner?.avatarUrl || "");
+            const avatarHtml = group
+                ? '<div class="avatar">👥</div>'
+                : (avatar ? '<div class="avatar"><img src="' + escapeHtml(avatar) + '" alt=""></div>' : '<div class="avatar">' + escapeHtml(shortName(name)) + '</div>');
             const active = state.currentRoom?.id === room.id ? " active" : "";
+            const sub = group ? 'グループ ・ メンバー ' + (room.memberIds || []).length + '人' : presenceHtml(room.partner);
 
             return '<button class="room-item' + active + '" type="button" data-room-id="' + escapeHtml(room.id) + '">' +
-                avatarHtml + '<span class="person-text"><strong>' + escapeHtml(name) + '</strong><small>' + presenceHtml(room.partner) + '</small>' + statusLine(room.partner) + '</span></button>';
+                avatarHtml + '<span class="person-text"><strong>' + escapeHtml(name) + '</strong><small>' + sub + '</small>' + (group ? '' : statusLine(room.partner)) + '</span></button>';
         }).join("");
 
         el.roomList.querySelectorAll("[data-room-id]").forEach((button) => {
@@ -752,12 +766,15 @@ html,body{height:100%}
         state.currentRoom = room;
         state.currentPartner = partner || room.partner || null;
         state.messages = [];
-        feat.partnerReadAt = null; feat.pending = new Set(); feat.editingId = null; el.schedulePanel.hidden = true;
+        feat.partnerReadAt = null; feat.readTimes = []; feat.readKey = ""; feat.pending = new Set(); feat.editingId = null; el.schedulePanel.hidden = true;
 
-        const name = profileDisplayName(state.currentPartner);
+        const name = room.is_group ? (room.name || "グループ") : profileDisplayName(state.currentPartner);
         el.chatTitle.textContent = name;
         if(room.suspended_at){ el.chatSubtitle.textContent = "このチャットは停止中です"; }else{ updateHeaderPresence(); }
-        setAvatar(el.chatAvatar,state.currentPartner);
+        if(room.is_group){ el.chatAvatar.textContent = "👥"; }else{ setAvatar(el.chatAvatar,state.currentPartner); }
+        document.getElementById("callAudioBtn").hidden = Boolean(room.is_group);
+        document.getElementById("callVideoBtn").hidden = Boolean(room.is_group);
+        await ensureMemberProfiles(room);
         el.app.classList.add("chat-open");
 
         const suspended = Boolean(room.suspended_at);
@@ -852,7 +869,7 @@ html,body{height:100%}
         if(typeof content !== "string") return {type:"text",text:String(content ?? "")};
         try{
             const parsed = JSON.parse(content);
-            if(parsed && typeof parsed === "object" && ["text","image","file","video"].includes(parsed.type)){
+            if(parsed && typeof parsed === "object" && ["text","image","file","video","poll"].includes(parsed.type)){
                 return parsed;
             }
         }catch(_error){}
@@ -864,6 +881,9 @@ html,body{height:100%}
 
         if(item.type === "text"){
             return '<div class="bubble">' + escapeHtml(item.text || "") + '</div>';
+        }
+        if(item.type === "poll"){
+            return '<div class="bubble">📊 <b>アンケート</b><br>' + escapeHtml(item.question || "") + '<br><button type="button" class="button-secondary" data-openpoll="' + escapeHtml(item.pollId || "") + '">回答・結果を見る</button></div>';
         }
 
         const url = item.url || "";
@@ -898,7 +918,7 @@ html,body{height:100%}
 
         el.messages.innerHTML = state.messages.map((message) => {
             const own = message.sender_id === state.user.id;
-            const profile = own ? state.profile : state.currentPartner;
+            const profile = own ? state.profile : (feat.known.get(message.sender_id) || state.currentPartner);
             const name = own ? "あなた" : profileDisplayName(profile);
             const avatarUrl = profile?.avatar_url || profile?.avatarUrl || "";
             const avatar = avatarUrl
@@ -914,7 +934,11 @@ html,body{height:100%}
 
             let meta = escapeHtml(formatDate(message.created_at));
             if(message.edited_at) meta += " ・編集済み";
-            if(own) meta += (readAt && readAt >= new Date(message.created_at).getTime()) ? " ・既読" : " ・送信済み";
+            if(own){
+                const created = new Date(message.created_at).getTime();
+                const readers = feat.readTimes.filter((t) => t >= created).length;
+                meta += readers > 0 ? (state.currentRoom?.is_group ? " ・既読 " + readers : " ・既読") : " ・送信済み";
+            }
 
             let actions = "";
             if(own && !editing){
@@ -1153,12 +1177,15 @@ html,body{height:100%}
         room_suspended:"このチャットは停止中です。", send_at_out_of_range:"送信日時は30秒後〜30日以内で指定してください。",
         too_many_scheduled:"予約は最大50件までです。", forbidden:"管理者権限がありません。", message_length_invalid:"メッセージの長さが正しくありません。",
         request_not_pending:"この申請はすでに処理されています。",
+        group_name_invalid:"グループ名は1〜40文字で入力してください。", group_members_invalid:"メンバーは1〜49人まで選んでください。", notice_too_long:"注意事項は500文字以内です。",
+        link_title_invalid:"リンクの名前は1〜60文字で入力してください。", link_url_invalid:"リンクは https:// で始まるURLを入力してください。", too_many_links:"リンクは20件までです。",
+        poll_question_invalid:"質問は1〜100文字で入力してください。", poll_options_invalid:"選択肢は2〜6個（各50文字以内）で入力してください。",
         post_too_long:"投稿は500文字以内で入力してください。", post_empty:"投稿の内容を入力してください。", invalid_image_path:"画像の保存先が正しくありません。",
         bio_too_long:"自己紹介は150文字以内です。", status_too_long:"ステータスメッセージは60文字以内です。", invalid_avatar_url:"アイコン画像のURLが正しくありません。", invalid_display_name:"表示名は1〜30文字で入力してください。",
         verification_note_required:"本人確認の方法を5文字以上で入力してください。", user_not_found:"対象のユーザーが見つかりません。",
         cannot_target_admin:"管理者アカウントは再発行の対象にできません。", rate_limited:"短時間に再発行しすぎです。時間をおいてください。"
     };
-    const feat = {manual:"online",lastActivity:Date.now(),timers:[],partnerReadAt:null,pending:new Set(),editingId:null,isAdmin:false,adminView:"rooms"};
+    const feat = {known:new Map(),readTimes:[],readKey:"",manual:"online",lastActivity:Date.now(),timers:[],partnerReadAt:null,pending:new Set(),editingId:null,isAdmin:false,adminView:"rooms"};
     try{ const saved = localStorage.getItem("are_manual_status"); if(STATUS_LABELS[saved]) feat.manual = saved; }catch(_e){}
 
     function featError(error){
@@ -1187,7 +1214,11 @@ html,body{height:100%}
         return '<span class="dot ' + p.cls + '"></span>' + escapeHtml(p.text);
     }
     function updateHeaderPresence(){
-        if(state.currentRoom && !state.currentRoom.suspended_at) el.chatSubtitle.innerHTML = presenceHtml(state.currentPartner);
+        if(state.currentRoom && !state.currentRoom.suspended_at){
+            el.chatSubtitle.innerHTML = state.currentRoom.is_group
+                ? 'メンバー ' + (state.currentRoom.memberIds || []).length + '人 ・ タップでグループ情報'
+                : presenceHtml(state.currentPartner);
+        }
     }
     async function sendPresence(){
         let status = feat.inCall ? "in_call" : feat.manual;
@@ -1220,12 +1251,19 @@ html,body{height:100%}
         try{ await requireClient().rpc("mark_room_read",{p_room_id:state.currentRoom.id}); }catch(_e){}
     }
     async function loadPartnerRead(){
-        if(!state.currentRoom || !state.currentPartner?.id) return;
+        if(!state.currentRoom) return;
         const roomId = state.currentRoom.id;
-        const result = await requireClient().rpc("get_partner_read_at",{p_room_id:roomId});
+        const result = await requireClient().rpc("get_room_reads",{p_room_id:roomId});
         if(result.error || state.currentRoom?.id !== roomId) return;
-        const value = result.data || null;
-        if(value !== feat.partnerReadAt){ feat.partnerReadAt = value; if(feat.editingId === null) renderMessages(false); }
+        const times = (result.data || []).map((row) => new Date(row.last_read_at).getTime()).filter(Number.isFinite).sort();
+        const key = times.join(",");
+        if(key !== feat.readKey){ feat.readKey = key; feat.readTimes = times; if(feat.editingId === null) renderMessages(false); }
+    }
+    async function ensureMemberProfiles(room){
+        const ids = (room.memberIds || []).filter((id) => id !== state.user.id && !feat.known.has(id));
+        if(!ids.length) return;
+        const result = await requireClient().from(TABLES.profiles).select("*").in("id",ids);
+        (result.data || []).forEach((p) => feat.known.set(p.id,p));
     }
     async function loadPending(roomId){
         const result = await requireClient().from("message_delete_requests").select("message_id").eq("room_id",roomId).eq("requester_id",state.user.id).eq("status","pending");
@@ -1239,6 +1277,8 @@ html,body{height:100%}
     }
 
     async function onMessageAction(event){
+        const pollBtn = event.target.closest("[data-openpoll]");
+        if(pollBtn){ openGroupInfo(pollBtn.dataset.openpoll); return; }
         const button = event.target.closest("[data-act]");
         if(!button) return;
         const id = button.dataset.id, act = button.dataset.act;
@@ -1350,7 +1390,9 @@ html,body{height:100%}
         document.querySelectorAll("[data-admin-view]").forEach((b) => b.classList.toggle("active",b.dataset.adminView === feat.adminView));
         try{
             const client = requireClient();
-            if(feat.adminView === "users"){
+            if(feat.adminView === "backup"){
+                await renderAdminBackup(client);
+            }else if(feat.adminView === "users"){
                 await renderAdminUsers(client);
             }else if(feat.adminView === "requests"){
                 const result = await client.rpc("admin_list_delete_requests",{p_status:"pending"});
@@ -1396,10 +1438,10 @@ html,body{height:100%}
     async function renderAdminUsers(client){
         const result = await client.rpc("admin_list_profiles");
         if(result.error) throw result.error;
-        el.adminBody.innerHTML = '<div class="admin-card meta">復旧コードを失くした利用者に対する再発行です。必ず本人確認を行ってから実行してください。新しいコードは画面に1回だけ表示され、保存されません。旧コードは無効になり、利用者本人にも再発行の通知が表示されます。</div>' +
+        el.adminBody.innerHTML = '<div class="row"><button class="button" id="adminCreateUser" type="button">＋ 新規アカウントを作成</button></div><div class="admin-card meta">復旧コードを失くした利用者に対する再発行です。必ず本人確認を行ってから実行してください。新しいコードは画面に1回だけ表示され、保存されません。旧コードは無効になり、利用者本人にも再発行の通知が表示されます。</div>' +
             (result.data.length ? result.data.map((u) =>
                 '<div class="admin-card"><b>' + escapeHtml(u.display_name || "ユーザー") + '</b> <span class="meta">ID：' + escapeHtml(u.login_id || "-") + (u.last_seen_at ? ' ・最終オンライン：' + escapeHtml(formatDate(u.last_seen_at)) : '') + '</span>' +
-                '<div class="row"><button class="button-secondary" data-contact="' + escapeHtml(u.user_id) + '" type="button">連絡先を表示（閲覧は記録されます）</button></div>' + (u.is_admin ? '<div class="meta">管理者アカウント（再発行不可）</div>' : '<div class="row"><button class="button-secondary" data-reissue="' + escapeHtml(u.user_id) + '" data-name="' + escapeHtml(u.display_name || "ユーザー") + '" type="button">復旧コードを再発行</button><button class="button-danger" data-deluser="' + escapeHtml(u.user_id) + '" data-name="' + escapeHtml(u.display_name || "ユーザー") + '" type="button">アカウントを削除</button></div>') + '</div>').join("")
+                '<div class="row"><button class="button-secondary" data-contact="' + escapeHtml(u.user_id) + '" type="button">連絡先を表示（閲覧は記録されます）</button></div>' + (u.is_admin ? '<div class="meta">管理者アカウント（再発行不可）</div>' : '<div class="row"><button class="button-secondary" data-edituser="' + escapeHtml(u.user_id) + '" type="button">編集</button><button class="button-secondary" data-reissue="' + escapeHtml(u.user_id) + '" data-name="' + escapeHtml(u.display_name || "ユーザー") + '" type="button">復旧コードを再発行</button><button class="button-danger" data-deluser="' + escapeHtml(u.user_id) + '" data-name="' + escapeHtml(u.display_name || "ユーザー") + '" type="button">アカウントを削除</button></div>') + '</div>').join("")
                 : '<div class="empty-list">ユーザーがいません。</div>');
     }
     async function reissueRecovery(userId,name){
@@ -1433,6 +1475,8 @@ html,body{height:100%}
             }catch(error){ showToast(featError(error)); }
             return;
         }
+        if(target.id === "adminCreateUser") return openCreateUser();
+        if(target.dataset.edituser) return openEditUser(target.dataset.edituser);
         if(target.dataset.deluser) return deleteAccount(target.dataset.deluser,target.dataset.name);
         if(target.dataset.reissue) return reissueRecovery(target.dataset.reissue,target.dataset.name);
         if(target.dataset.copycode){
@@ -1460,10 +1504,12 @@ html,body{height:100%}
             if(!mine.error && mine.data) el.readReceiptToggle.checked = mine.data.read_receipts_enabled !== false;
             const notices = await requireClient().rpc("get_my_security_notices");
             if(!notices.error && notices.data && notices.data.length){
-                const when = formatDate(notices.data[0].occurred_at);
-                el.securityBanner.textContent = "⚠️ " + when + " に、管理者があなたの復旧コードを再発行しました。心当たりがない場合は、すぐにパスワードを変更して運営に連絡してください。以前の復旧コードは使えません。";
+                const notice = notices.data[0];
+                const when = formatDate(notice.occurred_at);
+                const what = notice.kind === "password_reset_by_admin" ? "パスワードを再設定" : "復旧コードを再発行";
+                el.securityBanner.textContent = "⚠️ " + when + " に、管理者があなたの" + what + "しました。心当たりがない場合は、すぐに運営に連絡してください。";
                 el.securityBanner.hidden = false;
-                showToast("管理者により復旧コードが再発行されました（マイページで確認）。");
+                showToast("管理者により" + what + "されました（マイページで確認）。");
             }
         }catch(_e){}
     }
@@ -1549,6 +1595,8 @@ html,body{height:100%}
         }catch(error){ button.disabled = false; showToast(featError(error)); }
     }
     async function onSheetClick(event){
+        const copy = event.target.closest("[data-copycode]");
+        if(copy){ try{ await navigator.clipboard.writeText(copy.dataset.copycode); showToast("コピーしました。"); }catch(_e){ showToast("手動で選択してコピーしてください。"); } return; }
         if(event.target === el.profileModal){ closeSheet(); return; }
         const button = event.target.closest("[data-pm]");
         if(!button) return;
@@ -1720,7 +1768,262 @@ html,body{height:100%}
         }catch(error){ button.disabled = false; showToast(featError(error)); }
     }
 
+
+    // ===== グループチャット（名称・注意事項・リンク・アンケート） =====
+    function pickList(excludeIds){
+        const people = state.recommendations.filter((p) => !excludeIds.includes(p.id));
+        return people.length ? '<div class="pick">' + people.map((p) => '<label><input type="checkbox" data-pick="' + escapeHtml(p.id) + '"> ' + escapeHtml(profileDisplayName(p)) + '</label>').join("") + '</div>' : '<div class="meta">選べるユーザーがいません。</div>';
+    }
+    function pickedIds(){ return [...el.profileSheet.querySelectorAll("[data-pick]:checked")].map((i) => i.dataset.pick); }
+    function openGroupCreator(){
+        openSheet('<h3 style="margin:0">👥 グループを作成</h3>' +
+            '<label for="gName">グループ名（40文字まで）</label><input id="gName" type="text" maxlength="40">' +
+            '<label for="gNotice">注意事項（任意・500文字まで）</label><textarea id="gNotice" rows="3" maxlength="500" placeholder="例：個人情報は書かないでください"></textarea>' +
+            '<label>メンバーを選ぶ（1人以上）</label>' + pickList([]) +
+            '<div class="row"><button type="button" class="button-secondary" data-pm="close">キャンセル</button><button type="button" class="button" data-g="create">作成</button></div>');
+    }
+    async function openGroupInfo(focusPollId){
+        const room = state.currentRoom;
+        if(!room || !room.is_group){ return; }
+        openSheet('<div class="empty-list">読み込み中...</div>');
+        await renderGroupInfo(room.id,focusPollId);
+    }
+    async function renderGroupInfo(roomId,focusPollId){
+        const client = requireClient();
+        const room = state.rooms.find((r) => r.id === roomId);
+        if(!room) return;
+        const owner = room.created_by === state.user.id;
+        const [links,polls] = await Promise.all([
+            client.from("room_links").select("id,title,url").eq("room_id",roomId).order("created_at"),
+            client.from("polls").select("id,question,created_by,closed_at").eq("room_id",roomId).order("created_at",{ascending:false}).limit(10)]);
+        await ensureMemberProfiles(room);
+        const pollHtml = [];
+        for(const poll of (polls.data || [])){
+            const res = await client.rpc("get_poll_results",{p_poll_id:poll.id});
+            const rows = res.data || [], total = rows.reduce((s,r) => s + Number(r.votes),0);
+            const mine = rows.find((r) => r.mine);
+            pollHtml.push('<div class="admin-card" id="poll-' + escapeHtml(poll.id) + '"' + (poll.id === focusPollId ? ' style="border-color:var(--accent)"' : '') + '><b>' + escapeHtml(poll.question) + '</b>' + (poll.closed_at ? ' <span class="meta">（締切済み）</span>' : '') +
+                rows.map((r) => '<div class="grp-opt"><button type="button" class="' + (r.mine ? 'button' : 'button-secondary') + '" ' + (poll.closed_at ? 'disabled' : 'data-g="vote" data-poll="' + escapeHtml(poll.id) + '" data-opt="' + escapeHtml(r.option_id) + '"') + '>' + escapeHtml(r.label) + (r.mine ? ' ✓' : '') + '　' + r.votes + '票</button><div class="grp-bar"><i style="width:' + (total ? Math.round(Number(r.votes) / total * 100) : 0) + '%"></i></div></div>').join("") +
+                '<div class="meta">' + total + '票' + (mine ? ' ・ あなたの回答：' + escapeHtml(mine.label) : '') + '</div>' +
+                ((!poll.closed_at && (owner || poll.created_by === state.user.id)) ? '<button type="button" class="button-secondary" data-g="closepoll" data-poll="' + escapeHtml(poll.id) + '">締め切る</button>' : '') + '</div>');
+        }
+        const members = (room.memberIds || []).map((id) => id === state.user.id ? "あなた" : profileDisplayName(feat.known.get(id))).join("、");
+        openSheet('<h3 style="margin:0">👥 ' + escapeHtml(room.name || "グループ") + '</h3><div class="meta">メンバー ' + (room.memberIds || []).length + '人' + (owner ? ' ・ あなたが管理者です' : '') + '</div>' +
+            '<div class="grp-sec"><h4>📌 注意事項</h4>' + (owner
+                ? '<input id="gEditName" type="text" maxlength="40" value="' + escapeHtml(room.name || "") + '"><textarea id="gEditNotice" rows="3" maxlength="500">' + escapeHtml(room.notice || "") + '</textarea><button type="button" class="button" data-g="saveinfo">名前と注意事項を保存</button>'
+                : '<div style="white-space:pre-wrap;overflow-wrap:anywhere">' + (room.notice ? escapeHtml(room.notice) : '<span class="meta">注意事項はありません。</span>') + '</div>') + '</div>' +
+            '<div class="grp-sec"><h4>🔗 参考資料</h4>' + ((links.data || []).length ? links.data.map((l) => { const u = safeHttpUrl(l.url); return '<div class="grp-item"><span>' + (u ? '<a href="' + escapeHtml(u) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(l.title) + '</a>' : escapeHtml(l.title)) + '</span>' + (owner ? '<button type="button" class="hide-btn" data-g="rmlink" data-id="' + escapeHtml(l.id) + '">削除</button>' : '') + '</div>'; }).join("") : '<div class="meta">リンクはありません。</div>') +
+                (owner ? '<input id="gLinkTitle" type="text" maxlength="60" placeholder="リンクの名前"><input id="gLinkUrl" type="text" maxlength="500" placeholder="https://..."><button type="button" class="button-secondary" data-g="addlink">リンクを追加</button>' : '') + '</div>' +
+            '<div class="grp-sec"><h4>📊 アンケート</h4>' + (pollHtml.join("") || '<div class="meta">アンケートはありません。</div>') +
+                '<input id="gPollQ" type="text" maxlength="100" placeholder="質問（例：集合はいつ？）"><textarea id="gPollOpts" rows="3" placeholder="選択肢を1行に1つ（2〜6個）"></textarea><button type="button" class="button-secondary" data-g="newpoll">アンケートを作成してチャットに投稿</button></div>' +
+            '<div class="grp-sec"><h4>👤 メンバー</h4><div style="overflow-wrap:anywhere">' + escapeHtml(members) + '</div>' +
+                (owner ? '<label>メンバーを追加</label>' + pickList(room.memberIds || []) + '<button type="button" class="button-secondary" data-g="addmembers">選んだ人を追加</button>' : '') + '</div>' +
+            '<div class="row"><button type="button" class="button-danger" data-g="leave">グループを退出</button><button type="button" class="button-secondary" data-pm="close">閉じる</button></div>');
+        if(focusPollId){ const t = document.getElementById("poll-" + focusPollId); if(t) t.scrollIntoView({block:"center"}); }
+    }
+    async function onGroupAction(event){
+        const b = event.target.closest("[data-g]");
+        if(!b) return;
+        const client = requireClient(), act = b.dataset.g, room = state.currentRoom;
+        const val = (id) => (document.getElementById(id)?.value || "");
+        b.disabled = true;
+        try{
+            if(act === "create"){
+                const ids = pickedIds();
+                const r = await client.rpc("create_group",{p_name:val("gName"),p_member_ids:ids,p_notice:val("gNotice")});
+                if(r.error) throw r.error;
+                closeSheet(); await loadRooms();
+                const created = state.rooms.find((x) => x.id === r.data);
+                if(created) await selectRoom(created,null);
+                showToast("グループを作成しました。");
+                return;
+            }
+            if(!room) return;
+            if(act === "saveinfo"){ const r = await client.rpc("update_group_info",{p_room_id:room.id,p_name:val("gEditName"),p_notice:val("gEditNotice")}); if(r.error) throw r.error; await loadRooms(); const fresh = state.rooms.find((x) => x.id === room.id); if(fresh){ state.currentRoom = fresh; el.chatTitle.textContent = fresh.name; } showToast("保存しました。"); }
+            else if(act === "addlink"){ const r = await client.rpc("add_room_link",{p_room_id:room.id,p_title:val("gLinkTitle"),p_url:val("gLinkUrl")}); if(r.error) throw r.error; }
+            else if(act === "rmlink"){ const r = await client.rpc("remove_room_link",{p_link_id:b.dataset.id}); if(r.error) throw r.error; }
+            else if(act === "newpoll"){
+                const options = val("gPollOpts").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+                const r = await client.rpc("create_poll",{p_room_id:room.id,p_question:val("gPollQ"),p_options:options});
+                if(r.error) throw r.error;
+                await sendMessagePayload({type:"poll",pollId:r.data,question:val("gPollQ").trim()});
+            }
+            else if(act === "vote"){ const r = await client.rpc("vote_poll",{p_poll_id:b.dataset.poll,p_option_id:b.dataset.opt}); if(r.error) throw r.error; }
+            else if(act === "closepoll"){ const r = await client.rpc("close_poll",{p_poll_id:b.dataset.poll}); if(r.error) throw r.error; }
+            else if(act === "addmembers"){ const ids = pickedIds(); if(!ids.length){ showToast("追加する人を選んでください。"); b.disabled = false; return; } const r = await client.rpc("add_group_members",{p_room_id:room.id,p_member_ids:ids}); if(r.error) throw r.error; await loadRooms(); const fresh = state.rooms.find((x) => x.id === room.id); if(fresh) state.currentRoom = fresh; updateHeaderPresence(); }
+            else if(act === "leave"){
+                if(!window.confirm("このグループを退出しますか？")) { b.disabled = false; return; }
+                const r = await client.rpc("leave_group",{p_room_id:room.id}); if(r.error) throw r.error;
+                closeSheet(); cleanupSubscription(); state.currentRoom = null; state.currentPartner = null; el.app.classList.remove("chat-open"); setChatEnabled(false); await loadRooms(); showToast("グループを退出しました。"); return;
+            }
+            await renderGroupInfo(room.id,act === "newpoll" ? undefined : undefined);
+        }catch(error){ b.disabled = false; showToast(featError(error)); }
+    }
+
+    // ===== 会話履歴のZIP保存（端末に保存。サーバー側の履歴は削除しません） =====
+    const crcTable = (() => { const t = new Uint32Array(256); for(let n = 0; n < 256; n++){ let v = n; for(let k = 0; k < 8; k++) v = v & 1 ? 0xEDB88320 ^ (v >>> 1) : v >>> 1; t[n] = v >>> 0; } return t; })();
+    function crc32(bytes){ let c = 0xFFFFFFFF; for(let i = 0; i < bytes.length; i++) c = crcTable[(c ^ bytes[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+    function makeZip(files){
+        const enc = new TextEncoder(), chunks = [], central = []; let offset = 0;
+        const now = new Date(), dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1), dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+        const u16 = (v) => new Uint8Array([v & 255,(v >> 8) & 255]), u32 = (v) => new Uint8Array([v & 255,(v >> 8) & 255,(v >> 16) & 255,(v >>> 24) & 255]);
+        const cat = (...arr) => { const out = new Uint8Array(arr.reduce((s,a) => s + a.length,0)); let p = 0; arr.forEach((a) => { out.set(a,p); p += a.length; }); return out; };
+        for(const f of files){
+            const name = enc.encode(f.name), data = f.data, crc = crc32(data);
+            const local = cat(u32(0x04034b50),u16(20),u16(0x0800),u16(0),u16(dosTime),u16(dosDate),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name,data);
+            central.push(cat(u32(0x02014b50),u16(20),u16(20),u16(0x0800),u16(0),u16(dosTime),u16(dosDate),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name));
+            chunks.push(local); offset += local.length;
+        }
+        const cd = cat(...central);
+        return new Blob([...chunks,cd,cat(u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(cd.length),u32(offset),u16(0))],{type:"application/zip"});
+    }
+    const exportKey = () => "are_export_last_" + state.user.id;
+    function contentLine(content){
+        const item = parseMessageContent(content);
+        if(item.type === "text") return item.text || "";
+        if(item.type === "poll") return "[アンケート] " + (item.question || "");
+        return "[" + item.type + "] " + (item.name || "添付ファイル");
+    }
+    async function exportHistory(mode){
+        const client = requireClient();
+        const cutoff = new Date(Date.now() - 30 * 86400000).toISOString();
+        let since = null;
+        try{ since = mode === "old" ? localStorage.getItem(exportKey()) : null; }catch(_e){}
+        const files = [], used = new Set();
+        el.exportOldButton.disabled = el.exportAllButton.disabled = true;
+        try{
+            for(const room of state.rooms){
+                await ensureMemberProfiles(room);
+                const lines = []; let from = 0;
+                for(;;){
+                    let q = client.from(TABLES.messages).select("sender_id,content,created_at").eq("room_id",room.id).order("created_at",{ascending:true}).range(from,from + 999);
+                    if(mode === "old") q = q.lt("created_at",cutoff);
+                    if(since) q = q.gt("created_at",since);
+                    const r = await q; if(r.error) throw r.error;
+                    (r.data || []).forEach((m) => {
+                        const who = m.sender_id === state.user.id ? "あなた" : profileDisplayName(feat.known.get(m.sender_id));
+                        lines.push("[" + new Date(m.created_at).toLocaleString("ja-JP") + "] " + who + "：" + contentLine(m.content).replace(/\r?\n/g,"\n    "));
+                    });
+                    if(!r.data || r.data.length < 1000) break;
+                    from += 1000;
+                }
+                if(!lines.length) continue;
+                const base = (room.is_group ? room.name : profileDisplayName(room.partner)).replace(/[\\/:*?"<>|]/g,"_").slice(0,40) || "chat";
+                let name = base + ".txt", i = 2; while(used.has(name)) name = base + "_" + (i++) + ".txt"; used.add(name);
+                files.push({name:name,data:new TextEncoder().encode("\uFEFF" + (room.is_group ? "グループ：" : "相手：") + (room.is_group ? room.name : profileDisplayName(room.partner)) + "\n" + "保存日時：" + new Date().toLocaleString("ja-JP") + "\n\n" + lines.join("\n") + "\n")});
+            }
+            if(!files.length){ showToast("保存する履歴はありません。"); return false; }
+            const d = new Date(), stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2,"0") + String(d.getDate()).padStart(2,"0");
+            const url = URL.createObjectURL(makeZip(files));
+            const a = document.createElement("a"); a.href = url; a.download = "ARE会話履歴_" + stamp + ".zip"; document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url),60000);
+            try{ localStorage.setItem(exportKey(),mode === "old" ? cutoff : new Date().toISOString()); }catch(_e){}
+            showToast("会話履歴をZIPで保存しました。");
+            return true;
+        }catch(error){ showToast(featError(error)); return false; }
+        finally{ el.exportOldButton.disabled = el.exportAllButton.disabled = false; }
+    }
+    async function maybePromptExport(){
+        try{
+            const today = new Date().toISOString().slice(0,10);
+            if(localStorage.getItem("are_export_prompt_day") === today) return;
+            const since = localStorage.getItem(exportKey());
+            const cutoff = new Date(Date.now() - 30 * 86400000).toISOString();
+            let q = requireClient().from(TABLES.messages).select("id",{count:"exact",head:true}).lt("created_at",cutoff);
+            if(since) q = q.gt("created_at",since);
+            const r = await q;
+            if(r.error || !r.count) return;
+            localStorage.setItem("are_export_prompt_day",today);
+            if(window.confirm("30日を過ぎた会話履歴が " + r.count + " 件あります。\nZIPファイルとして、この端末に保存しますか？\n（サーバー上の履歴は消えません）")) await exportHistory("old");
+        }catch(_e){}
+    }
+
+    // ===== 管理者：アカウントの作成・編集 / Googleドライブ連携 =====
+    function userForm(prefix,v){
+        return (v.loginId !== undefined ? '<label>ログインID</label><input id="' + prefix + 'Id" type="text" maxlength="50" autocomplete="off">' : '') +
+            '<label>表示名（30文字まで）</label><input id="' + prefix + 'Name" type="text" maxlength="30" value="' + escapeHtml(v.name || "") + '">' +
+            '<label>ステータスメッセージ</label><input id="' + prefix + 'Status" type="text" maxlength="60" value="' + escapeHtml(v.status || "") + '">' +
+            '<label>自己紹介</label><textarea id="' + prefix + 'Bio" rows="2" maxlength="150">' + escapeHtml(v.bio || "") + '</textarea>' +
+            '<label>電話番号（電話かメールのどちらかは必須）</label><input id="' + prefix + 'Phone" type="tel" maxlength="30" value="' + escapeHtml(v.phone || "") + '">' +
+            '<label>メールアドレス</label><input id="' + prefix + 'Email" type="email" maxlength="254" value="' + escapeHtml(v.email || "") + '">';
+    }
+    function openCreateUser(){
+        openSheet('<h3 style="margin:0">＋ 新規アカウントを作成</h3>' + userForm("cu",{loginId:""}).replace('<label>ログインID</label>','<label>ログインID</label>') +
+            '<label>初期パスワード（8文字以上）</label><input id="cuPass" type="text" maxlength="72" autocomplete="off">' +
+            '<div class="meta">作成後に表示される復旧コードと一緒に本人へ渡し、本人が「アカウント復旧」で自分のパスワードに変更するよう案内してください。</div>' +
+            '<div class="row"><button type="button" class="button-secondary" data-pm="close">キャンセル</button><button type="button" class="button" data-a="create">作成</button></div>');
+    }
+    async function openEditUser(userId){
+        openSheet('<div class="empty-list">読み込み中...</div>');
+        try{
+            const client = requireClient();
+            const [p,contact] = await Promise.all([client.from(TABLES.profiles).select("*").eq("id",userId).maybeSingle(),client.rpc("admin_get_user_contact",{p_user_id:userId})]);
+            if(p.error || !p.data) throw (p.error || new Error("ユーザーが見つかりません。"));
+            const row = (contact.data && contact.data[0]) || {};
+            openSheet('<h3 style="margin:0">✏️ アカウントを編集</h3><div class="meta">連絡先の閲覧は監査ログに記録されました。</div>' +
+                userForm("eu",{name:p.data.display_name,status:p.data.status_message,bio:p.data.bio,phone:row.phone_number,email:row.contact_email}) +
+                '<div class="row"><button type="button" class="button-secondary" data-a="resetpw" data-id="' + escapeHtml(userId) + '">パスワード再設定</button><button type="button" class="button-secondary" data-pm="close">キャンセル</button><button type="button" class="button" data-a="update" data-id="' + escapeHtml(userId) + '">保存</button></div>');
+        }catch(error){ closeSheet(); showToast(featError(error)); }
+    }
+    async function onAdminAction(event){
+        const b = event.target.closest("[data-a]");
+        if(!b) return;
+        const v = (id) => document.getElementById(id)?.value || "";
+        const call = (payload) => window.ARESystem.callAuthenticatedFunction("admin-manage-user",payload);
+        b.disabled = true;
+        try{
+            if(b.dataset.a === "create"){
+                const res = await call({action:"create",loginId:v("cuId"),password:v("cuPass"),displayName:v("cuName"),phoneNumber:v("cuPhone"),contactEmail:v("cuEmail")});
+                if(v("cuStatus") || v("cuBio")) await call({action:"update",userId:res.userId,statusMessage:v("cuStatus"),bio:v("cuBio")});
+                const code = escapeHtml(String(res.recoveryCode));
+                openSheet('<h3 style="margin:0">アカウントを作成しました</h3><div class="meta">この復旧コードは、この画面を閉じると二度と表示できません。本人にだけ安全な方法で伝えてください。</div><div class="code-box">' + code + '</div><div class="row"><button type="button" class="button" data-copycode="' + code + '">コピー</button><button type="button" class="button-secondary" data-pm="close">閉じる（再表示不可）</button></div>');
+                renderAdmin();
+            }else if(b.dataset.a === "update"){
+                await call({action:"update",userId:b.dataset.id,displayName:v("euName"),statusMessage:v("euStatus"),bio:v("euBio"),phoneNumber:v("euPhone"),contactEmail:v("euEmail")});
+                closeSheet(); showToast("更新しました。"); renderAdmin();
+            }else if(b.dataset.a === "resetpw"){
+                const pw = window.prompt("新しいパスワード（8文字以上）を入力してください。本人には通知が表示されます。","");
+                if(pw === null){ b.disabled = false; return; }
+                const note = window.prompt("本人確認の方法を入力してください（5文字以上・監査ログに記録されます）。","");
+                if(note === null){ b.disabled = false; return; }
+                await call({action:"reset-password",userId:b.dataset.id,newPassword:pw,note:note});
+                showToast("パスワードを再設定しました。"); b.disabled = false;
+            }
+        }catch(error){ b.disabled = false; showToast(error?.message || "処理に失敗しました。"); }
+    }
+    async function renderAdminBackup(client){
+        const st = await client.rpc("admin_export_token_status");
+        const row = (st.data && st.data[0]) || null;
+        el.adminBody.innerHTML = '<div class="admin-card"><b>Googleドライブ自動バックアップ（毎日）</b><div class="meta">Googleスプレッドシートの Apps Script（GAS）が毎日深夜0時台に、前日分の会話をZIPにして指定のドライブフォルダへ保存します。設定手順は同梱の「GAS設定手順」を見てください。</div>' +
+            '<div class="meta" style="margin-top:8px">現在のトークン：' + (row ? (row.active ? '有効（発行 ' + escapeHtml(formatDate(row.created_at)) + (row.last_used_at ? ' ・最終使用 ' + escapeHtml(formatDate(row.last_used_at)) : ' ・未使用') + '）' : '無効') : '未発行') + '</div>' +
+            '<div class="row"><button class="button" data-bk="issue" type="button">トークンを発行（古いものは無効）</button><button class="button-secondary" data-bk="revoke" type="button">トークンを無効にする</button></div></div>' +
+            '<div class="admin-card meta">トークンは発行時に1回だけ表示されます。GAS の「スクリプト プロパティ」にだけ保存し、他人に渡さないでください。このトークンを知っている人は、全会話の内容を読み出せます。ドライブのフォルダも、共有範囲を必要な人だけに限定してください。</div>';
+    }
+    async function onBackupClick(event){
+        const b = event.target.closest("[data-bk]");
+        if(!b) return;
+        try{
+            if(b.dataset.bk === "issue"){
+                if(!window.confirm("トークンを新しく発行します。以前のトークンは使えなくなります。よろしいですか？")) return;
+                const r = await requireClient().rpc("admin_issue_export_token"); if(r.error) throw r.error;
+                const code = escapeHtml(String(r.data));
+                el.adminBody.innerHTML = '<div class="admin-card"><b>新しいバックアップ用トークン</b><div class="code-box">' + code + '</div><div class="meta">この画面を離れると二度と表示できません。GAS の「スクリプト プロパティ」の EXPORT_TOKEN に貼り付けてください。</div><div class="row"><button class="button" data-copycode="' + code + '" type="button">コピー</button><button class="button-secondary" data-admin-view="backup" type="button">完了（再表示不可）</button></div></div>';
+            }else{
+                if(!window.confirm("トークンを無効にします。GASによる自動バックアップは止まります。")) return;
+                const r = await requireClient().rpc("admin_revoke_export_tokens"); if(r.error) throw r.error;
+                showToast("トークンを無効にしました。"); renderAdmin();
+            }
+        }catch(error){ showToast(featError(error)); }
+    }
+
     function startFeatures(){
+        el.profileModal.addEventListener("click",onGroupAction);
+        el.profileModal.addEventListener("click",onAdminAction);
+        el.adminPanel.addEventListener("click",onBackupClick);
+        el.newGroupButton.addEventListener("click",openGroupCreator);
+        el.exportOldButton.addEventListener("click",() => exportHistory("old"));
+        el.exportAllButton.addEventListener("click",() => exportHistory("all"));
+        setTimeout(maybePromptExport,4000);
         el.toggleHiddenUsers.addEventListener("click",() => { state.showHidden = !state.showHidden; renderRecommendations(); });
         el.postFilter.addEventListener("change",() => loadPosts(true));
         loadMyFollowCounts();
@@ -1734,7 +2037,7 @@ html,body{height:100%}
         el.postFeed.addEventListener("click",onFeedClick);
         el.postImage.addEventListener("change",() => { feat.postImageFile = el.postImage.files[0] || null; el.postImageName.textContent = feat.postImageFile ? feat.postImageFile.name : ""; });
         el.chatTitle.style.cursor = "pointer";
-        el.chatTitle.addEventListener("click",() => { if(state.currentPartner) openProfileView(state.currentPartner); });
+        el.chatTitle.addEventListener("click",() => { if(state.currentRoom?.is_group) openGroupInfo(); else if(state.currentPartner) openProfileView(state.currentPartner); });
         loadMySettings();
         el.readReceiptToggle.addEventListener("change",async () => {
             const wanted = el.readReceiptToggle.checked;

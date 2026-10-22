@@ -67,8 +67,10 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        if (password.length < 8) {
-            showStatus(elements.status, "パスワードは8文字以上で入力してください。", true);
+        const passwordProblem = window.AREPasswordPolicy ? window.AREPasswordPolicy.problem(password) : (password.length < 8 ? "パスワードは8文字以上で入力してください。" : null);
+        if (passwordProblem) {
+            showStatus(elements.status, passwordProblem, true);
+            elements.password.focus();
             return;
         }
 

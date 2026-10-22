@@ -30,8 +30,10 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        if (newPassword.length < 8) {
-            showStatus("新しいパスワードは8文字以上で入力してください。", true);
+        const passwordProblem = window.AREPasswordPolicy ? window.AREPasswordPolicy.problem(newPassword) : (newPassword.length < 8 ? "新しいパスワードは8文字以上で入力してください。" : null);
+        if (passwordProblem) {
+            showStatus(passwordProblem, true);
+            elements.newPassword.focus();
             return;
         }
 

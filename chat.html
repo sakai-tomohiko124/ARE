@@ -243,6 +243,10 @@ html,body{height:100%}
         </div>
         <div class="sidebar-content">
             <div class="profile-card pane-me"><div class="profile-text" id="profileText"></div><button class="button" id="profileEditButton" type="button">✏️ プロフィールを編集</button></div>
+            <div class="profile-card pane-me" id="delCard">
+                <div class="profile-text"><b>アカウントの削除</b><div class="bio" id="delStatus">削除を申請すると、管理者の承認後にアカウントとデータが完全に削除されます（元に戻せません）。</div></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="button-danger" id="delRequestButton" type="button">アカウント削除を申請</button><button class="button-secondary" id="delCancelButton" type="button" hidden>申請を取り消す</button></div>
+            </div>
             <div class="profile-card pane-me">
                 <div class="profile-text"><b>会話履歴の保存</b><div class="bio">30日を過ぎた会話は、ZIPファイルとしてこの端末に保存できます（添付ファイルの中身は含まれません）。</div></div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="button" id="exportOldButton" type="button">30日より前をZIP保存</button><button class="button-secondary" id="exportAllButton" type="button">すべてZIP保存</button></div>
@@ -269,7 +273,7 @@ html,body{height:100%}
             <div class="pane pane-users">
             <div class="section-heading"><h2>🔎 おすすめユーザー</h2><button class="button-secondary" id="toggleHiddenUsers" type="button">非表示の人を表示</button><button class="button-secondary" id="refreshUsersButton" type="button">更新</button></div>
             <input class="search" id="userSearch" type="search" placeholder="ユーザー名を検索..." autocomplete="off">
-            <div class="user-list" id="recommendedUsers"><div class="empty-list">ユーザーを読み込んでいます...</div></div>
+            <div class="user-list" id="recommendedUsers"><div class="empty-list">上の検索バーに名前を入力すると、ユーザーが表示されます。</div></div>
             </div>
             <div class="pane pane-chats">
             <div class="section-heading"><h2>💬 チャット</h2><button class="button-secondary" id="newGroupButton" type="button">👥 グループ作成</button><button class="button-secondary" id="refreshRoomsButton" type="button">更新</button></div>
@@ -324,6 +328,7 @@ html,body{height:100%}
         <button class="button-secondary" data-admin-view="rooms" type="button">会話一覧</button>
         <button class="button-secondary" data-admin-view="requests" type="button">削除申請</button>
         <button class="button-secondary" data-admin-view="users" type="button">ユーザー管理</button>
+        <button class="button-secondary" data-admin-view="acctdel" type="button">アカウント削除</button>
         <button class="button-secondary" data-admin-view="backup" type="button">バックアップ</button>
         <button class="button-secondary" id="adminClose" type="button">閉じる</button></header>
     <div class="admin-body" id="adminBody"></div>
@@ -395,7 +400,7 @@ html,body{height:100%}
             "refreshUsersButton","userSearch","recommendedUsers","refreshRoomsButton",
             "roomList","backButton","chatAvatar","chatTitle","chatSubtitle",
             "refreshMessagesButton","pageStatus","messages","imageInput","fileInput",
-            "videoInput","attachmentStatus","messageInput","sendButton","charCount","toast","newGroupButton","exportOldButton","exportAllButton","postFilter","toggleHiddenUsers","postBody","postImage","postImageName","postSubmit","postFeed","postMore","postsRefresh","profileText","profileEditButton","profileModal","profileSheet","sidebar","rail","readReceiptToggle","securityBanner","myStatus","scheduleButton","schedulePanel","scheduleAt","scheduleSubmit","scheduleList","scheduleClose","adminTabButton","adminBadge","adminPanel","adminBody","adminClose"
+            "videoInput","attachmentStatus","messageInput","sendButton","charCount","toast","delCard","delStatus","delRequestButton","delCancelButton","newGroupButton","exportOldButton","exportAllButton","postFilter","toggleHiddenUsers","postBody","postImage","postImageName","postSubmit","postFeed","postMore","postsRefresh","profileText","profileEditButton","profileModal","profileSheet","sidebar","rail","readReceiptToggle","securityBanner","myStatus","scheduleButton","schedulePanel","scheduleAt","scheduleSubmit","scheduleList","scheduleClose","adminTabButton","adminBadge","adminPanel","adminBody","adminClose"
         ].forEach((id) => el[id] = $(id));
     }
 
@@ -565,9 +570,11 @@ html,body{height:100%}
         el.refreshUsersButton.addEventListener("click",loadRecommendations);
         el.refreshRoomsButton.addEventListener("click",loadRooms);
         el.refreshMessagesButton.addEventListener("click",() => loadMessages(true));
+        let searchTimer = null;
         el.userSearch.addEventListener("input",() => {
             state.searchText = el.userSearch.value.trim().toLocaleLowerCase();
-            renderRecommendations();
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(loadRecommendations,250);
         });
         el.sendButton.addEventListener("click",sendTextMessage);
         el.messageInput.addEventListener("input",updateCharCount);
@@ -598,22 +605,27 @@ html,body{height:100%}
         window.addEventListener("beforeunload",cleanupSubscription);
     }
 
+    const escLike = (text) => text.replace(/[\\%_]/g,(ch) => "\\" + ch);
     async function loadRecommendations(){
         if(state.loadingUsers) return;
         state.loadingUsers = true;
-        el.recommendedUsers.innerHTML = '<div class="empty-list">ユーザーを読み込んでいます...</div>';
-
         try{
             const client = requireClient();
-            const result = await client.from(TABLES.profiles).select("*").neq("id",state.user.id).order("display_name",{ascending:true}).limit(100);
-            if(result.error) throw result.error;
-            state.recommendations = result.data || [];
             const hiddenResult = await client.from("hidden_recommendations").select("hidden_user_id");
             if(!hiddenResult.error) state.hiddenIds = new Set((hiddenResult.data || []).map((row) => row.hidden_user_id));
+            const text = el.userSearch.value.trim();
+            let result = {data:[]};
+            if(text){
+                result = await client.from(TABLES.profiles).select("*").ilike("display_name","%" + escLike(text) + "%").neq("id",state.user.id).order("display_name",{ascending:true}).limit(30);
+            }else if(state.showHidden && state.hiddenIds.size){
+                result = await client.from(TABLES.profiles).select("*").in("id",[...state.hiddenIds]).limit(100);
+            }
+            if(result.error) throw result.error;
+            state.recommendations = result.data || [];
             renderRecommendations();
         }catch(error){
-            console.error("User recommendations error:",error);
-            el.recommendedUsers.innerHTML = '<div class="empty-list">ユーザー一覧を取得できませんでした。<br>' + escapeHtml(getErrorMessage(error)) + '</div>';
+            console.error("User search error:",error);
+            el.recommendedUsers.innerHTML = '<div class="empty-list">ユーザーを検索できませんでした。<br>' + escapeHtml(getErrorMessage(error)) + '</div>';
         }finally{
             state.loadingUsers = false;
         }
@@ -621,14 +633,14 @@ html,body{height:100%}
 
     function renderRecommendations(){
         const list = state.recommendations.filter((profile) => {
-            const name = profileDisplayName(profile).toLocaleLowerCase();
-            if(state.searchText && !name.includes(state.searchText)) return false;
             return state.showHidden || !state.hiddenIds.has(profile.id);
         });
         el.toggleHiddenUsers.textContent = state.showHidden ? "非表示の人を隠す" : "非表示の人を表示（" + state.hiddenIds.size + "）";
 
         if(!list.length){
-            el.recommendedUsers.innerHTML = '<div class="empty-list">表示できるユーザーがいません。</div>';
+            el.recommendedUsers.innerHTML = '<div class="empty-list">' + (el.userSearch.value.trim()
+                ? '該当するユーザーが見つかりません。'
+                : '上の検索バーに名前を入力すると、ユーザーが表示されます。') + '</div>';
             return;
         }
 
@@ -1177,6 +1189,7 @@ html,body{height:100%}
         room_suspended:"このチャットは停止中です。", send_at_out_of_range:"送信日時は30秒後〜30日以内で指定してください。",
         too_many_scheduled:"予約は最大50件までです。", forbidden:"管理者権限がありません。", message_length_invalid:"メッセージの長さが正しくありません。",
         request_not_pending:"この申請はすでに処理されています。",
+        reason_required:"理由を5文字以上で入力してください。", confirm_mismatch:"確認用の表示名が一致しません。", already_requested:"すでに削除を申請済みです。",
         group_name_invalid:"グループ名は1〜40文字で入力してください。", group_members_invalid:"メンバーは1〜49人まで選んでください。", notice_too_long:"注意事項は500文字以内です。",
         link_title_invalid:"リンクの名前は1〜60文字で入力してください。", link_url_invalid:"リンクは https:// で始まるURLを入力してください。", too_many_links:"リンクは20件までです。",
         poll_question_invalid:"質問は1〜100文字で入力してください。", poll_options_invalid:"選択肢は2〜6個（各50文字以内）で入力してください。",
@@ -1378,19 +1391,24 @@ html,body{height:100%}
         try{ const result = await requireClient().rpc("is_current_user_admin"); feat.isAdmin = result.data === true; }
         catch(_e){ feat.isAdmin = false; }
         el.adminTabButton.hidden = !feat.isAdmin;
+        if(feat.isAdmin) el.delCard.hidden = true;
         if(feat.posts && feat.posts.length) renderPosts();
         if(feat.isAdmin){ refreshAdminBadge(); feat.timers.push(setInterval(refreshAdminBadge,30000)); }
     }
     async function refreshAdminBadge(){
         const result = await requireClient().rpc("admin_list_delete_requests",{p_status:"pending"});
-        if(!result.error) el.adminBadge.textContent = result.data.length ? String(result.data.length) : "";
+        const acct = await requireClient().rpc("admin_list_account_deletion_requests");
+        const total = (result.error ? 0 : result.data.length) + (acct.error ? 0 : acct.data.length);
+        el.adminBadge.textContent = total ? String(total) : "";
     }
     async function renderAdmin(){
         el.adminBody.innerHTML = '<div class="empty-list">読み込み中...</div>';
         document.querySelectorAll("[data-admin-view]").forEach((b) => b.classList.toggle("active",b.dataset.adminView === feat.adminView));
         try{
             const client = requireClient();
-            if(feat.adminView === "backup"){
+            if(feat.adminView === "acctdel"){
+                await renderAdminAcctDel(client);
+            }else if(feat.adminView === "backup"){
                 await renderAdminBackup(client);
             }else if(feat.adminView === "users"){
                 await renderAdminUsers(client);
@@ -1702,329 +1720,113 @@ html,body{height:100%}
         }catch(error){ showToast(featError(error)); }
     }
     async function deleteAccount(userId,name){
-        const typed = window.prompt("⚠️ " + name + " さんのアカウントを完全に削除します。\n・プロフィール、投稿、この人とのすべての会話（相手側からも消えます）、添付ファイルが削除されます\n・元に戻せません\n\n確認のため、表示名「" + name + "」をそのまま入力してください。","");
-        if(typed === null) return;
-        if(typed !== name){ showToast("表示名が一致しないため、削除を中止しました。"); return; }
-        const reason = window.prompt("削除の理由を入力してください（5文字以上・監査ログに記録されます）。","");
+        const reason = window.prompt("⚠️ " + name + " さんの「アカウント削除の申請」を作成します。\n（このあと「アカウント削除」タブで承認すると、完全に削除されます）\n\n削除の理由を入力してください（5文字以上・記録されます）。","");
         if(reason === null) return;
         try{
-            await window.ARESystem.callAuthenticatedFunction("admin-delete-user",{userId:userId,confirmName:name,reason:reason});
-            showToast(name + " さんのアカウントを削除しました。");
-            renderAdmin();
-        }catch(error){ showToast(error?.message || "削除に失敗しました。"); }
-    }
-
-
-    // ===== おすすめの非表示 / フォロー =====
-    state.hiddenIds = new Set(); state.showHidden = false;
-    async function toggleHideUser(id,hide){
-        try{
-            const client = requireClient();
-            const result = hide
-                ? await client.from("hidden_recommendations").insert({user_id:state.user.id,hidden_user_id:id})
-                : await client.from("hidden_recommendations").delete().eq("user_id",state.user.id).eq("hidden_user_id",id);
+            const result = await requireClient().rpc("admin_request_account_deletion",{p_user_id:userId,p_reason:reason});
             if(result.error) throw result.error;
-            if(hide) state.hiddenIds.add(id); else state.hiddenIds.delete(id);
-            renderRecommendations();
-            showToast(hide ? "おすすめに表示しないようにしました。" : "再表示しました。");
+            feat.adminView = "acctdel"; renderAdmin(); refreshAdminBadge();
+            showToast("削除申請を作成しました。内容を確認して「承認して完全削除」を押してください。");
         }catch(error){ showToast(featError(error)); }
     }
-    async function followCounts(uid){
-        const client = requireClient();
-        const [followers,following] = await Promise.all([
-            client.from("follows").select("*",{count:"exact",head:true}).eq("followee_id",uid),
-            client.from("follows").select("*",{count:"exact",head:true}).eq("follower_id",uid)]);
-        return {followers:followers.count || 0,following:following.count || 0};
+    async function renderAdminAcctDel(client){
+        const result = await client.rpc("admin_list_account_deletion_requests");
+        if(result.error) throw result.error;
+        el.adminBody.innerHTML = '<div class="admin-card meta">承認すると、そのアカウントと関連データが完全に削除されます（元に戻せません）。承認前に、追跡ログをZIPで保存するかどうかを必ず確認します。</div>' +
+            (result.data.length ? result.data.map((r) =>
+                '<div class="admin-card"><b>' + escapeHtml(r.display_name || "ユーザー") + '</b> <span class="meta">ID：' + escapeHtml(r.login_id || "-") + ' ・ ' + (r.requested_by_admin ? '管理者が申請' : '本人が申請') + ' ・ ' + escapeHtml(formatDate(r.created_at)) + '</span>' +
+                '<div class="meta">理由：' + escapeHtml(r.reason || "（記載なし）") + '</div><div class="row">' +
+                '<button class="button-danger" data-acctdel="approve" data-id="' + escapeHtml(r.id) + '" data-uid="' + escapeHtml(r.user_id) + '" data-name="' + escapeHtml(r.display_name || "") + '" data-reason="' + escapeHtml(r.reason || "") + '" type="button">承認して完全削除</button>' +
+                '<button class="button-secondary" data-acctdel="reject" data-id="' + escapeHtml(r.id) + '" type="button">却下</button></div></div>').join("")
+                : '<div class="empty-list">承認待ちのアカウント削除申請はありません。</div>');
     }
-    async function loadMyFollowCounts(){
-        try{
-            const counts = await followCounts(state.user.id);
-            const box = document.getElementById("myFollowCounts");
-            if(box) box.textContent = "フォロワー " + counts.followers + " ・ フォロー中 " + counts.following;
-        }catch(_e){}
-    }
-    async function loadFollow(uid){
-        const box = document.getElementById("pmFollow");
-        if(!box || uid === state.user.id) return;
-        try{
-            const counts = await followCounts(uid);
-            const mine = await requireClient().from("follows").select("followee_id").eq("follower_id",state.user.id).eq("followee_id",uid).maybeSingle();
-            if(document.getElementById("pmFollow") !== box) return;
-            const following = !!mine.data;
-            box.innerHTML = '<div class="meta">フォロワー ' + counts.followers + ' ・ フォロー中 ' + counts.following + '</div>' +
-                '<button type="button" class="' + (following ? 'button-secondary' : 'button') + '" data-pm="follow" data-uid="' + escapeHtml(uid) + '" data-following="' + (following ? '1' : '0') + '" style="margin-top:6px">' + (following ? 'フォロー中（解除する）' : 'フォローする') + '</button>';
-        }catch(_e){}
-    }
-    async function toggleFollow(button){
-        const uid = button.dataset.uid, following = button.dataset.following === "1";
-        button.disabled = true;
-        try{
-            const client = requireClient();
-            const result = following
-                ? await client.from("follows").delete().eq("follower_id",state.user.id).eq("followee_id",uid)
-                : await client.from("follows").insert({follower_id:state.user.id,followee_id:uid});
-            if(result.error) throw result.error;
-            await loadFollow(uid);
-        }catch(error){ button.disabled = false; showToast(featError(error)); }
-    }
-
-
-    // ===== グループチャット（名称・注意事項・リンク・アンケート） =====
-    function pickList(excludeIds){
-        const people = state.recommendations.filter((p) => !excludeIds.includes(p.id));
-        return people.length ? '<div class="pick">' + people.map((p) => '<label><input type="checkbox" data-pick="' + escapeHtml(p.id) + '"> ' + escapeHtml(profileDisplayName(p)) + '</label>').join("") + '</div>' : '<div class="meta">選べるユーザーがいません。</div>';
-    }
-    function pickedIds(){ return [...el.profileSheet.querySelectorAll("[data-pick]:checked")].map((i) => i.dataset.pick); }
-    function openGroupCreator(){
-        openSheet('<h3 style="margin:0">👥 グループを作成</h3>' +
-            '<label for="gName">グループ名（40文字まで）</label><input id="gName" type="text" maxlength="40">' +
-            '<label for="gNotice">注意事項（任意・500文字まで）</label><textarea id="gNotice" rows="3" maxlength="500" placeholder="例：個人情報は書かないでください"></textarea>' +
-            '<label>メンバーを選ぶ（1人以上）</label>' + pickList([]) +
-            '<div class="row"><button type="button" class="button-secondary" data-pm="close">キャンセル</button><button type="button" class="button" data-g="create">作成</button></div>');
-    }
-    async function openGroupInfo(focusPollId){
-        const room = state.currentRoom;
-        if(!room || !room.is_group){ return; }
-        openSheet('<div class="empty-list">読み込み中...</div>');
-        await renderGroupInfo(room.id,focusPollId);
-    }
-    async function renderGroupInfo(roomId,focusPollId){
-        const client = requireClient();
-        const room = state.rooms.find((r) => r.id === roomId);
-        if(!room) return;
-        const owner = room.created_by === state.user.id;
-        const [links,polls] = await Promise.all([
-            client.from("room_links").select("id,title,url").eq("room_id",roomId).order("created_at"),
-            client.from("polls").select("id,question,created_by,closed_at").eq("room_id",roomId).order("created_at",{ascending:false}).limit(10)]);
-        await ensureMemberProfiles(room);
-        const pollHtml = [];
-        for(const poll of (polls.data || [])){
-            const res = await client.rpc("get_poll_results",{p_poll_id:poll.id});
-            const rows = res.data || [], total = rows.reduce((s,r) => s + Number(r.votes),0);
-            const mine = rows.find((r) => r.mine);
-            pollHtml.push('<div class="admin-card" id="poll-' + escapeHtml(poll.id) + '"' + (poll.id === focusPollId ? ' style="border-color:var(--accent)"' : '') + '><b>' + escapeHtml(poll.question) + '</b>' + (poll.closed_at ? ' <span class="meta">（締切済み）</span>' : '') +
-                rows.map((r) => '<div class="grp-opt"><button type="button" class="' + (r.mine ? 'button' : 'button-secondary') + '" ' + (poll.closed_at ? 'disabled' : 'data-g="vote" data-poll="' + escapeHtml(poll.id) + '" data-opt="' + escapeHtml(r.option_id) + '"') + '>' + escapeHtml(r.label) + (r.mine ? ' ✓' : '') + '　' + r.votes + '票</button><div class="grp-bar"><i style="width:' + (total ? Math.round(Number(r.votes) / total * 100) : 0) + '%"></i></div></div>').join("") +
-                '<div class="meta">' + total + '票' + (mine ? ' ・ あなたの回答：' + escapeHtml(mine.label) : '') + '</div>' +
-                ((!poll.closed_at && (owner || poll.created_by === state.user.id)) ? '<button type="button" class="button-secondary" data-g="closepoll" data-poll="' + escapeHtml(poll.id) + '">締め切る</button>' : '') + '</div>');
+    feat.delTarget = null;
+    function onAcctDelClick(event){
+        const b = event.target.closest("[data-acctdel]");
+        if(!b) return;
+        if(b.dataset.acctdel === "reject"){
+            const note = window.prompt("却下の理由（任意）","");
+            if(note === null) return;
+            requireClient().rpc("admin_reject_account_deletion",{p_request_id:b.dataset.id,p_note:note}).then((r) => {
+                if(r.error) showToast(featError(r.error)); else { showToast("却下しました。"); renderAdmin(); refreshAdminBadge(); }
+            });
+            return;
         }
-        const members = (room.memberIds || []).map((id) => id === state.user.id ? "あなた" : profileDisplayName(feat.known.get(id))).join("、");
-        openSheet('<h3 style="margin:0">👥 ' + escapeHtml(room.name || "グループ") + '</h3><div class="meta">メンバー ' + (room.memberIds || []).length + '人' + (owner ? ' ・ あなたが管理者です' : '') + '</div>' +
-            '<div class="grp-sec"><h4>📌 注意事項</h4>' + (owner
-                ? '<input id="gEditName" type="text" maxlength="40" value="' + escapeHtml(room.name || "") + '"><textarea id="gEditNotice" rows="3" maxlength="500">' + escapeHtml(room.notice || "") + '</textarea><button type="button" class="button" data-g="saveinfo">名前と注意事項を保存</button>'
-                : '<div style="white-space:pre-wrap;overflow-wrap:anywhere">' + (room.notice ? escapeHtml(room.notice) : '<span class="meta">注意事項はありません。</span>') + '</div>') + '</div>' +
-            '<div class="grp-sec"><h4>🔗 参考資料</h4>' + ((links.data || []).length ? links.data.map((l) => { const u = safeHttpUrl(l.url); return '<div class="grp-item"><span>' + (u ? '<a href="' + escapeHtml(u) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(l.title) + '</a>' : escapeHtml(l.title)) + '</span>' + (owner ? '<button type="button" class="hide-btn" data-g="rmlink" data-id="' + escapeHtml(l.id) + '">削除</button>' : '') + '</div>'; }).join("") : '<div class="meta">リンクはありません。</div>') +
-                (owner ? '<input id="gLinkTitle" type="text" maxlength="60" placeholder="リンクの名前"><input id="gLinkUrl" type="text" maxlength="500" placeholder="https://..."><button type="button" class="button-secondary" data-g="addlink">リンクを追加</button>' : '') + '</div>' +
-            '<div class="grp-sec"><h4>📊 アンケート</h4>' + (pollHtml.join("") || '<div class="meta">アンケートはありません。</div>') +
-                '<input id="gPollQ" type="text" maxlength="100" placeholder="質問（例：集合はいつ？）"><textarea id="gPollOpts" rows="3" placeholder="選択肢を1行に1つ（2〜6個）"></textarea><button type="button" class="button-secondary" data-g="newpoll">アンケートを作成してチャットに投稿</button></div>' +
-            '<div class="grp-sec"><h4>👤 メンバー</h4><div style="overflow-wrap:anywhere">' + escapeHtml(members) + '</div>' +
-                (owner ? '<label>メンバーを追加</label>' + pickList(room.memberIds || []) + '<button type="button" class="button-secondary" data-g="addmembers">選んだ人を追加</button>' : '') + '</div>' +
-            '<div class="row"><button type="button" class="button-danger" data-g="leave">グループを退出</button><button type="button" class="button-secondary" data-pm="close">閉じる</button></div>');
-        if(focusPollId){ const t = document.getElementById("poll-" + focusPollId); if(t) t.scrollIntoView({block:"center"}); }
+        feat.delTarget = {id:b.dataset.id,uid:b.dataset.uid,name:b.dataset.name,reason:b.dataset.reason};
+        openSheet('<h3 style="margin:0">⚠️ アカウントの完全削除</h3><div><b>' + escapeHtml(b.dataset.name) + '</b> さんのアカウント、投稿、1対1の会話、添付ファイル、追跡ログを完全に削除します。元に戻せません。</div>' +
+            '<label for="delConfirmName">確認のため、表示名「' + escapeHtml(b.dataset.name) + '」をそのまま入力してください</label><input id="delConfirmName" type="text" autocomplete="off">' +
+            '<div class="admin-card"><b>追跡ログ（このアカウントに関する操作記録・復旧の試行記録）を、ZIPで保存しますか？</b><div class="meta">削除と同時に、サーバー上の追跡ログも消えます。残したい場合は先にZIPで保存してください。</div></div>' +
+            '<div class="row" style="justify-content:stretch"><button type="button" class="button" data-d="zip">ZIPを保存してから削除</button><button type="button" class="button-danger" data-d="nozip">保存せずに削除</button><button type="button" class="button-secondary" data-pm="close">やめる</button></div>');
     }
-    async function onGroupAction(event){
-        const b = event.target.closest("[data-g]");
-        if(!b) return;
-        const client = requireClient(), act = b.dataset.g, room = state.currentRoom;
-        const val = (id) => (document.getElementById(id)?.value || "");
-        b.disabled = true;
+    async function onDelSheet(event){
+        const b = event.target.closest("[data-d]");
+        if(!b || !feat.delTarget) return;
+        const t = feat.delTarget, typed = (document.getElementById("delConfirmName")?.value || "");
+        if(typed !== t.name){ showToast("表示名が一致しないため、削除を中止しました。"); return; }
+        el.profileSheet.querySelectorAll("button").forEach((x) => { x.disabled = true; });
         try{
-            if(act === "create"){
-                const ids = pickedIds();
-                const r = await client.rpc("create_group",{p_name:val("gName"),p_member_ids:ids,p_notice:val("gNotice")});
-                if(r.error) throw r.error;
-                closeSheet(); await loadRooms();
-                const created = state.rooms.find((x) => x.id === r.data);
-                if(created) await selectRoom(created,null);
-                showToast("グループを作成しました。");
-                return;
+            if(b.dataset.d === "zip"){
+                const logs = await requireClient().rpc("admin_get_user_logs",{p_user_id:t.uid});
+                if(logs.error) throw logs.error;
+                const readme = "削除したアカウント（表示名）：" + t.name + "\nユーザーID：" + t.uid + "\n保存日時：" + new Date().toLocaleString("ja-JP") + "\n\naccount-logs.json に、このアカウントに関する操作記録（監査ログ）と復旧の試行記録を保存しています。\n";
+                const enc = new TextEncoder();
+                const blob = makeZip([{name:"README.txt",data:enc.encode("\uFEFF" + readme)},{name:"account-logs.json",data:enc.encode(JSON.stringify(logs.data,null,2))}]);
+                const url = URL.createObjectURL(blob), a = document.createElement("a");
+                a.href = url; a.download = "ARE追跡ログ_" + t.name.replace(/[\\/:*?"<>|]/g,"_") + "_" + new Date().toISOString().slice(0,10) + ".zip"; document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => URL.revokeObjectURL(url),60000);
             }
-            if(!room) return;
-            if(act === "saveinfo"){ const r = await client.rpc("update_group_info",{p_room_id:room.id,p_name:val("gEditName"),p_notice:val("gEditNotice")}); if(r.error) throw r.error; await loadRooms(); const fresh = state.rooms.find((x) => x.id === room.id); if(fresh){ state.currentRoom = fresh; el.chatTitle.textContent = fresh.name; } showToast("保存しました。"); }
-            else if(act === "addlink"){ const r = await client.rpc("add_room_link",{p_room_id:room.id,p_title:val("gLinkTitle"),p_url:val("gLinkUrl")}); if(r.error) throw r.error; }
-            else if(act === "rmlink"){ const r = await client.rpc("remove_room_link",{p_link_id:b.dataset.id}); if(r.error) throw r.error; }
-            else if(act === "newpoll"){
-                const options = val("gPollOpts").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-                const r = await client.rpc("create_poll",{p_room_id:room.id,p_question:val("gPollQ"),p_options:options});
-                if(r.error) throw r.error;
-                await sendMessagePayload({type:"poll",pollId:r.data,question:val("gPollQ").trim()});
-            }
-            else if(act === "vote"){ const r = await client.rpc("vote_poll",{p_poll_id:b.dataset.poll,p_option_id:b.dataset.opt}); if(r.error) throw r.error; }
-            else if(act === "closepoll"){ const r = await client.rpc("close_poll",{p_poll_id:b.dataset.poll}); if(r.error) throw r.error; }
-            else if(act === "addmembers"){ const ids = pickedIds(); if(!ids.length){ showToast("追加する人を選んでください。"); b.disabled = false; return; } const r = await client.rpc("add_group_members",{p_room_id:room.id,p_member_ids:ids}); if(r.error) throw r.error; await loadRooms(); const fresh = state.rooms.find((x) => x.id === room.id); if(fresh) state.currentRoom = fresh; updateHeaderPresence(); }
-            else if(act === "leave"){
-                if(!window.confirm("このグループを退出しますか？")) { b.disabled = false; return; }
-                const r = await client.rpc("leave_group",{p_room_id:room.id}); if(r.error) throw r.error;
-                closeSheet(); cleanupSubscription(); state.currentRoom = null; state.currentPartner = null; el.app.classList.remove("chat-open"); setChatEnabled(false); await loadRooms(); showToast("グループを退出しました。"); return;
-            }
-            await renderGroupInfo(room.id,act === "newpoll" ? undefined : undefined);
-        }catch(error){ b.disabled = false; showToast(featError(error)); }
-    }
-
-    // ===== 会話履歴のZIP保存（端末に保存。サーバー側の履歴は削除しません） =====
-    const crcTable = (() => { const t = new Uint32Array(256); for(let n = 0; n < 256; n++){ let v = n; for(let k = 0; k < 8; k++) v = v & 1 ? 0xEDB88320 ^ (v >>> 1) : v >>> 1; t[n] = v >>> 0; } return t; })();
-    function crc32(bytes){ let c = 0xFFFFFFFF; for(let i = 0; i < bytes.length; i++) c = crcTable[(c ^ bytes[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
-    function makeZip(files){
-        const enc = new TextEncoder(), chunks = [], central = []; let offset = 0;
-        const now = new Date(), dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1), dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
-        const u16 = (v) => new Uint8Array([v & 255,(v >> 8) & 255]), u32 = (v) => new Uint8Array([v & 255,(v >> 8) & 255,(v >> 16) & 255,(v >>> 24) & 255]);
-        const cat = (...arr) => { const out = new Uint8Array(arr.reduce((s,a) => s + a.length,0)); let p = 0; arr.forEach((a) => { out.set(a,p); p += a.length; }); return out; };
-        for(const f of files){
-            const name = enc.encode(f.name), data = f.data, crc = crc32(data);
-            const local = cat(u32(0x04034b50),u16(20),u16(0x0800),u16(0),u16(dosTime),u16(dosDate),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),name,data);
-            central.push(cat(u32(0x02014b50),u16(20),u16(20),u16(0x0800),u16(0),u16(dosTime),u16(dosDate),u32(crc),u32(data.length),u32(data.length),u16(name.length),u16(0),u16(0),u16(0),u16(0),u32(0),u32(offset),name));
-            chunks.push(local); offset += local.length;
+            await window.ARESystem.callAuthenticatedFunction("admin-delete-user",{requestId:t.id,userId:t.uid,confirmName:t.name,reason:(t.reason && t.reason.length >= 5) ? t.reason : "利用者本人の申請による削除"});
+            closeSheet(); feat.delTarget = null;
+            showToast(t.name + " さんのアカウントを完全に削除しました。");
+            renderAdmin(); refreshAdminBadge();
+        }catch(error){
+            el.profileSheet.querySelectorAll("button").forEach((x) => { x.disabled = false; });
+            showToast(error?.message || featError(error));
         }
-        const cd = cat(...central);
-        return new Blob([...chunks,cd,cat(u32(0x06054b50),u16(0),u16(0),u16(files.length),u16(files.length),u32(cd.length),u32(offset),u16(0))],{type:"application/zip"});
     }
-    const exportKey = () => "are_export_last_" + state.user.id;
-    function contentLine(content){
-        const item = parseMessageContent(content);
-        if(item.type === "text") return item.text || "";
-        if(item.type === "poll") return "[アンケート] " + (item.question || "");
-        return "[" + item.type + "] " + (item.name || "添付ファイル");
-    }
-    async function exportHistory(mode){
-        const client = requireClient();
-        const cutoff = new Date(Date.now() - 30 * 86400000).toISOString();
-        let since = null;
-        try{ since = mode === "old" ? localStorage.getItem(exportKey()) : null; }catch(_e){}
-        const files = [], used = new Set();
-        el.exportOldButton.disabled = el.exportAllButton.disabled = true;
+    async function loadMyDeletion(){
         try{
-            for(const room of state.rooms){
-                await ensureMemberProfiles(room);
-                const lines = []; let from = 0;
-                for(;;){
-                    let q = client.from(TABLES.messages).select("sender_id,content,created_at").eq("room_id",room.id).order("created_at",{ascending:true}).range(from,from + 999);
-                    if(mode === "old") q = q.lt("created_at",cutoff);
-                    if(since) q = q.gt("created_at",since);
-                    const r = await q; if(r.error) throw r.error;
-                    (r.data || []).forEach((m) => {
-                        const who = m.sender_id === state.user.id ? "あなた" : profileDisplayName(feat.known.get(m.sender_id));
-                        lines.push("[" + new Date(m.created_at).toLocaleString("ja-JP") + "] " + who + "：" + contentLine(m.content).replace(/\r?\n/g,"\n    "));
-                    });
-                    if(!r.data || r.data.length < 1000) break;
-                    from += 1000;
-                }
-                if(!lines.length) continue;
-                const base = (room.is_group ? room.name : profileDisplayName(room.partner)).replace(/[\\/:*?"<>|]/g,"_").slice(0,40) || "chat";
-                let name = base + ".txt", i = 2; while(used.has(name)) name = base + "_" + (i++) + ".txt"; used.add(name);
-                files.push({name:name,data:new TextEncoder().encode("\uFEFF" + (room.is_group ? "グループ：" : "相手：") + (room.is_group ? room.name : profileDisplayName(room.partner)) + "\n" + "保存日時：" + new Date().toLocaleString("ja-JP") + "\n\n" + lines.join("\n") + "\n")});
-            }
-            if(!files.length){ showToast("保存する履歴はありません。"); return false; }
-            const d = new Date(), stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2,"0") + String(d.getDate()).padStart(2,"0");
-            const url = URL.createObjectURL(makeZip(files));
-            const a = document.createElement("a"); a.href = url; a.download = "ARE会話履歴_" + stamp + ".zip"; document.body.appendChild(a); a.click(); a.remove();
-            setTimeout(() => URL.revokeObjectURL(url),60000);
-            try{ localStorage.setItem(exportKey(),mode === "old" ? cutoff : new Date().toISOString()); }catch(_e){}
-            showToast("会話履歴をZIPで保存しました。");
-            return true;
-        }catch(error){ showToast(featError(error)); return false; }
-        finally{ el.exportOldButton.disabled = el.exportAllButton.disabled = false; }
-    }
-    async function maybePromptExport(){
-        try{
-            const today = new Date().toISOString().slice(0,10);
-            if(localStorage.getItem("are_export_prompt_day") === today) return;
-            const since = localStorage.getItem(exportKey());
-            const cutoff = new Date(Date.now() - 30 * 86400000).toISOString();
-            let q = requireClient().from(TABLES.messages).select("id",{count:"exact",head:true}).lt("created_at",cutoff);
-            if(since) q = q.gt("created_at",since);
-            const r = await q;
-            if(r.error || !r.count) return;
-            localStorage.setItem("are_export_prompt_day",today);
-            if(window.confirm("30日を過ぎた会話履歴が " + r.count + " 件あります。\nZIPファイルとして、この端末に保存しますか？\n（サーバー上の履歴は消えません）")) await exportHistory("old");
+            const r = await requireClient().from("account_deletion_requests").select("id,status,created_at").eq("status","pending").maybeSingle();
+            const pending = !r.error && r.data;
+            el.delRequestButton.hidden = Boolean(pending);
+            el.delCancelButton.hidden = !pending;
+            el.delStatus.textContent = pending ? "削除を申請中です（" + formatDate(r.data.created_at) + "）。管理者の承認後に、アカウントとデータが完全に削除されます。" : "削除を申請すると、管理者の承認後にアカウントとデータが完全に削除されます（元に戻せません）。";
         }catch(_e){}
     }
-
-    // ===== 管理者：アカウントの作成・編集 / Googleドライブ連携 =====
-    function userForm(prefix,v){
-        return (v.loginId !== undefined ? '<label>ログインID</label><input id="' + prefix + 'Id" type="text" maxlength="50" autocomplete="off">' : '') +
-            '<label>表示名（30文字まで）</label><input id="' + prefix + 'Name" type="text" maxlength="30" value="' + escapeHtml(v.name || "") + '">' +
-            '<label>ステータスメッセージ</label><input id="' + prefix + 'Status" type="text" maxlength="60" value="' + escapeHtml(v.status || "") + '">' +
-            '<label>自己紹介</label><textarea id="' + prefix + 'Bio" rows="2" maxlength="150">' + escapeHtml(v.bio || "") + '</textarea>' +
-            '<label>電話番号（電話かメールのどちらかは必須）</label><input id="' + prefix + 'Phone" type="tel" maxlength="30" value="' + escapeHtml(v.phone || "") + '">' +
-            '<label>メールアドレス</label><input id="' + prefix + 'Email" type="email" maxlength="254" value="' + escapeHtml(v.email || "") + '">';
-    }
-    function openCreateUser(){
-        openSheet('<h3 style="margin:0">＋ 新規アカウントを作成</h3>' + userForm("cu",{loginId:""}).replace('<label>ログインID</label>','<label>ログインID</label>') +
-            '<label>初期パスワード（8文字以上）</label><input id="cuPass" type="text" maxlength="72" autocomplete="off">' +
-            '<div class="meta">作成後に表示される復旧コードと一緒に本人へ渡し、本人が「アカウント復旧」で自分のパスワードに変更するよう案内してください。</div>' +
-            '<div class="row"><button type="button" class="button-secondary" data-pm="close">キャンセル</button><button type="button" class="button" data-a="create">作成</button></div>');
-    }
-    async function openEditUser(userId){
-        openSheet('<div class="empty-list">読み込み中...</div>');
+    async function requestMyDeletion(){
+        const reason = window.prompt("アカウントの削除を申請します。管理者が承認すると、アカウントと投稿・会話などが完全に削除され、元に戻せません。\n\n理由（任意）を入力してください。","");
+        if(reason === null) return;
+        if(!window.confirm("本当に削除を申請しますか？")) return;
         try{
-            const client = requireClient();
-            const [p,contact] = await Promise.all([client.from(TABLES.profiles).select("*").eq("id",userId).maybeSingle(),client.rpc("admin_get_user_contact",{p_user_id:userId})]);
-            if(p.error || !p.data) throw (p.error || new Error("ユーザーが見つかりません。"));
-            const row = (contact.data && contact.data[0]) || {};
-            openSheet('<h3 style="margin:0">✏️ アカウントを編集</h3><div class="meta">連絡先の閲覧は監査ログに記録されました。</div>' +
-                userForm("eu",{name:p.data.display_name,status:p.data.status_message,bio:p.data.bio,phone:row.phone_number,email:row.contact_email}) +
-                '<div class="row"><button type="button" class="button-secondary" data-a="resetpw" data-id="' + escapeHtml(userId) + '">パスワード再設定</button><button type="button" class="button-secondary" data-pm="close">キャンセル</button><button type="button" class="button" data-a="update" data-id="' + escapeHtml(userId) + '">保存</button></div>');
-        }catch(error){ closeSheet(); showToast(featError(error)); }
+            const r = await requireClient().rpc("request_account_deletion",{p_reason:reason});
+            if(r.error) throw r.error;
+            showToast("削除を申請しました。管理者の承認をお待ちください。"); loadMyDeletion();
+        }catch(error){ showToast(featError(error)); }
     }
-    async function onAdminAction(event){
-        const b = event.target.closest("[data-a]");
-        if(!b) return;
-        const v = (id) => document.getElementById(id)?.value || "";
-        const call = (payload) => window.ARESystem.callAuthenticatedFunction("admin-manage-user",payload);
-        b.disabled = true;
+    async function cancelMyDeletion(){
         try{
-            if(b.dataset.a === "create"){
-                const res = await call({action:"create",loginId:v("cuId"),password:v("cuPass"),displayName:v("cuName"),phoneNumber:v("cuPhone"),contactEmail:v("cuEmail")});
-                if(v("cuStatus") || v("cuBio")) await call({action:"update",userId:res.userId,statusMessage:v("cuStatus"),bio:v("cuBio")});
-                const code = escapeHtml(String(res.recoveryCode));
-                openSheet('<h3 style="margin:0">アカウントを作成しました</h3><div class="meta">この復旧コードは、この画面を閉じると二度と表示できません。本人にだけ安全な方法で伝えてください。</div><div class="code-box">' + code + '</div><div class="row"><button type="button" class="button" data-copycode="' + code + '">コピー</button><button type="button" class="button-secondary" data-pm="close">閉じる（再表示不可）</button></div>');
-                renderAdmin();
-            }else if(b.dataset.a === "update"){
-                await call({action:"update",userId:b.dataset.id,displayName:v("euName"),statusMessage:v("euStatus"),bio:v("euBio"),phoneNumber:v("euPhone"),contactEmail:v("euEmail")});
-                closeSheet(); showToast("更新しました。"); renderAdmin();
-            }else if(b.dataset.a === "resetpw"){
-                const pw = window.prompt("新しいパスワード（8文字以上）を入力してください。本人には通知が表示されます。","");
-                if(pw === null){ b.disabled = false; return; }
-                const note = window.prompt("本人確認の方法を入力してください（5文字以上・監査ログに記録されます）。","");
-                if(note === null){ b.disabled = false; return; }
-                await call({action:"reset-password",userId:b.dataset.id,newPassword:pw,note:note});
-                showToast("パスワードを再設定しました。"); b.disabled = false;
-            }
-        }catch(error){ b.disabled = false; showToast(error?.message || "処理に失敗しました。"); }
-    }
-    async function renderAdminBackup(client){
-        const st = await client.rpc("admin_export_token_status");
-        const row = (st.data && st.data[0]) || null;
-        el.adminBody.innerHTML = '<div class="admin-card"><b>Googleドライブ自動バックアップ（毎日）</b><div class="meta">Googleスプレッドシートの Apps Script（GAS）が毎日深夜0時台に、前日分の会話をZIPにして指定のドライブフォルダへ保存します。設定手順は同梱の「GAS設定手順」を見てください。</div>' +
-            '<div class="meta" style="margin-top:8px">現在のトークン：' + (row ? (row.active ? '有効（発行 ' + escapeHtml(formatDate(row.created_at)) + (row.last_used_at ? ' ・最終使用 ' + escapeHtml(formatDate(row.last_used_at)) : ' ・未使用') + '）' : '無効') : '未発行') + '</div>' +
-            '<div class="row"><button class="button" data-bk="issue" type="button">トークンを発行（古いものは無効）</button><button class="button-secondary" data-bk="revoke" type="button">トークンを無効にする</button></div></div>' +
-            '<div class="admin-card meta">トークンは発行時に1回だけ表示されます。GAS の「スクリプト プロパティ」にだけ保存し、他人に渡さないでください。このトークンを知っている人は、全会話の内容を読み出せます。ドライブのフォルダも、共有範囲を必要な人だけに限定してください。</div>';
-    }
-    async function onBackupClick(event){
-        const b = event.target.closest("[data-bk]");
-        if(!b) return;
-        try{
-            if(b.dataset.bk === "issue"){
-                if(!window.confirm("トークンを新しく発行します。以前のトークンは使えなくなります。よろしいですか？")) return;
-                const r = await requireClient().rpc("admin_issue_export_token"); if(r.error) throw r.error;
-                const code = escapeHtml(String(r.data));
-                el.adminBody.innerHTML = '<div class="admin-card"><b>新しいバックアップ用トークン</b><div class="code-box">' + code + '</div><div class="meta">この画面を離れると二度と表示できません。GAS の「スクリプト プロパティ」の EXPORT_TOKEN に貼り付けてください。</div><div class="row"><button class="button" data-copycode="' + code + '" type="button">コピー</button><button class="button-secondary" data-admin-view="backup" type="button">完了（再表示不可）</button></div></div>';
-            }else{
-                if(!window.confirm("トークンを無効にします。GASによる自動バックアップは止まります。")) return;
-                const r = await requireClient().rpc("admin_revoke_export_tokens"); if(r.error) throw r.error;
-                showToast("トークンを無効にしました。"); renderAdmin();
-            }
+            const r = await requireClient().rpc("cancel_account_deletion_request");
+            if(r.error) throw r.error;
+            showToast("申請を取り消しました。"); loadMyDeletion();
         }catch(error){ showToast(featError(error)); }
     }
 
     function startFeatures(){
         el.profileModal.addEventListener("click",onGroupAction);
+        el.profileModal.addEventListener("input",onPickInput);
+        el.profileModal.addEventListener("change",onPickChange);
+        el.profileModal.addEventListener("click",onDelSheet);
         el.profileModal.addEventListener("click",onAdminAction);
         el.adminPanel.addEventListener("click",onBackupClick);
+        el.adminPanel.addEventListener("click",onAcctDelClick);
+        el.delRequestButton.addEventListener("click",requestMyDeletion);
+        el.delCancelButton.addEventListener("click",cancelMyDeletion);
+        loadMyDeletion();
         el.newGroupButton.addEventListener("click",openGroupCreator);
         el.exportOldButton.addEventListener("click",() => exportHistory("old"));
         el.exportAllButton.addEventListener("click",() => exportHistory("all"));
         setTimeout(maybePromptExport,4000);
-        el.toggleHiddenUsers.addEventListener("click",() => { state.showHidden = !state.showHidden; renderRecommendations(); });
+        el.toggleHiddenUsers.addEventListener("click",() => { state.showHidden = !state.showHidden; loadRecommendations(); });
         el.postFilter.addEventListener("change",() => loadPosts(true));
         loadMyFollowCounts();
         renderProfileText();

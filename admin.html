@@ -1,16 +1,10 @@
 <!DOCTYPE html>
 <html lang="ja"><head><meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://geocoding-api.open-meteo.com; font-src 'self' data:; form-action 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; manifest-src 'self'">
-<meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<script src="./guard.js"></script><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ARE 管理画面</title>
-<style>
-body{margin:0;font:14px/1.6 system-ui,"Hiragino Sans","Noto Sans JP",sans-serif;background:#0b1020;color:#e8ecf5}
-main{max-width:960px;margin:0 auto;padding:16px}h1{font-size:20px}
-input,button,select{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid #33405f;background:#141b33;color:inherit}
-button{cursor:pointer;background:#2a6df4;border:0}button.d{background:#b3261e}button:disabled{opacity:.5}
-.row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.card{background:#141b33;border:1px solid #26314f;border-radius:10px;padding:10px;margin:8px 0;overflow-wrap:anywhere}
-.m{color:#9aa7c7;font-size:12px}#st{min-height:1.4em}.err{color:#ff8a80}.warn{background:#3a2e10;border:1px solid #6b5416;border-radius:8px;padding:8px;font-size:12px}
-</style></head><body><main>
+<link rel="stylesheet" href="./admin.css"></head><body><main>
 <h1>ARE 管理画面</h1>
 <p class="warn">この画面の操作（会話の閲覧・検索・削除・停止）はすべて監査ログに記録されます。業務上必要な範囲でのみ使用してください。</p>
 <form id="lf" class="row"><input id="lid" placeholder="管理者ログインID" autocomplete="username" required><input id="lpw" type="password" placeholder="パスワード" autocomplete="current-password" required><button>ログイン</button></form>

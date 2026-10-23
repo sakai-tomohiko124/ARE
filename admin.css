@@ -1,0 +1,6 @@
+body{margin:0;font:14px/1.6 system-ui,"Hiragino Sans","Noto Sans JP",sans-serif;background:#0b1020;color:#e8ecf5}
+main{max-width:960px;margin:0 auto;padding:16px}h1{font-size:20px}
+input,button,select{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid #33405f;background:#141b33;color:inherit}
+button{cursor:pointer;background:#2a6df4;border:0}button.d{background:#b3261e}button:disabled{opacity:.5}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.card{background:#141b33;border:1px solid #26314f;border-radius:10px;padding:10px;margin:8px 0;overflow-wrap:anywhere}
+.m{color:#9aa7c7;font-size:12px}#st{min-height:1.4em}.err{color:#ff8a80}.warn{background:#3a2e10;border:1px solid #6b5416;border-radius:8px;padding:8px;font-size:12px}

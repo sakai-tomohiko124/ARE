@@ -5,223 +5,12 @@
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://geocoding-api.open-meteo.com; font-src 'self' data:; form-action 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="no-referrer">
+<script src="./guard.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#0b1020">
 <meta name="theme-color" content="#111827">
 <title>ARE | チャット</title>
-<style>
-:root{color-scheme:dark;--bg:#0b1020;--panel:#141b2d;--panel2:#1b253a;--line:#2b3851;--text:#edf2ff;--muted:#9aa8c2;--accent:#7c9cff;--accent2:#5578ed;--danger:#ff7777;--success:#5de0b0}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
-button,input,textarea{font:inherit}
-button{cursor:pointer}
-button:disabled{opacity:.45;cursor:not-allowed}
-.app{display:grid;grid-template-columns:320px minmax(0,1fr);height:100dvh;min-height:540px}
-.sidebar{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line);background:#0f1627}
-.brand{display:flex;justify-content:space-between;align-items:center;padding:20px;border-bottom:1px solid var(--line)}
-.brand h1{font-size:24px;letter-spacing:2px;margin:0}
-.brand small{display:block;color:var(--muted);font-size:11px;letter-spacing:1px}
-.userbar{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
-.avatar{display:flex;align-items:center;justify-content:center;flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#34466b;color:white;font-weight:700;overflow:hidden}
-.avatar img{width:100%;height:100%;object-fit:cover}
-.user-info{flex:1;min-width:0}
-.user-info strong,.user-info small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.user-info small{color:var(--muted);font-size:12px;margin-top:3px}
-.button{border:0;border-radius:10px;background:var(--accent2);color:white;padding:10px 13px;font-weight:650}
-.button:hover{filter:brightness(1.1)}
-.button-secondary{border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text);padding:9px 12px}
-.button-danger{border:1px solid #743f50;background:#3b1e2b;color:#ffb5c0;border-radius:9px;padding:8px 10px}
-.sidebar-content{padding:16px;overflow-y:auto;min-height:0}
-.section-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 12px}
-.section-heading h2{font-size:14px;margin:0}
-.search{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px 12px;outline:none}
-.search:focus,textarea:focus,input:focus{border-color:var(--accent)}
-.user-list,.room-list{display:flex;flex-direction:column;gap:7px}
-.person,.room-item{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--text);text-align:left;width:100%;min-width:0}
-.person:hover,.room-item:hover,.room-item.active{background:var(--panel2);border-color:var(--line)}
-.person .person-text,.room-item .person-text{flex:1;min-width:0}
-.person strong,.person small,.room-item strong,.room-item small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.person small,.room-item small{color:var(--muted);font-size:12px;margin-top:3px}
-.person .add{font-size:19px;color:var(--accent);font-weight:700}
-.room-item .avatar,.person .avatar{width:38px;height:38px;flex-basis:38px}
-.section-divider{height:1px;background:var(--line);margin:20px 0}
-.empty-list{color:var(--muted);font-size:13px;line-height:1.7;padding:12px 4px}
-.main{display:flex;flex-direction:column;min-width:0;min-height:0}
-.chat-header{display:flex;align-items:center;gap:12px;padding:16px 22px;border-bottom:1px solid var(--line);background:#0f1627;min-height:78px}
-.chat-header .person-text{flex:1;min-width:0}
-.chat-header h2{font-size:17px;margin:0}
-.chat-header p{font-size:12px;color:var(--muted);margin:4px 0 0}
-.mobile-back{display:none}
-.messages{flex:1;min-height:0;overflow-y:auto;padding:24px clamp(12px,4vw,48px);display:flex;flex-direction:column;gap:14px}
-.welcome{margin:auto;text-align:center;max-width:390px;color:var(--muted);line-height:1.8}
-.welcome .welcome-icon{font-size:48px;margin-bottom:10px}
-.welcome h2{color:var(--text);font-size:22px;margin:0 0 8px}
-.day-divider{text-align:center;color:var(--muted);font-size:11px;margin:8px 0}
-.message-row{display:flex;align-items:flex-end;gap:9px;max-width:min(82%,700px)}
-.message-row.own{align-self:flex-end;flex-direction:row-reverse}
-.message-avatar{width:28px;height:28px;flex:0 0 28px;border-radius:50%;background:#34466b;display:flex;align-items:center;justify-content:center;font-size:11px;overflow:hidden}
-.message-avatar img{width:100%;height:100%;object-fit:cover}
-.message-body{min-width:0}
-.message-sender{font-size:11px;color:var(--muted);margin:0 0 5px 3px}
-.message-row.own .message-sender{text-align:right}
-.bubble{padding:11px 14px;border:1px solid var(--line);background:var(--panel);border-radius:15px 15px 15px 4px;overflow-wrap:anywhere;white-space:pre-wrap;line-height:1.65}
-.message-row.own .bubble{background:#273d73;border-color:#405b9c;border-radius:15px 15px 4px 15px}
-.message-time{font-size:10px;color:var(--muted);margin-top:5px}
-.message-row.own .message-time{text-align:right}
-.attachment{display:flex;flex-direction:column;gap:8px;max-width:min(100%,380px)}
-.attachment img{max-width:100%;max-height:330px;object-fit:contain;border-radius:10px;background:#0b1020}
-.attachment video{max-width:100%;max-height:300px;border-radius:10px;background:#000}
-.attachment a{color:#c6d6ff;overflow-wrap:anywhere}
-.file-card{display:flex;gap:10px;align-items:center;padding:10px;background:#111a2d;border:1px solid var(--line);border-radius:10px}
-.file-icon{font-size:25px}
-.file-name{overflow-wrap:anywhere}
-.file-meta{font-size:11px;color:var(--muted);margin-top:3px}
-.composer{padding:14px clamp(12px,3vw,32px) 18px;border-top:1px solid var(--line);background:#0f1627}
-.composer-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.tool-button{border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:8px 10px;border-radius:9px;font-size:12px}
-.file-input{display:none}
-.composer-bottom{display:flex;align-items:flex-end;gap:10px}
-.composer textarea{flex:1;min-width:0;resize:vertical;min-height:48px;max-height:180px;padding:13px 14px;border:1px solid var(--line);border-radius:13px;background:var(--panel);color:var(--text);outline:none;line-height:1.5}
-.char-count{font-size:11px;color:var(--muted);text-align:right;margin:6px 4px 0}
-.status{padding:10px 14px;font-size:13px;line-height:1.6;display:none}
-.status.show{display:block}
-.status.error{color:#ffb1b1;background:#3b1e2b}
-.status.success{color:#9df2d0;background:#12382f}
-.status.info{color:#c9d7ff;background:#1c2b4b}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:10;padding:12px 16px;border-radius:10px;background:#26344d;color:white;box-shadow:0 10px 35px #0008;max-width:90vw;display:none}
-.toast.show{display:block}
-.loading{opacity:.65;pointer-events:none}
-.status-select{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px;max-width:122px}
-.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:#6b7893}
-.dot.online{background:#5de0b0}.dot.busy{background:#ff7777}.dot.in_call{background:#b388ff}.dot.away{background:#ffcc66}
-.admin-tab{width:100%;margin-bottom:14px;background:#7a3d8f}.badge{background:#ff7777;color:#111;border-radius:99px;padding:0 7px;font-size:12px;margin-left:6px}.badge:empty{display:none}
-.message-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px;font-size:11px}
-.message-actions button{background:none;border:0;color:var(--muted);text-decoration:underline;padding:0}
-.message-actions .pending{color:#ffcc66}
-.bubble.edit{display:flex;flex-direction:column;gap:8px;white-space:normal}
-.edit-box{width:100%;min-height:70px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px}
-.edit-actions{display:flex;gap:8px;justify-content:flex-end}
-.schedule-panel{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px;margin-bottom:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
-.schedule-panel[hidden],.admin-panel[hidden],.admin-tab[hidden]{display:none}
-.schedule-panel input{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px}
-.schedule-list{flex-basis:100%;font-size:12px}.sched-item{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:4px 0}
-.admin-panel{position:fixed;inset:0;z-index:30;background:#0b1020;display:flex;flex-direction:column}
-.admin-panel>header{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--line)}
-.admin-note{flex:1;color:var(--muted);font-size:12px}
-.admin-panel [data-admin-view].active{border-color:var(--accent);color:var(--accent)}
-.admin-body{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
-.admin-card{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:10px 12px;overflow-wrap:anywhere}
-.admin-card .meta{color:var(--muted);font-size:12px}.admin-card .row{display:flex;gap:8px;margin-top:8px}
-button.admin-card{text-align:left;color:var(--text);width:100%}
-.admin-msg.deleted{opacity:.55}
-/* ===== レスポンシブ：スマホ=LINE/Instagram風、タブレット=2ペイン、PC=Teams/Slack風 ===== */
-html,body{height:100%}
-.rail{display:flex}
-.rail-logo{font-weight:800;letter-spacing:2px;margin-bottom:10px}
-.rail-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:none;color:var(--muted);font-size:10px;border-radius:12px}
-.rail-btn .ico{font-size:22px;line-height:1}.rail-btn.active{background:var(--panel2);color:var(--text)}
-.sidebar[data-tab="chats"] .pane-users,.sidebar[data-tab="chats"] .pane-me,
-.sidebar[data-tab="users"] .pane-chats,.sidebar[data-tab="users"] .pane-me,
-.sidebar[data-tab="me"] .pane-chats,.sidebar[data-tab="me"] .pane-users{display:none}
-.me-note{color:var(--muted);font-size:12px;line-height:1.7;margin:4px 0 0}
-.message-body{max-width:100%}
-@media(min-width:701px){
- .app{grid-template-columns:64px 300px minmax(0,1fr);height:100dvh}
- .rail{flex-direction:column;align-items:center;gap:6px;padding:12px 0;background:#080d1a;border-right:1px solid var(--line)}
- .rail-btn{width:56px;padding:8px 0}
- .brand small{display:none}
-}
-@media(min-width:1100px){
- .app{grid-template-columns:76px 340px minmax(0,1fr)}
- .rail-btn{width:64px}
- .messages{padding:24px clamp(20px,3vw,48px);gap:12px}
- .message-actions{opacity:.0;transition:opacity .15s}.message-row:hover .message-actions,.message-row:focus-within .message-actions{opacity:1}
- .composer{padding:14px 32px 20px}
- .composer textarea{border-radius:10px}
-}
-@media(max-width:700px){
- html,body{overscroll-behavior:none}
- input,textarea,select{font-size:16px}
- .app{display:flex;flex-direction:column;height:100dvh;min-height:0}
- .sidebar{order:1;flex:1;min-height:0;border-right:0;background:var(--bg)}
- .main{order:2;display:none;flex:1;min-height:0}
- .rail{order:3;flex:0 0 auto;flex-direction:row;justify-content:space-around;background:#0f1627;border-top:1px solid var(--line);padding:4px 4px calc(4px + env(safe-area-inset-bottom))}
- .rail-logo{display:none}
- .rail-btn{flex:1;min-height:52px}
- .app.chat-open .sidebar,.app.chat-open .rail{display:none}
- .app.chat-open .main{display:flex}
- .brand{padding:calc(12px + env(safe-area-inset-top)) 16px 12px}.brand small{display:none}.brand h1{font-size:22px}
- .userbar{padding:18px 16px}.userbar .avatar{width:56px;height:56px;flex-basis:56px;font-size:22px}
- .status-select{max-width:none;min-height:44px}
- .sidebar-content{padding:0 0 12px}
- .section-heading{padding:12px 16px 4px;margin:0}
- .search{width:calc(100% - 32px);margin:8px 16px;border-radius:22px;min-height:44px}
- .user-list,.room-list{gap:0}
- .person,.room-item{border-radius:0;padding:12px 16px;border:0;border-bottom:1px solid var(--line)}
- .person .avatar,.room-item .avatar{width:52px;height:52px;flex-basis:52px;font-size:20px}
- .person strong,.room-item strong{font-size:16px}
- .admin-tab{width:calc(100% - 32px);margin:12px 16px;min-height:48px}
- .me-note{padding:0 16px}
- .mobile-back{display:inline-flex;align-items:center;min-height:44px;padding:8px 12px}
- .chat-header{min-height:60px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;gap:10px}
- #refreshMessagesButton{display:none}
- .messages{padding:12px 10px;gap:10px}
- .message-row{max-width:90%}.message-row.own .message-avatar{display:none}
- .bubble{font-size:15px}
- .attachment{max-width:100%}
- .composer{padding:8px 10px calc(8px + env(safe-area-inset-bottom))}
- .composer-tools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-bottom:6px}
- .composer-tools::-webkit-scrollbar{display:none}
- .tool-button{white-space:nowrap;flex:0 0 auto;min-height:36px}
- .composer textarea{min-height:44px;resize:none;border-radius:22px;padding:11px 14px}
- .composer .button{min-height:44px;border-radius:22px;padding:0 18px}
- .char-count{display:none}
- .schedule-panel{flex-direction:column;align-items:stretch}
- .admin-panel>header{padding:calc(10px + env(safe-area-inset-top)) 12px 10px}
- .admin-body{padding:12px 12px calc(12px + env(safe-area-inset-bottom))}
- .toast{bottom:84px}
-}
-@media(max-height:500px) and (max-width:950px){
- .chat-header{min-height:44px;padding:4px 12px}.messages{padding:8px 12px}.composer{padding:6px 12px}.composer-tools{display:none}
-}
-.me-toggle{display:flex;flex-direction:column;gap:2px;margin:14px 16px 0;font-size:14px}
-.me-toggle input{margin-right:8px;width:18px;height:18px;vertical-align:middle}.me-toggle small{color:var(--muted);font-size:12px;margin-left:26px}
-.security-banner{margin:12px 16px 0;padding:10px 12px;border:1px solid #6b5416;background:#3a2e10;border-radius:10px;font-size:13px}
-.code-box{font-family:ui-monospace,Menlo,monospace;font-size:14px;word-break:break-all;background:#000;border:1px dashed #ffcc66;border-radius:8px;padding:12px;margin:8px 0}
-.sidebar[data-tab]:not([data-tab="posts"]) .pane-posts{display:none}
-.sidebar[data-tab="posts"] .pane-chats,.sidebar[data-tab="posts"] .pane-users,.sidebar[data-tab="posts"] .pane-me{display:none}
-.profile-card{margin:12px 16px 0;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
-.profile-text{margin-bottom:10px;font-size:14px;overflow-wrap:anywhere}.profile-text .sm{font-weight:700}.profile-text .bio{color:var(--muted);font-size:13px;margin-top:4px;white-space:pre-wrap}
-.status-msg{color:var(--muted);font-size:12px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.modal{position:fixed;inset:0;z-index:40;background:#000a;display:flex;align-items:center;justify-content:center;padding:16px}.modal[hidden]{display:none}
-.sheet{width:min(440px,100%);max-height:100%;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px}
-.sheet label{font-size:12px;color:var(--muted)}.sheet input[type=text],.sheet textarea{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
-.sheet .big-avatar{width:96px;height:96px;border-radius:50%;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;margin:0 auto}
-.sheet .big-avatar img{width:100%;height:100%;object-fit:cover}.sheet .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
-.post-composer{margin:8px 16px;display:flex;flex-direction:column;gap:8px}
-.post-composer textarea{width:100%;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:10px;resize:vertical;font:inherit}
-.post-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.post-tools .button{margin-left:auto}
-.post-feed{display:flex;flex-direction:column}
-.post{padding:12px 16px;border-bottom:1px solid var(--line)}
-.post-head{display:flex;gap:10px;align-items:center}.post-avatar{width:36px;height:36px;border-radius:50%;background:var(--panel2);display:inline-flex;align-items:center;justify-content:center;overflow:hidden;flex:0 0 36px;font-size:14px}
-.post-avatar img{width:100%;height:100%;object-fit:cover}
-.post-name{background:none;border:0;color:var(--text);font-weight:700;padding:0;text-align:left}.post-time{color:var(--muted);font-size:12px}
-.post-body{margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}.post-img{max-width:100%;border-radius:12px;display:block;margin:6px 0}
-.post-actions{display:flex;gap:12px;font-size:12px}.post-actions button{background:none;border:0;color:var(--muted);text-decoration:underline;padding:0}
-.post-more{margin:12px 16px;width:calc(100% - 32px)}
-.sidebar[data-tab]:not([data-tab="more"]) .pane-more{display:none}
-.sidebar[data-tab="more"] .pane-chats,.sidebar[data-tab="more"] .pane-users,.sidebar[data-tab="more"] .pane-posts,.sidebar[data-tab="more"] .pane-me{display:none}
-.more-item{text-align:left;color:var(--text);font-size:15px}.more-item small{display:block;margin-top:2px}
-.person-wrap{display:flex;align-items:center;gap:6px}.person-wrap .person{flex:1;min-width:0}.person-wrap.is-hidden{opacity:.55}
-.hide-btn{background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:6px 8px;font-size:12px;cursor:pointer;white-space:nowrap}
-.chat-header #callAudioBtn,.chat-header #callVideoBtn{padding:8px 12px;min-width:44px}
-.grp-sec{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:6px}
-.grp-sec h4{margin:0;font-size:14px}.grp-item{display:flex;gap:8px;align-items:center;justify-content:space-between;font-size:14px;overflow-wrap:anywhere}
-.grp-bar{height:8px;border-radius:6px;background:var(--panel2);overflow:hidden}.grp-bar i{display:block;height:100%;background:var(--accent)}
-.grp-opt{display:flex;flex-direction:column;gap:2px;margin:4px 0}.grp-opt button{text-align:left}.sheet textarea{resize:vertical}
-.pick{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:8px}
-.pick label{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--text)}
-</style>
+<link rel="stylesheet" href="./chat.css">
 </head>
 <body>
 <div class="app" id="app">
@@ -229,7 +18,7 @@ html,body{height:100%}
         <div class="rail-logo">ARE</div>
         <button class="rail-btn active" data-tab="chats" type="button"><span class="ico">💬</span><span>チャット</span></button>
         <button class="rail-btn" data-tab="users" type="button"><span class="ico">👥</span><span>ユーザー</span></button>
-        <button class="rail-btn" data-tab="posts" type="button"><span class="ico">📷</span><span>投稿</span></button>
+        <button class="rail-btn" data-tab="posts" data-feature="posts" type="button"><span class="ico">📷</span><span>投稿</span></button>
         <button class="rail-btn" data-tab="more" type="button"><span class="ico">🧰</span><span>その他</span></button>
         <button class="rail-btn" data-tab="me" type="button"><span class="ico">👤</span><span>マイページ</span></button>
     </nav>
@@ -244,42 +33,42 @@ html,body{height:100%}
             <select id="myStatus" class="status-select" aria-label="ステータス"><option value="online">🟢 オンライン</option><option value="busy">🔴 取り込み中</option><option value="in_call">📞 通話中</option><option value="away">🟡 待機中</option></select>
         </div>
         <div class="sidebar-content">
-            <div class="profile-card pane-me"><div class="profile-text" id="profileText"></div><button class="button" id="profileEditButton" type="button">✏️ プロフィールを編集</button></div>
+            <div class="profile-card pane-me"><div class="profile-text" id="profileText"></div><button class="button" id="profileEditButton" data-feature="profile" type="button">✏️ プロフィールを編集</button></div>
             <div class="profile-card pane-me" id="delCard">
                 <div class="profile-text"><b>アカウントの削除</b><div class="bio" id="delStatus">削除を申請すると、管理者の承認後にアカウントとデータが完全に削除されます（元に戻せません）。</div></div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="button-danger" id="delRequestButton" type="button">アカウント削除を申請</button><button class="button-secondary" id="delCancelButton" type="button" hidden>申請を取り消す</button></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="button-danger" id="delRequestButton" data-feature="account" type="button">アカウント削除を申請</button><button class="button-secondary" id="delCancelButton" type="button" hidden>申請を取り消す</button></div>
             </div>
             <div class="profile-card pane-me">
                 <div class="profile-text"><b>会話履歴の保存</b><div class="bio">30日を過ぎた会話は、ZIPファイルとしてこの端末に保存できます（添付ファイルの中身は含まれません）。</div></div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="button" id="exportOldButton" type="button">30日より前をZIP保存</button><button class="button-secondary" id="exportAllButton" type="button">すべてZIP保存</button></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="button" id="exportOldButton" data-feature="history" type="button">30日より前をZIP保存</button><button class="button-secondary" id="exportAllButton" data-feature="history" type="button">すべてZIP保存</button></div>
             </div>
             <div class="pane pane-more">
                 <div class="section-heading"><h2>🧰 その他</h2></div>
                 <a class="admin-card more-item" href="./help.html" target="_blank" rel="noopener" style="text-decoration:none">📖 操作方法<small class="meta">使い方ガイド（スマホ・パソコン共通）</small></a>
-                <button class="admin-card more-item" data-extra="chatbot" type="button">🤖 AIチャットボット<small class="meta">よくある質問に自動で答えます</small></button>
-                <button class="admin-card more-item" data-extra="weather" type="button">☀️ 天気予報<small class="meta">地名で検索・7日間の予報</small></button>
-                <button class="admin-card more-item" data-extra="transit" type="button">🚆 交通情報<small class="meta">乗換案内・運行状況</small></button>
+                <button class="admin-card more-item" data-extra="chatbot" data-feature="extras" type="button">🤖 AIチャットボット<small class="meta">よくある質問に自動で答えます</small></button>
+                <button class="admin-card more-item" data-extra="weather" data-feature="extras" type="button">☀️ 天気予報<small class="meta">地名で検索・7日間の予報</small></button>
+                <button class="admin-card more-item" data-extra="transit" data-feature="extras" type="button">🚆 交通情報<small class="meta">乗換案内・運行状況</small></button>
             </div>
             <div class="pane pane-posts">
-                <div class="section-heading"><h2>📷 投稿</h2><select id="postFilter" class="status-select" aria-label="表示する投稿"><option value="all">すべて</option><option value="following">フォロー中</option></select><button class="button-secondary" id="postsRefresh" type="button">更新</button></div>
+                <div class="section-heading"><h2>📷 投稿</h2><select id="postFilter" data-feature="posts" class="status-select" aria-label="表示する投稿"><option value="all">すべて</option><option value="following">フォロー中</option></select><button class="button-secondary" id="postsRefresh" data-feature="posts" type="button">更新</button></div>
                 <div class="post-composer">
                     <textarea id="postBody" maxlength="500" rows="2" placeholder="いまどうしてる？（500文字まで）"></textarea>
-                    <div class="post-tools"><label class="tool-button">🖼️ 写真<input class="file-input" id="postImage" type="file" accept="image/*"></label><span id="postImageName" class="meta"></span><button class="button" id="postSubmit" type="button">投稿する</button></div>
+                    <div class="post-tools"><label class="tool-button">🖼️ 写真<input class="file-input" id="postImage" type="file" accept="image/*"></label><span id="postImageName" class="meta"></span><button class="button" id="postSubmit" data-feature="posts" type="button">投稿する</button></div>
                 </div>
                 <div id="postFeed" class="post-feed"><div class="empty-list">読み込み中...</div></div>
                 <button class="button-secondary post-more" id="postMore" type="button" hidden>さらに読み込む</button>
             </div>
-            <button class="button admin-tab pane-me" id="adminTabButton" type="button" hidden>🛡️ 管理者パネル <span id="adminBadge" class="badge"></span></button>
+            <button class="button admin-tab pane-me" id="adminTabButton" data-feature="admin" type="button" hidden>🛡️ 管理者パネル <span id="adminBadge" class="badge"></span></button>
             <p class="me-note pane-me">ご注意：運営管理者は、安全管理・不正対策のため会話内容を閲覧でき、バックアップとして保存する場合があります。個人情報や機密情報は送信しないでください。</p>
             <p class="security-banner pane-me" id="securityBanner" hidden></p>
             <label class="me-toggle pane-me"><input type="checkbox" id="readReceiptToggle" checked> 既読を相手に表示する<small>オフにすると、あなたが読んでも相手には「既読」と表示されません。</small></label>
             <div class="pane pane-users">
-            <div class="section-heading"><h2>🔎 おすすめユーザー</h2><button class="button-secondary" id="toggleHiddenUsers" type="button">非表示の人を表示</button><button class="button-secondary" id="refreshUsersButton" type="button">更新</button></div>
+            <div class="section-heading"><h2>🔎 ユーザーを探す</h2><button class="button-secondary" id="toggleHiddenUsers" data-feature="follow" type="button">非表示（0）</button><button class="button-secondary" id="refreshUsersButton" type="button">更新</button></div>
             <input class="search" id="userSearch" type="search" placeholder="ユーザー名を検索..." autocomplete="off">
             <div class="user-list" id="recommendedUsers"><div class="empty-list">上の検索バーに名前を入力すると、ユーザーが表示されます。</div></div>
             </div>
             <div class="pane pane-chats">
-            <div class="section-heading"><h2>💬 チャット</h2><button class="button-secondary" id="newGroupButton" type="button">👥 グループ作成</button><button class="button-secondary" id="refreshRoomsButton" type="button">更新</button></div>
+            <div class="section-heading"><h2>💬 チャット</h2><button class="button-secondary" id="newGroupButton" data-feature="groups" type="button">👥 グループ作成</button><button class="button-secondary" id="refreshRoomsButton" type="button">更新</button></div>
             <div class="room-list" id="roomList"><div class="empty-list">チャットを読み込んでいます...</div></div>
             </div>
         </div>
@@ -290,8 +79,8 @@ html,body{height:100%}
             <button class="button-secondary mobile-back" id="backButton" type="button">← 戻る</button>
             <div class="avatar" id="chatAvatar">💬</div>
             <div class="person-text"><h2 id="chatTitle">AREへようこそ</h2><p id="chatSubtitle">チャット相手を選択してください</p></div>
-            <button class="button-secondary" id="callAudioBtn" type="button" title="音声通話" aria-label="音声通話">📞</button>
-            <button class="button-secondary" id="callVideoBtn" type="button" title="ビデオ通話" aria-label="ビデオ通話">🎥</button>
+            <button class="button-secondary" id="callAudioBtn" data-feature="calls" type="button" title="音声通話" aria-label="音声通話">📞</button>
+            <button class="button-secondary" id="callVideoBtn" data-feature="calls" type="button" title="ビデオ通話" aria-label="ビデオ通話">🎥</button>
             <button class="button-secondary" id="refreshMessagesButton" type="button" disabled>更新</button>
         </header>
 
@@ -309,7 +98,7 @@ html,body{height:100%}
                 <input class="file-input" id="fileInput" type="file" multiple accept=".pdf,.docx,.xlsx,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation">
                 <label class="tool-button" for="videoInput">🎬 動画を選択</label>
                 <input class="file-input" id="videoInput" type="file" accept="video/*">
-                <button class="tool-button" id="scheduleButton" type="button" disabled>🕒 予約送信</button>
+                <button class="tool-button" id="scheduleButton" data-feature="messages" type="button" disabled>🕒 予約送信</button>
                 <span id="attachmentStatus" style="font-size:11px;color:var(--muted)"></span>
             </div>
             <div class="schedule-panel" id="schedulePanel" hidden>
@@ -343,8 +132,21 @@ html,body{height:100%}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="./apikey.js"></script>
+<script src="./password-toggle.js"></script>
 <script src="./system.js"></script>
 <script src="./extras.js"></script>
-<script src="./chat.js"></script>
+<script src="./chat-base.js"></script>
+<script src="./chat-feat.js"></script>
+<script src="./chat-presence.js"></script>
+<script src="./chat-messages.js"></script>
+<script src="./chat-profile.js"></script>
+<script src="./chat-posts.js"></script>
+<script src="./chat-follow.js"></script>
+<script src="./chat-groups.js"></script>
+<script src="./chat-history.js"></script>
+<script src="./chat-account.js"></script>
+<script src="./chat-admin.js"></script>
+<script src="./chat-admin-users.js"></script>
+<script src="./chat-main.js"></script>
 </body>
 </html>

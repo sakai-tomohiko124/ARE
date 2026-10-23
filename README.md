@@ -21,20 +21,44 @@ HTML・CSS・JavaScript だけで作った静的サイトを **GitHub Pages** �
 
 ## 2. ファイル構成
 
+HTML・CSS・JavaScript を、画面ごと・機能ごとに別々のファイルにしています（例：`login.html` / `login.css` / `login.js`）。
+
 ```
-index.html / index.js / index.css     起動画面
-login.html / login.js / login.css     ログイン
-register.html / register.js / .css    新規登録
-recovery.html / recovery.js / .css    アカウント復旧
-chat.html / chat.js                   メイン画面（チャット・投稿・管理者パネル）
-extras.js                             ボット・天気・交通・通話
-system.js                             Supabase との通信の共通部分
-apikey.js                             Supabase の接続先（公開してよい値）
-password-toggle.js                    目のボタンとパスワード条件の表示
-chatbot.txt                           チャットボットの回答データ（自由に編集可）
-help.html                             操作ガイド（スマホ・パソコン共通）
-admin.html / admin.js                 旧式の管理画面（なくても動きます）
+index.html / index.css / index.js            起動画面
+login.html / login.css / login.js            ログイン
+register.html / register.css / register.js   新規登録
+recovery.html / recovery.css / recovery.js   アカウント復旧
+admin.html / admin.css / admin.js            旧式の管理画面（なくても動きます）
+help.html / help.css                         操作ガイド（スマホ・パソコン共通）
+
+chat.html / chat.css                         メイン画面の骨組みと見た目
+  chat-base.js        チャットの土台（部屋・メッセージ・送信）
+  chat-feat.js        機能共通の部品（エラー文など）
+  chat-presence.js    在席状況・既読
+  chat-messages.js    編集・削除申請・予約送信
+  chat-profile.js     プロフィール編集・表示
+  chat-posts.js       投稿
+  chat-follow.js      フォロー・ユーザーの非表示
+  chat-groups.js      グループ（名称・注意事項・リンク・アンケート）
+  chat-history.js     会話履歴のZIP保存
+  chat-account.js     アカウント削除の申請・通知
+  chat-admin.js       管理者パネル（会話の閲覧・削除申請・セキュリティ）
+  chat-admin-users.js 管理者のアカウント作成・編集・バックアップ
+  chat-main.js        起動（機能ごとに別々に起動します）
+extras.js             チャットボット・天気・交通・通話
+guard.js              安全装置（下記）
+system.js             Supabase との通信の共通部分
+apikey.js             Supabase の接続先（公開してよい値）
+password-toggle.js    目のボタンとパスワード条件の表示
+chatbot.txt           チャットボットの回答データ（自由に編集可）
 ```
+
+### 「押しても反応しない」を作らない仕組み（`guard.js` と `chat-main.js`）
+
+- 機能は**1つずつ別々に起動**します。1つの機能が壊れても、ほかの機能は動きます。
+- 起動できなかった機能は、画面の上に「一部の機能は、未実装、または起動に失敗したため使えません：◯◯」と表示し、その機能のボタンを押すと「**現在ご利用いただけません（未実装、またはサーバー側でエラー）**」と表示します。
+- Supabase 側の準備がまだない機能（関数・テーブルがない）は、「**この機能は未実装です**」と表示します。
+- 処理がつながっていないボタンを押したときも、「この機能は未実装です」と表示します。
 
 ## 3. 公開のしかた（GitHub Pages）
 
@@ -102,6 +126,7 @@ admin.html / admin.js                 旧式の管理画面（なくても動き
 
 | 症状 | 対処 |
 |---|---|
+| 「未実装です」と表示される | その機能は起動に失敗しているか、サーバー側の準備がありません。ブラウザの開発者ツールのコンソールに `[ARE feature failed]` と原因が出ます |
 | 真っ白・読み込めない | ブラウザの開発者ツールのコンソールを見る。CSP のエラーが出る場合は、`<meta http-equiv="Content-Security-Policy">` の許可先を確認 |
 | 「権限がありません」 | RLS／関数の実行権限。新しい関数を作ったら、`service_role` や `authenticated` への実行権限を確認 |
 | 予約送信が届かない | `pg_cron` のジョブが登録されているか確認 |

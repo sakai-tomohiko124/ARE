@@ -144,15 +144,31 @@ async function onAdminClick(event){
     }
 }
 
-async function deleteAccount(userId,name){
-    const reason = window.prompt("⚠️ " + name + " さんの「アカウント削除の申請」を作成します。\n（このあと「アカウント削除」タブで承認すると、完全に削除されます）\n\n削除の理由を入力してください（5文字以上・記録されます）。","");
-    if(reason === null) return;
+function deleteAccount(userId,name){
+    feat.reqTarget = {uid:userId,name:name};
+    openSheet('<h3 style="margin:0">アカウント削除の申請</h3><div><b>' + escapeHtml(name) + '</b> さんの削除申請を作成します。作成後に「アカウント削除」タブで承認すると完全に削除されます。</div>' +
+        '<label for="drReason">削除の理由（2文字以上・記録されます）</label><textarea id="drReason" rows="3" maxlength="300"></textarea>' +
+        '<div id="drErr" class="meta" style="color:#ff8a8a" role="alert"></div>' +
+        '<div class="row" style="justify-content:stretch"><button type="button" class="button-danger" data-dr="submit">申請を作成</button><button type="button" class="button-secondary" data-pm="close">やめる</button></div>');
+}
+
+async function submitDeleteRequest(button){
+    const t = feat.reqTarget, err = document.getElementById("drErr");
+    const reason = (document.getElementById("drReason")?.value || "").trim();
+    if(!t) return;
+    if(reason.length < 2){ err.textContent = "理由を2文字以上で入力してください。"; return; }
+    button.disabled = true; err.textContent = "申請を作成しています…";
     try{
-        const result = await requireClient().rpc("admin_request_account_deletion",{p_user_id:userId,p_reason:reason});
+        const result = await requireClient().rpc("admin_request_account_deletion",{p_user_id:t.uid,p_reason:reason});
         if(result.error) throw result.error;
+        // 本当に保存されたか、一覧を取り直して確認する
+        const check = await requireClient().rpc("admin_list_account_deletion_requests");
+        if(check.error) throw check.error;
+        if(!(check.data || []).some((r) => r.user_id === t.uid)) throw new Error("申請が一覧に反映されませんでした。");
+        feat.reqTarget = null; closeSheet();
         feat.adminView = "acctdel"; renderAdmin(); refreshAdminBadge();
         showToast("削除申請を作成しました。内容を確認して「承認して完全削除」を押してください。");
-    }catch(error){ showToast(featError(error)); }
+    }catch(error){ button.disabled = false; err.textContent = "申請できませんでした：" + featError(error); }
 }
 
 async function renderAdminSecurity(client){
@@ -195,6 +211,8 @@ function onAcctDelClick(event){
 }
 
 async function onDelSheet(event){
+    const dr = event.target.closest("[data-dr]");
+    if(dr) return submitDeleteRequest(dr);
     const b = event.target.closest("[data-d]");
     if(!b || !feat.delTarget) return;
     const t = feat.delTarget, typed = (document.getElementById("delConfirmName")?.value || "");

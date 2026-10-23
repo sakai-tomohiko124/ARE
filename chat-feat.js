@@ -11,7 +11,7 @@ const FEAT_ERRORS = {
     room_suspended:"このチャットは停止中です。", send_at_out_of_range:"送信日時は30秒後〜30日以内で指定してください。",
     too_many_scheduled:"予約は最大50件までです。", forbidden:"管理者権限がありません。", message_length_invalid:"メッセージの長さが正しくありません。",
     request_not_pending:"この申請はすでに処理されています。",
-    reason_required:"理由を5文字以上で入力してください。", confirm_mismatch:"確認用の表示名が一致しません。", already_requested:"すでに削除を申請済みです。",
+    reason_required:"理由を2文字以上で入力してください。", confirm_mismatch:"確認用の表示名が一致しません。", already_requested:"すでに削除を申請済みです。",
     group_name_invalid:"グループ名は1〜40文字で入力してください。", group_members_invalid:"メンバーは1〜49人まで選んでください。", notice_too_long:"注意事項は500文字以内です。",
     link_title_invalid:"リンクの名前は1〜60文字で入力してください。", link_url_invalid:"リンクは https:// で始まるURLを入力してください。", too_many_links:"リンクは20件までです。",
     poll_question_invalid:"質問は1〜100文字で入力してください。", poll_options_invalid:"選択肢は2〜6個（各50文字以内）で入力してください。",

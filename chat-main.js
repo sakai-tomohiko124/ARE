@@ -123,7 +123,18 @@ const FEATURES = [
     ["admin","管理者パネル",initAdmin],
     ["adminUsers","アカウントの作成・編集・バックアップ",initAdminUsers],
     ["extras","チャットボット・天気・交通",initExtras],
-    ["calls","通話（試験的）",initCalls]
+    ["calls","通話（試験的）",initCalls],
+    ["msgmenu","メッセージ操作メニュー",initMsgMenu],
+    ["reply","返信・引用",initReply],
+    ["forward","メッセージの転送",initForward],
+    ["react","絵文字リアクション",initReact],
+    ["pin","メッセージの固定",initPin],
+    ["block","ブロック・ミュート",initBlock],
+    ["search","メッセージ検索",initSearch],
+    ["typing","入力中の表示",initTyping],
+    ["voice","音声メッセージ",initVoice],
+    ["stamps","絵文字・スタンプ",initStamps],
+    ["mention","メンション",initMention]
 ];
 
 function startFeatures(){

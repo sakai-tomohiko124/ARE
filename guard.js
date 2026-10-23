@@ -80,10 +80,22 @@
     }, true);
 
     // 処理がつながっていないボタンを押したとき
+    // ※ボタンの処理が画面を作り直す（シートを閉じる等）と、ボタンが画面から外れて「つながっていない」と
+    //   誤判定されるため、押された瞬間（処理が走る前）に判定しておく
+    var clickInfo = null;
+    function isWired(btn) {
+        for (var n = btn; n; n = n.parentElement) { if (handled.has(n)) return true; }
+        return false;
+    }
+    document.addEventListener("click", function (e) {
+        var btn = e.target.closest && e.target.closest("button");
+        clickInfo = btn ? { btn: btn, wired: isWired(btn) } : null;
+    }, true);
     document.addEventListener("click", function (e) {
         var btn = e.target.closest && e.target.closest("button");
         if (!btn || btn.disabled || btn.hasAttribute("data-keep")) return;
-        for (var n = btn; n; n = n.parentElement) { if (handled.has(n)) return; }
+        var wired = (clickInfo && clickInfo.btn === btn) ? clickInfo.wired : isWired(btn);
+        if (wired) return;
         notify("この機能は未実装です。");
     }, false);
 

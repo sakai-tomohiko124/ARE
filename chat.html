@@ -81,16 +81,20 @@
             <div class="person-text"><h2 id="chatTitle">AREへようこそ</h2><p id="chatSubtitle">チャット相手を選択してください</p></div>
             <button class="button-secondary" id="callAudioBtn" data-feature="calls" type="button" title="音声通話" aria-label="音声通話">📞</button>
             <button class="button-secondary" id="callVideoBtn" data-feature="calls" type="button" title="ビデオ通話" aria-label="ビデオ通話">🎥</button>
+            <button class="button-secondary" id="searchBtn" data-feature="search" type="button" title="メッセージ検索" aria-label="メッセージ検索">🔍</button>
+            <button class="button-secondary" id="blockBtn" data-feature="block" type="button" hidden title="ブロック・ミュート" aria-label="ブロック・ミュート">🚫</button>
             <button class="button-secondary" id="refreshMessagesButton" type="button" disabled>更新</button>
         </header>
 
         <div class="status" id="pageStatus" role="status" aria-live="polite"></div>
+        <button class="pin-bar" id="pinBar" data-feature="pin" type="button" hidden></button>
 
         <section class="messages" id="messages" aria-live="polite">
             <div class="welcome"><div class="welcome-icon">✉️</div><h2>会話を始めよう</h2><div>おすすめユーザーを選択するか、既存のチャットを開いてください。</div></div>
         </section>
 
         <section class="composer">
+            <div class="typing-line" id="typingLine" aria-live="polite"></div>
             <div class="composer-tools">
                 <label class="tool-button" for="imageInput">🖼️ 画像を選択</label>
                 <input class="file-input" id="imageInput" type="file" accept="image/*" multiple>
@@ -98,6 +102,9 @@
                 <input class="file-input" id="fileInput" type="file" multiple accept=".pdf,.docx,.xlsx,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation">
                 <label class="tool-button" for="videoInput">🎬 動画を選択</label>
                 <input class="file-input" id="videoInput" type="file" accept="video/*">
+                <button class="tool-button" id="emojiButton" data-feature="stamps" type="button">😊 絵文字・スタンプ</button>
+                <button class="tool-button" id="voiceButton" data-feature="voice" data-needs-room type="button" disabled>🎤 音声</button>
+                <button class="tool-button" id="voiceCancel" data-feature="voice" type="button" hidden>✖ 録音を取消</button>
                 <button class="tool-button" id="scheduleButton" data-feature="messages" type="button" disabled>🕒 予約送信</button>
                 <span id="attachmentStatus" style="font-size:11px;color:var(--muted)"></span>
             </div>
@@ -147,6 +154,17 @@
 <script src="./chat-account.js"></script>
 <script src="./chat-admin.js"></script>
 <script src="./chat-admin-users.js"></script>
+<script src="./chat-msgmenu.js"></script>
+<script src="./chat-reply.js"></script>
+<script src="./chat-forward.js"></script>
+<script src="./chat-react.js"></script>
+<script src="./chat-pin.js"></script>
+<script src="./chat-block.js"></script>
+<script src="./chat-search.js"></script>
+<script src="./chat-typing.js"></script>
+<script src="./chat-voice.js"></script>
+<script src="./chat-stamps.js"></script>
+<script src="./chat-mention.js"></script>
 <script src="./chat-main.js"></script>
 </body>
 </html>

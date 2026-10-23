@@ -22,7 +22,9 @@ async function onMessageAction(event){
         if(Array.from(text).length > MAX_TEXT_LENGTH){ showToast("メッセージは2,000文字以内で入力してください。"); return; }
         button.disabled = true;
         try{
-            const result = await requireClient().rpc("edit_message",{p_message_id:id,p_content:JSON.stringify({type:"text",text})});
+            const keep = Object.assign({},parseMessageContent(message.content),{type:"text",text});
+            delete keep.stamp;
+            const result = await requireClient().rpc("edit_message",{p_message_id:id,p_content:JSON.stringify(keep)});
             if(result.error) throw result.error;
             feat.editingId = null;
             await loadMessages(false,true);

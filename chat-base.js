@@ -183,6 +183,7 @@ function setChatEnabled(enabled){
     el.sendButton.disabled = !enabled;
     el.refreshMessagesButton.disabled = !enabled;
     el.scheduleButton.disabled = !enabled;
+    document.querySelectorAll("[data-needs-room]").forEach((node) => { node.disabled = !enabled; });
     if(!enabled) el.schedulePanel.hidden = true;
     if(!enabled) el.messageInput.value = "";
     updateCharCount();
@@ -453,6 +454,7 @@ async function selectRoom(room,partner){
     state.currentRoom = room;
     state.currentPartner = partner || room.partner || null;
     state.messages = [];
+    if(typeof runRoomHooks === "function") runRoomHooks();
     feat.partnerReadAt = null; feat.readTimes = []; feat.readKey = ""; feat.pending = new Set(); feat.editingId = null; el.schedulePanel.hidden = true;
 
     const name = room.is_group ? (room.name || "グループ") : profileDisplayName(state.currentPartner);
@@ -556,7 +558,7 @@ function parseMessageContent(content){
     if(typeof content !== "string") return {type:"text",text:String(content ?? "")};
     try{
         const parsed = JSON.parse(content);
-        if(parsed && typeof parsed === "object" && ["text","image","file","video","poll"].includes(parsed.type)){
+        if(parsed && typeof parsed === "object" && ["text","image","file","video","audio","poll"].includes(parsed.type)){
             return parsed;
         }
     }catch(_error){}
@@ -567,7 +569,9 @@ function renderMessageContent(content){
     const item = parseMessageContent(content);
 
     if(item.type === "text"){
-        return '<div class="bubble">' + escapeHtml(item.text || "") + '</div>';
+        const escaped = escapeHtml(item.text || "");
+        const html = (window.AREText && typeof window.AREText.format === "function") ? window.AREText.format(escaped,item) : escaped;
+        return '<div class="bubble' + (item.stamp ? ' stamp' : '') + '">' + html + '</div>';
     }
     if(item.type === "poll"){
         return '<div class="bubble">📊 <b>アンケート</b><br>' + escapeHtml(item.question || "") + '<br><button type="button" class="button-secondary" data-openpoll="' + escapeHtml(item.pollId || "") + '">回答・結果を見る</button></div>';
@@ -581,6 +585,10 @@ function renderMessageContent(content){
     }
     const safeName = escapeHtml(name);
     const size = item.size ? '<div class="file-meta">' + escapeHtml(formatBytes(Number(item.size))) + '</div>' : "";
+
+    if(item.type === "audio"){
+        return '<div class="bubble"><div class="attachment">🎤 ボイスメッセージ<audio controls preload="metadata" src="' + safeUrl + '"></audio>' + size + '</div></div>';
+    }
 
     if(item.type === "image"){
         return '<div class="bubble"><div class="attachment"><a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer"><img src="' + safeUrl + '" alt="' + safeName + '" loading="lazy"></a><div class="file-meta">' + safeName + '</div></div></div>';
@@ -635,12 +643,13 @@ function renderMessages(scrollToBottom){
                 '</div>';
         }
 
-        return '<article class="message-row' + (own ? ' own' : '') + '">' +
+        return '<article class="message-row' + (own ? ' own' : '') + '" data-mid="' + id + '">' +
             avatar +
             '<div class="message-body"><div class="message-sender">' + escapeHtml(name) + '</div>' +
             body + '<div class="message-time">' + meta + '</div>' + actions + '</div></article>';
     }).join("");
 
+    if(typeof afterRenderMessages === "function") afterRenderMessages();
     el.messages.scrollTop = stick ? el.messages.scrollHeight : prevTop;
 }
 
@@ -658,10 +667,10 @@ async function sendTextMessage(){
         return;
     }
 
-    await sendMessagePayload({type:"text",text});
+    await sendMessagePayload(buildTextPayload(text));
 }
 
-async function sendMessagePayload(payload){
+async function sendMessagePayload(payload,options){
     if(!state.currentRoom || state.sending) return;
 
     state.sending = true;
@@ -677,15 +686,16 @@ async function sendMessagePayload(payload){
 
         if(result.error) throw result.error;
 
-        if(payload.type === "text"){
+        if(payload.type === "text" && !(options && options.keepInput)){
             el.messageInput.value = "";
             updateCharCount();
         }
+        if(typeof afterPayloadSent === "function") afterPayloadSent(payload);
 
         await loadMessages(false);
     }catch(error){
         console.error("Send message error:",error);
-        setStatus(getErrorMessage(error),"error");
+        setStatus(typeof featError === "function" ? featError(error) : getErrorMessage(error),"error");
     }finally{
         state.sending = false;
         updateCharCount();

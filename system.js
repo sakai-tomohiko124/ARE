@@ -1,3 +1,5 @@
+// frame-busting：他のサイトの枠(iframe)の中に埋め込まれて表示されたときは、単独のページとして開き直す
+try { if (window.top !== window.self) { window.top.location = window.self.location; } } catch (e) { document.documentElement.style.display = "none"; }
 (function () {
     "use strict";
 

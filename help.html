@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ARE 操作ガイド</title>
+<style>
+:root{--bg:#0b1020;--panel:#141b33;--line:#26314f;--text:#e8ecf5;--muted:#9aa7c7;--acc:#7da2ff;--ok:#5de0b0;--warn:#ffcc66}
+@media (prefers-color-scheme:light){:root{--bg:#f4f6fb;--panel:#fff;--line:#d9deea;--text:#1a2133;--muted:#5a6580;--acc:#2a56d6;--ok:#16825d;--warn:#9a6a00}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.85 "Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.wrap{max-width:1040px;margin:0 auto;padding:16px;display:block}
+header.top{padding:20px 4px 8px}header.top h1{margin:0;font-size:26px}header.top p{margin:6px 0 0;color:var(--muted)}
+nav.toc{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin:14px 0}
+nav.toc summary{font-weight:700;cursor:pointer}nav.toc ol{margin:8px 0 0;padding-left:1.4em}nav.toc a{color:var(--acc);text-decoration:none}
+main section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 18px 14px;margin:14px 0}
+h2{font-size:20px;margin:16px 0 4px}h3{font-size:16px;margin:16px 0 2px;color:var(--acc)}
+p{margin:6px 0}ul,ol{margin:6px 0;padding-left:1.4em}li{margin:3px 0}
+.note,.warn,.tip{border-radius:10px;padding:10px 14px;margin:10px 0;font-size:15px}
+.note{border:1px solid var(--line);background:rgba(125,162,255,.08)}.tip{border:1px solid var(--ok);background:rgba(93,224,176,.08)}.warn{border:1px solid var(--warn);background:rgba(255,204,102,.1)}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:8px 0;display:block;overflow-x:auto}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}th{background:rgba(125,162,255,.12);white-space:nowrap}
+kbd,code{background:rgba(125,162,255,.15);border-radius:6px;padding:1px 6px;font-size:.92em}
+.dev{display:flex;gap:10px;flex-wrap:wrap}.dev>div{flex:1 1 260px;border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+details{border-top:1px solid var(--line);padding:6px 0}details summary{cursor:pointer;font-weight:700}
+a.top-link{color:var(--acc)}footer{color:var(--muted);font-size:13px;text-align:center;padding:16px}
+@media (min-width:1000px){.wrap{display:grid;grid-template-columns:260px 1fr;gap:18px;align-items:start}header.top{grid-column:1/-1}nav.toc{position:sticky;top:12px;margin:0}nav.toc details>summary{pointer-events:none}main section:first-child{margin-top:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top"><h1>📖 ARE 操作ガイド</h1><p>スマホ（縦向きがおすすめ）でもパソコンでも、このページ1つで読めます。気になる項目だけ開いて読んでください。</p></header>
+
+<nav class="toc"><details open><summary>目次</summary><ol>
+<li><a href="#s1">はじめに（登録とログイン）</a></li><li><a href="#s2">画面の見かた</a></li><li><a href="#s3">1対1のチャット</a></li>
+<li><a href="#s4">グループチャット</a></li><li><a href="#s5">投稿とフォロー</a></li><li><a href="#s6">プロフィールとステータス</a></li>
+<li><a href="#s7">その他（ボット・天気・交通）</a></li><li><a href="#s8">履歴の保存（ZIP）</a></li><li><a href="#s9">アカウントの削除</a></li>
+<li><a href="#s10">安全のために</a></li><li><a href="#s11">困ったとき</a></li><li><a href="#s12">管理者向けガイド</a></li></ol></details></nav>
+
+<main>
+<section id="s1"><h2>1. はじめに（登録とログイン）</h2>
+<h3>新規登録</h3><ol>
+<li>「新規登録」を開き、<b>ログインID</b>（ログインに使う名前）と<b>表示名</b>（他の人に見える名前）を決めます。</li>
+<li><b>パスワード</b>を決めます。下のチェック欄がすべて「✓」になれば使えます。</li>
+<li><b>電話番号かメールアドレス</b>のどちらか一方は、必ず入力します（トラブルのときの本人確認に使います。他の利用者には見えません）。</li>
+<li>登録が終わると<b>復旧コード</b>（長い英数字）が1回だけ表示されます。<b>必ず保存</b>してください（下の注意を参照）。</li></ol>
+<div class="note"><b>パスワードの条件：</b>8文字以上で、<b>大文字・小文字・数字か記号</b>をそれぞれ1文字以上。<br>つくり方の例：好きな言葉を2つ続けて、1文字を大文字にし、最後に数字と記号を足す（例：<code>Nekobus24!</code>）。<b>この例そのものは使わず</b>、自分だけの言葉で作ってください。</div>
+<div class="warn"><b>復旧コードは1度しか表示されません。</b>スクリーンショットではなく、パスワード管理アプリや紙に控えてください。なくした場合は、管理者に再発行を頼めます（本人確認があります）。</div>
+<h3>ログイン</h3><ul>
+<li><b>ログインID</b>＝登録したときに決めたID（表示名とは別です）。<b>パスワード</b>＝登録したときのパスワード（復旧コードではありません）。</li>
+<li>パスワード欄の右にある<b>目のボタン（👁）</b>を押すと、入力した文字を表示して確認できます。もう一度押すと隠れます。</li>
+<li>パスワードを間違え続けると、<b>5回ごとに一時的にログインできなくなります</b>（5回＝5分、10回＝10分、15回＝15分…）。待ってからやり直してください。</li>
+<li>パスワードを忘れたら、ログイン画面の<b>「アカウント復旧」</b>で、復旧コードと新しいパスワードを入力します。</li></ul>
+<div class="tip">表示のしくみ：<b>スマホ</b>は画面の下にタブ、<b>パソコン</b>は左端にメニューが出ます。中身は同じです。</div></section>
+
+<section id="s2"><h2>2. 画面の見かた</h2>
+<div class="dev"><div><b>📱 スマホ（縦向き推奨）</b><br>画面の下のタブで切り替えます。チャットを開くと全画面になり、左上の「←」で一覧に戻ります。</div><div><b>💻 パソコン・タブレット</b><br>左のメニューで切り替え、その右に一覧、いちばん広い場所に会話が出ます。</div></div>
+<table><tr><th>タブ</th><th>できること</th></tr>
+<tr><td>💬 チャット</td><td>会話の一覧。グループの作成もここから。</td></tr>
+<tr><td>👥 ユーザー</td><td>名前で検索して、相手を探します（最初は何も表示されません）。</td></tr>
+<tr><td>📷 投稿</td><td>近況の投稿とタイムライン。</td></tr>
+<tr><td>🧰 その他</td><td>操作方法、AIチャットボット、天気予報、交通情報。</td></tr>
+<tr><td>👤 マイページ</td><td>プロフィール編集、ステータス、既読の設定、履歴の保存、アカウント削除。</td></tr></table></section>
+
+<section id="s3"><h2>3. 1対1のチャット</h2>
+<h3>会話を始める</h3><ol><li>「👥 ユーザー」を開き、検索バーに相手の名前を入れます。</li><li>相手の「＋」を押すと、会話が始まります。気に入らない人は「非表示」で、検索結果から外せます。</li></ol>
+<h3>メッセージを送る</h3><ul>
+<li>下の入力欄に書いて、<kbd>Enter</kbd>で送信（スマホは「送信」ボタン）。<kbd>Shift</kbd>+<kbd>Enter</kbd>で改行です。2,000文字まで。</li>
+<li>自分のメッセージは<b>右</b>、相手は<b>左</b>に表示されます。</li>
+<li>画像（10枚まで）・動画（50MB・5分まで）・ファイル（PDF／Word／Excel／PowerPoint、50MBまで）は、入力欄の上のボタンから送れます。</li></ul>
+<h3>便利な機能</h3>
+<table><tr><th>機能</th><th>使いかた</th></tr>
+<tr><td>🕒 予約送信</td><td>メッセージを書いて「🕒 予約送信」→日時を選ぶ→「この日時に予約」。30秒後〜30日先まで、最大50件。取り消しも同じ画面でできます。</td></tr>
+<tr><td>編集</td><td>自分のテキストメッセージの下の「編集」から直せます。「編集済み」と表示されます。</td></tr>
+<tr><td>削除の申請</td><td>メッセージの下の「削除申請」を押すと、管理者に届きます。承認されると消えます（すぐには消えません）。</td></tr>
+<tr><td>既読</td><td>相手が開くと「既読」と出ます。マイページの「既読を相手に表示する」で、自分の既読を見せるかどうか選べます。</td></tr>
+<tr><td>在席</td><td>🟢オンライン／🔴取り込み中／📞通話中／🟡待機中（5分操作がないと自動）／オフライン（最終オンライン◯時間前）。マイページの上のメニューで選べます。</td></tr>
+<tr><td>📞🎥 通話</td><td><b>試験的な機能</b>です（1対1のみ）。回線によってはつながりません。使うときは、マイクやカメラの許可が必要です。</td></tr></table></section>
+
+<section id="s4"><h2>4. グループチャット</h2>
+<ol><li>「💬 チャット」の「👥 グループ作成」を押します。</li><li><b>グループ名</b>（40文字まで）、<b>注意事項</b>（任意・500文字まで）、<b>メンバー</b>（名前で検索して選ぶ）を入れて「作成」。</li></ol>
+<p>グループの名前を押すと「グループ情報」が開きます。</p>
+<table><tr><th>項目</th><th>内容</th></tr>
+<tr><td>📌 注意事項</td><td>全員が読めます。作成者だけが編集できます。</td></tr>
+<tr><td>🔗 参考資料</td><td>名前とURL（https:// で始まるもの）を、20件まで登録できます（作成者のみ）。</td></tr>
+<tr><td>📊 アンケート</td><td>メンバー全員が作成・回答できます。選択肢は2〜6個。回答は締め切るまで何度でも変えられます。誰がどれを選んだかは見えず、集計だけが見えます。</td></tr>
+<tr><td>👤 メンバー</td><td>作成者が追加できます。誰でも「グループを退出」できます。</td></tr></table>
+<div class="note">グループでは、既読は「既読 3」のように人数で表示されます。</div></section>
+
+<section id="s5"><h2>5. 投稿とフォロー</h2>
+<ul><li>「📷 投稿」で、500文字までの文章と写真1枚を投稿できます。投稿はログイン中の全員が見られます。</li>
+<li>相手の名前を押すと、プロフィールが開き、<b>フォロー</b>・フォロー解除ができます。「フォロー中」の人の投稿だけを見ることもできます。</li>
+<li>自分の投稿は「削除」で消せます。</li></ul></section>
+
+<section id="s6"><h2>6. プロフィールとステータス</h2>
+<p>「👤 マイページ」→「✏️ プロフィールを編集」で、<b>表示名</b>、<b>アイコン写真</b>、<b>ステータスメッセージ</b>（60文字まで。名前の下に表示）、<b>自己紹介</b>（150文字まで）を変えられます。</p></section>
+
+<section id="s7"><h2>7. その他（ボット・天気・交通）</h2>
+<table><tr><th>機能</th><th>説明</th></tr>
+<tr><td>🤖 AIチャットボット</td><td>あらかじめ登録された質問と、言葉が部分的に合うものを探して答えます（人工知能が考えるわけではありません）。質問は「使い方」「予約」のような短い言葉で試してください。</td></tr>
+<tr><td>☀️ 天気予報</td><td>地名で検索すると、今の天気と7日間の予報が出ます。「📍 現在地」は、押したときだけ位置情報を使います。</td></tr>
+<tr><td>🚆 交通情報</td><td>出発地と到着地を入れると、Yahoo!乗換案内かGoogleマップが新しいタブで開きます。運行状況のページへのリンクもあります。</td></tr></table></section>
+
+<section id="s8"><h2>8. 履歴の保存（ZIP）</h2>
+<ul><li>「👤 マイページ」の「会話履歴の保存」から、会話を<b>ZIPファイル</b>として、いま使っている端末（スマホ・パソコン）に保存できます。</li>
+<li>「30日より前をZIP保存」と「すべてZIP保存」があります。30日を過ぎた会話があるときは、アプリを開いてしばらくすると、1日1回「保存しますか？」と聞かれます。</li>
+<li>中身は文字の会話です（添付ファイルの中身は含まれません）。サーバー上の履歴は、保存しても消えません。</li></ul></section>
+
+<section id="s9"><h2>9. アカウントの削除</h2>
+<ol><li>「👤 マイページ」の「アカウント削除を申請」を押します（理由は書かなくても構いません）。</li><li>管理者が内容を確認して承認すると、<b>アカウント・投稿・1対1の会話・添付ファイルが完全に削除</b>されます。元には戻せません。</li><li>承認される前なら、「申請を取り消す」でやめられます。</li></ol></section>
+
+<section id="s10"><h2>10. 安全のために</h2>
+<div class="warn"><b>運営管理者は、安全管理・不正対策のため会話内容を閲覧でき、バックアップとして保存する場合があります。</b>パスワード、口座番号、他人の個人情報などは送らないでください。</div>
+<ul><li>パスワードは、他のサービスと使い回さないでください。</li>
+<li>マイページに「⚠️」の通知が出たら読んでください。<b>自分のアカウントでログイン失敗があった</b>とき、<b>管理者が復旧コードの再発行やパスワードの再設定をした</b>ときに出ます。心当たりがなければ、すぐに運営に連絡し、「アカウント復旧」でパスワードを変えてください。</li>
+<li>知らない人から届いたリンクは、開く前に確認してください。</li></ul></section>
+
+<section id="s11"><h2>11. 困ったとき</h2>
+<details><summary>ログインできない</summary><p>ログインIDとパスワードを確認してください（目のボタンで表示できます）。「◯分後に再度お試しください」と出たら、その時間を待ちます。パスワードを忘れたら「アカウント復旧」へ。</p></details>
+<details><summary>復旧コードをなくした</summary><p>管理者に連絡してください。本人確認のあと、新しい復旧コードが発行されます（古いコードは使えなくなります）。</p></details>
+<details><summary>登録で「電話番号かメールアドレスを入力してください」と出る</summary><p>どちらか一方は必ず入力する決まりです。形式（電話は数字9〜15桁、メールは name@example.com の形）も確認してください。</p></details>
+<details><summary>相手が見つからない</summary><p>「ユーザー」タブの検索バーに、名前の一部を入力してください。最初は何も表示されません。「非表示」にした人は、「非表示の人を表示」で戻せます。</p></details>
+<details><summary>画像やファイルが送れない</summary><p>ファイルは50MBまで、対応形式はPDF・Word・Excel・PowerPointです。画像は10枚まで、動画は50MB・5分までです。</p></details>
+<details><summary>通話がつながらない</summary><p>通話は試験的な機能で、回線の種類によってはつながりません。文字のチャットをご利用ください。</p></details>
+<details><summary>表示がおかしい・古い</summary><p>ページを再読み込みしてください。それでも直らなければ、運営に連絡してください。</p></details></section>
+
+<section id="s12"><h2>12. 管理者向けガイド</h2>
+<p>管理者でログインすると、「👤 マイページ」に「🛡️ 管理者パネル」が出ます（管理者以外には表示されません）。操作は、監査ログに記録されます。</p>
+<table><tr><th>タブ</th><th>内容</th></tr>
+<tr><td>会話一覧</td><td>全員の会話を閲覧できます（閲覧のみ）。既読は、相手の設定に関係なく、実際の状態が表示されます。</td></tr>
+<tr><td>削除申請</td><td>メッセージの削除申請を承認・却下します。</td></tr>
+<tr><td>ユーザー管理</td><td>新規アカウントの作成、プロフィール・連絡先の編集、パスワード再設定、復旧コードの再発行、連絡先の表示、アカウント削除の申請。</td></tr>
+<tr><td>アカウント削除</td><td>削除申請を承認して完全に削除します。<b>承認のたびに「追跡ログをZIPで保存しますか？」と必ず確認されます。</b>削除と同時に、そのアカウントの追跡ログも消えます。</td></tr>
+<tr><td>セキュリティ</td><td>ログインに2回以上失敗した記録（日時・回数・ロック時間）を確認できます。</td></tr>
+<tr><td>バックアップ</td><td>Googleドライブへの毎日の自動保存に使うトークンを発行・無効化します。</td></tr></table>
+<h3>よくある作業</h3>
+<ol><li><b>復旧コードを再発行する：</b>ユーザー管理 → 対象の「復旧コードを再発行」→ 本人確認の方法を入力 → 表示されたコードを、本人にだけ伝える（再表示はできません）。</li>
+<li><b>アカウントを削除する：</b>ユーザー管理で「アカウントを削除」→ 理由を入力（申請が作られます）→「アカウント削除」タブで「承認して完全削除」→ 表示名を入力 → ZIP保存の有無を選ぶ。</li>
+<li><b>毎日のバックアップを設定する：</b>同梱の「GAS設定手順」に従います。</li></ol>
+<div class="warn">管理者の操作は強い権限です。本人確認、記録、他の人に画面を見せないことを徹底してください。</div></section>
+</main>
+<footer>ARE 操作ガイド　／　<a class="top-link" href="#">ページの先頭へ</a></footer>
+</div>
+</body></html>

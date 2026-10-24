@@ -101,16 +101,35 @@ ACT.tNew = () => { G.slotCtx = "new"; G.slotFrom = "title"; G.slotPick = null; G
 ACT.tLoad = () => { if(!tqHasSaves()){ toast("まだ 冒険の書が ありません。『はじめから』で 冒険を はじめよう！"); return; } G.slotCtx = "load"; G.slotFrom = "title"; G.slotPick = null; G.mode = "slots"; render(); };
 ACT.tHelp = () => { G.helpFrom = "title"; G.mode = "help"; render(); };
 ACT.tSet = () => { G.setFrom = "title"; G.mode = "settings"; render(); };
+// ==================================================================
+//  ★ しょうかい映像のリンク ★
+//  ↓ ここにリンクはりましょう（Google ドライブ / YouTube / 直接のmp4のURL が使えます）
+//    ※ Google ドライブは「リンクを知っている全員が閲覧可」にしておくこと
+// ==================================================================
+const TQ_MOVIE_URL = "https://drive.google.com/file/d/13xEw4xRGQiK9crsSKwPuLiYxyC1V-xlJ/view?usp=sharing";
+
+function tqMovieEmbed(u){
+    u = String(u || "").trim(); if(!u) return null;
+    let m = u.match(/drive\.google\.com\/file\/d\/([\w-]+)/) || u.match(/drive\.google\.com\/open\?id=([\w-]+)/);
+    if(m) return {type:"frame", src:"https://drive.google.com/file/d/" + m[1] + "/preview"};
+    m = u.match(/youtu\.be\/([\w-]{6,})/) || u.match(/youtube\.com\/watch\?[^#]*v=([\w-]{6,})/) || u.match(/youtube\.com\/(?:embed|shorts)\/([\w-]{6,})/);
+    if(m) return {type:"frame", src:"https://www.youtube.com/embed/" + m[1] + "?autoplay=1&rel=0"};
+    if(/^https:\/\//.test(u)) return {type:"video", src:u};
+    return null;
+}
 ACT.tMovie = () => {
     if(document.getElementById("movBox")) return;
+    const emb = tqMovieEmbed(TQ_MOVIE_URL);
     G.moviePlaying = true; if(typeof tqBgmStop === "function") tqBgmStop();
     const box = document.createElement("div"); box.id = "movBox";
-    box.innerHTML = '<video id="movV" src="movie.mp4" controls autoplay playsinline></video><div id="movMsg"></div><button type="button" id="movX">✕ とじる</button>';
+    let inner = "";
+    if(emb && emb.type === "frame") inner = '<iframe id="movV" src="' + esc(emb.src) + '" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe>';
+    else if(emb) inner = '<video id="movV" src="' + esc(emb.src) + '" controls autoplay playsinline></video>';
+    box.innerHTML = inner + '<div id="movMsg">' + (emb ? "" : "しょうかい映像は じゅんび中です。") + '</div><button type="button" id="movX">✕ とじる</button>';
     $("stage").appendChild(box);
-    const v = $("movV"), close = () => { try{ v.pause(); }catch(_e){} box.remove(); G.moviePlaying = false; if(typeof tqBgmSync === "function") tqBgmSync(); };
-    $("movX").addEventListener("click", close); v.addEventListener("ended", close);
-    v.addEventListener("error", () => { $("movMsg").textContent = "movie.mp4 が みつかりません。game フォルダに movie.mp4 を おいてください。"; });
-    box.addEventListener("keydown", (e) => { if(e.key === "Escape") close(); });
+    const v = $("movV"), close = () => { try{ if(v && v.pause) v.pause(); }catch(_e){} box.remove(); G.moviePlaying = false; if(typeof tqBgmSync === "function") tqBgmSync(); };
+    $("movX").addEventListener("click", close);
+    if(v && v.tagName === "VIDEO"){ v.addEventListener("ended", close); v.addEventListener("error", () => { $("movMsg").textContent = "映像を よみこめませんでした。"; }); }
 };
 ACT.tCheat = () => { G.cheatFrom = "title"; G.cheatMsg = ""; G.mode = "cheat"; render(); };
 

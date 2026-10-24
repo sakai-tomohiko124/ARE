@@ -1,5 +1,5 @@
 "use strict";
-// ===== 戦闘（ドラクエ風・みんなで たたかう）／オート戦闘／自動レベル上げ =====
+// ===== 戦闘（王道RPGふう・みんなで たたかう）／オート戦闘／自動レベル上げ =====
 const IMGC = {};
 function foeImg(key){ if(!IMGC[key]){ const im = new Image(); im.src = "./img/" + key + ".webp"; IMGC[key] = im; } return IMGC[key]; }
 const AUTO_DELAY = [700, 380, 130];
@@ -55,7 +55,7 @@ function paintBattle(g, time){
     const n = b.foes.length, big = n === 1 ? (b.foes[0].boss ? 130 : 104) : n === 2 ? 84 : n === 3 ? 70 : 58;
     b.foes.forEach((f, i) => {
         if(f.cur <= 0) return;
-        const sp = n === 1 ? 0 : Math.min(150, 440 / n), cx = (G.S.party.length > 4 ? 390 : 340) + (i - (n - 1) / 2) * sp, cy = 120 + (n === 1 ? 0 : (i % 2 ? 16 : -4)), bob = Math.sin(time / 420 + i) * 3;
+        const sp = n === 1 ? 0 : Math.min(150, 440 / n), cx = (G.S.party.length > 4 ? 390 : 340) + (i - (n - 1) / 2) * sp, cy = (G.S.party.length > 4 ? 150 : 120) + (n === 1 ? 0 : (i % 2 ? 16 : -4)), bob = Math.sin(time / 420 + i) * 3;
         const hit = G.hit && G.hit.idx === i && time < G.hit.until;
         g.save(); if(hit) g.translate((Math.random() - 0.5) * 8, 0);
         g.globalAlpha = hit ? 0.55 : 1;

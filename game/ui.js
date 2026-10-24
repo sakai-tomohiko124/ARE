@@ -23,7 +23,7 @@ function spriteURL(look){
 }
 function portraitHtml(who){
     if(!who) return "";
-    if(who === "me") return G.S && G.S.sex === "m" ? '<img src="./img/hero.webp" alt="">' : '<img class="pix" src="' + spriteURL("heroF") + '" alt="">';
+    if(who === "me"){ const f = G.S ? G.S.sex === "f" : (G.draft && G.draft.sex === "f"); return '<img src="./img/' + (f ? "girl" : "boy") + '.png" alt="">'; }
     if(TQ_PORTRAIT_IMG[who]) return '<img src="./img/' + TQ_PORTRAIT_IMG[who] + '.webp" alt="">';
     if(TQ_PORTRAIT_LOOK[who] && RPG_LOOKS[TQ_PORTRAIT_LOOK[who]]) return '<img class="pix" src="' + spriteURL(TQ_PORTRAIT_LOOK[who]) + '" alt="">';
     return "";
@@ -63,7 +63,7 @@ function render(){
     if(full) typeInto(full, full.dataset.full);
     const first = navList()[0]; if(first) first.classList.add("on");
     document.body.classList.toggle("padoff", G.set.pad === "off"); document.body.classList.toggle("padon", G.set.pad === "on");
-    $("btnVoice").textContent = G.set.voice ? "声：オン" : "声：オフ";
+    $("btnVoice").textContent = G.set.voice ? "声：オン" : "声：オフ"; $("btnBgm").textContent = G.set.bgm === false ? "BGM：オフ" : "BGM：オン";
     if(window.fieldAfterRender) fieldAfterRender();
     const dlgIn = ui.querySelector("#dlgIn"); if(dlgIn) dlgIn.focus();
 }
@@ -160,14 +160,15 @@ function viewProfile(){
     for(let i = 1; i <= 12; i++) mo += '<option value="' + i + '"' + (String(d.month) === String(i) ? " selected" : "") + '>' + i + '</option>';
     for(let i = 1; i <= 31; i++) da += '<option value="' + i + '"' + (String(d.day) === String(i) ? " selected" : "") + '>' + i + '</option>';
     const z = tqZodiac(d.month, d.day);
-    return '<div class="win panel sm"><h2>🧑 プロフィール</h2><label for="pName">主人公の なまえ（10文字まで・はじめは「主人公」）</label><input id="pName" type="text" maxlength="10" value="' + esc(d.name) + '" style="width:100%">' +
+    return '<div class="win panel sm scroll"><h2>🧑 プロフィール</h2><label for="pName">主人公の なまえ（10文字まで・はじめは「主人公」）</label><input id="pName" type="text" maxlength="10" value="' + esc(d.name) + '" style="width:100%">' +
         (sug ? '<div class="row" style="margin:.5cqw 0"><button class="btn sub" data-a="pUse">⭐ プロフィールの名前「' + esc(sug) + '」を つかう（おすすめ）</button></div>' : '<div class="meta">（チャットの プロフィールの 名前を おすすめします。ゲームの 中でも かえられます）</div>') +
-        '<label>せいべつ（話し方が かわります）</label><div class="row"><button class="btn' + (d.sex === "m" ? "" : " sub") + '" data-a="pSex" data-v="m">🧑 男の子（俺）</button><button class="btn' + (d.sex === "f" ? "" : " sub") + '" data-a="pSex" data-v="f">👩 女の子（わたし）</button></div>' +
+        '<label>せいべつ（話し方が かわります）</label><div class="row"><button class="btn' + (d.sex === "m" ? "" : " sub") + '" data-a="pSex" data-v="m">🧑 男の子（僕）</button><button class="btn' + (d.sex === "f" ? "" : " sub") + '" data-a="pSex" data-v="f">👩 女の子（私）</button></div>' +
+        '<label for="pPron">自分の よびかた（一人称）</label><select id="pPron"><option value="">おまかせ（男の子＝僕／女の子＝私）</option>' + TQ_PRONS.map((p) => '<option value="' + p[0] + '"' + (d.pron === p[0] ? " selected" : "") + '>' + esc(p[0] === "name" ? "自分の名前（" + (d.name || "主人公") + "）" : p[1]) + '</option>').join("") + '</select>' +
         '<label>たんじょう日（星座が わかるよ）</label><div class="row"><select id="pMon">' + mo + '</select> 月 <select id="pDay">' + da + '</select> 日</div>' +
         '<div class="zodiac" id="zod">' + zodHtml(z) + '</div><div class="err" id="perr"></div><div class="row"><button class="btn sub" data-a="pBack">もどる</button><button class="btn" data-a="pNext">つぎへ ▶</button></div></div>';
 }
 function zodHtml(z){ return z ? z.mark + " " + esc(z.name) + '<div class="meta">' + esc(z.text) + '</div>' : '<span class="meta">月と日を えらぶと、星座が ひょうじされます。</span>'; }
-function keepDraft(){ const d = G.draft; if(!d) return; if($("pName")) d.name = $("pName").value; if($("pMon")) d.month = $("pMon").value; if($("pDay")) d.day = $("pDay").value; }
+function keepDraft(){ const d = G.draft; if(!d) return; if($("pName")) d.name = $("pName").value; if($("pMon")) d.month = $("pMon").value; if($("pDay")) d.day = $("pDay").value; if($("pPron")) d.pron = $("pPron").value; }
 ACT.pUse = () => { const sug = (G.q.get("name") || "").trim().slice(0, 10); if(sug){ keepDraft(); G.draft.name = sug; render(); toast("プロフィールの 名前を 使います。"); } };
 ACT.pSex = (v) => { keepDraft(); G.draft.sex = v; render(); };
 ACT.pBack = () => { keepDraft(); G.mode = "title"; render(); };
@@ -197,7 +198,7 @@ ACT.rBack = () => { const d = G.draft; d.q = 2; d.answers.length = 2; G.mode = "
 ACT.rStart = () => {
     const d = G.draft;
     G.S = tqNewState({name:d.name, sex:d.sex, month:Number(d.month), day:Number(d.day), zodiac:d.zodiac, answers:d.answers.slice(), pers:d.pers});
-    G.slot = G.newSlot; G.saveName = d.name + "の冒険"; tqHealAll(); G.scripts = []; G.b = null; G.auto = false; G.grind = null;
+    G.slot = G.newSlot; G.saveName = d.name + "の冒険"; tqHealAll(); G.scripts = []; G.b = null; G.auto = false; G.grind = null; G.S.pron = d.pron || "";
     tqSaveTo(G.slot, G.saveName); G.draft = null;
     enterGame(""); runScript(RPG_EV.lab_intro);
 };
@@ -206,18 +207,24 @@ function helpText(){
     return "【ものがたり】\n未来の ARE かいはつラボから、過去の世界へ タイムスリップ！ ノイズ（かわいい モンスター）に 持ち去られた『大事なメモリ』6つを 取りもどして、ARE を 完成させよう。\n\n" +
         "【そうさ】\nいどう：矢印キー／WASD／画面の ボタン（長おしで 連続）\nはなす・しらべる・けってい：Enter／Z／スペース／Aボタン\nメニュー：X／M／メニューボタン　もどる：X／Esc\n\n" +
         "【たたかい】\nコマンドを えらんで たたかう。なかまは 自動で こうどう。『オート』を ONに すると 自動で 戦うよ。『ARE！ゲージ』が MAX で ひっさつ技！\n\n" +
-        "【ならではの きのう】\n・パーティは 最大4人\n・自動レベル上げ（メニュー→じどう）\n・冒険の書は 3つ（いつでも セーブ）\n・声は ブラウザの 読み上げ（BGMは なし）\n・🔑チート：ひみつの コードを さがそう！ ヒント：意外と たんじゅん。";
+        "【ならではの きのう】\n・パーティは 最大4人\n・自動レベル上げ（メニュー→じどう）\n・冒険の書は 3つ（いつでも セーブ）\n・声は ブラウザの 読み上げ／BGMは game/bgm の mp3 を ループ再生\n・🔑チート：ひみつの コードを さがそう！ ヒント：意外と たんじゅん。";
 }
 function viewHelp(){ return '<div class="win panel scroll"><h2>📘 あそびかた</h2><div style="white-space:pre-wrap;font-size:1.95cqw">' + esc(helpText()) + '</div><div class="row" style="margin-top:1cqw"><button class="btn" data-a="hBack">もどる</button></div></div>'; }
 ACT.hBack = () => { if(G.helpFrom === "menu"){ G.mode = "menu"; G.menuTab = "main"; } else G.mode = "title"; render(); };
 function viewSettings(){
     const s = G.set, sp = ["ふつう", "はやい", "すごくはやい"][s.speed || 0], pad = {auto:"じどう", on:"ひょうじ", off:"ひひょうじ"}[s.pad || "auto"];
-    return '<div class="win panel sm"><h2>⚙️ せってい</h2><div class="card"><div class="row"><button class="btn" data-a="sVoice">🔊 声（読み上げ）：' + (s.voice ? "オン" : "オフ") + '</button></div><div class="meta">ブラウザの 設定で ゆるされていないと 鳴りません。BGMは ありません。</div></div>' +
+    return '<div class="win panel sm scroll"><h2>⚙️ せってい</h2><div class="card"><div class="row"><button class="btn" data-a="sVoice">🔊 声（読み上げ）：' + (s.voice ? "オン" : "オフ") + '</button></div><div class="meta">ブラウザの 設定で ゆるされていないと 鳴りません。</div></div>' +
+        '<div class="card"><div class="row"><button class="btn" data-a="sBgm">🎵 BGM：' + (s.bgm === false ? "オフ" : "オン") + '</button><button class="btn sub" data-a="sBgmVol">音量：' + ["小", "中", "大"][s.bgmVol == null ? 1 : s.bgmVol] + '</button></div><div class="meta">曲は game/bgm/ に置いた mp3 が 鳴ります（ずっと ループ）。</div></div>' +
+        (G.S ? '<div class="card"><div class="meta">自分の よびかた（一人称）</div><div class="row">' + TQ_PRONS.map((p) => '<button class="btn' + (tqPronKey() === p[0] ? "" : " sub") + '" data-a="sPron" data-v="' + p[0] + '">' + esc(p[0] === "name" ? G.S.name : p[1]) + '</button>').join("") + '</div></div>' : "") +
         '<div class="card"><div class="row"><button class="btn" data-a="sSpeed">⏩ オート戦闘の はやさ：' + sp + '</button></div></div>' +
         '<div class="card"><div class="row"><button class="btn" data-a="sPad">🎮 タッチ ボタン：' + pad + '</button><button class="btn sub" data-a="sFull">全画面</button></div><div class="meta">スマホ・タブレットは よこむき が おすすめ。</div></div>' +
         '<div class="row"><button class="btn" data-a="sBack">もどる</button></div></div>';
 }
 ACT.sVoice = () => { G.set.voice = !G.set.voice; if(!G.set.voice) tqSpeakStop(); tqSettingsSave(); render(); };
+function tqPronKey(){ return (G.S && G.S.pron) || (G.S && G.S.sex === "f" ? "watashi" : "boku"); }
+ACT.sPron = (v) => { if(G.S && TQ_PRONS.some((p) => p[0] === v)){ G.S.pron = v; tqAutoSave(); } render(); };
+ACT.sBgm = () => { G.set.bgm = G.set.bgm === false; tqSettingsSave(); if(G.set.bgm === false) tqBgmStop(); else tqBgmSync(); $("btnBgm").textContent = G.set.bgm === false ? "BGM：オフ" : "BGM：オン"; render(); };
+ACT.sBgmVol = () => { G.set.bgmVol = ((G.set.bgmVol == null ? 1 : G.set.bgmVol) + 1) % 3; tqSettingsSave(); tqBgmSync(); render(); };
 ACT.sSpeed = () => { G.set.speed = ((G.set.speed || 0) + 1) % 3; tqSettingsSave(); render(); };
 ACT.sPad = () => { G.set.pad = G.set.pad === "auto" ? "on" : G.set.pad === "on" ? "off" : "auto"; tqSettingsSave(); render(); };
 ACT.sFull = () => toggleFullscreen();
@@ -308,5 +315,6 @@ document.addEventListener("change", (e) => {
     ["pointerup", "pointercancel", "pointerleave"].forEach((n) => document.addEventListener(n, stop));
 })();
 $("btnFs").addEventListener("click", toggleFullscreen);
+$("btnBgm").addEventListener("click", () => { ACT.sBgm(); });
 $("btnVoice").addEventListener("click", () => { G.set.voice = !G.set.voice; if(!G.set.voice) tqSpeakStop(); tqSettingsSave(); $("btnVoice").textContent = G.set.voice ? "声：オン" : "声：オフ"; });
 $("rotOk").addEventListener("click", () => document.body.classList.remove("needrot"));

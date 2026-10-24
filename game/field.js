@@ -20,6 +20,8 @@ function gotoMap(map, x, y){
     G.banner = {t:Date.now(), text:RPG_MAPS[map].name};
     const ev = RPG_ENTER[map];
     if(ev && RPG_EV[ev]) G.scripts.push({a:RPG_EV[ev], i:0});
+    const tm = tqTempSync(map, false);
+    if(tm.length) G.scripts.push({a:tm.map((t) => rpgN(t)), i:0});
     tqAutoSave();
 }
 // ---------------------------------------------------------------- いどう
@@ -159,6 +161,10 @@ function tqObjective(){
     if(!f.e_xmas) return "2028年12月25日の クリスマスの東京へ。紘に 会おう";
     if(!f.e_labn) return "ARE が 生まれた 夜へ。若い アキトと ハルキに 会おう";
     if(!f.e_future) return "のこりの メモリは 2035年の ARE タワー。ノイズの 王が いる！";
+    if(!f.e_n8) return "第2部『ノイズの深層』へ。ゲートに 新しい 行き先が ひらいたよ（推奨 Lv32）";
+    if(!f.e_n9) return "第2層『ノイズの海ぞこ』へ。ぬしの ミラを たすけよう（推奨 Lv38）";
+    if(!f.e_n10) return "第3層『くものうえの サーバー城』へ（推奨 Lv44）";
+    if(!f.e_n11) return "第4層『ノイズ王国 さいおくぶ』で ノイズ・オメガと さいごの たたかい（推奨 Lv50）";
     if(!f.xr_open) f.xr_open = 1;
     if(!f.e_xr) return "クリア おめでとう！ おまけ：『XRアドベンチャー体験会』へ（ゲート）";
     return "ぜんぶ クリア！『自動レベル上げ』で レベル99を めざそう";

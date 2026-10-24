@@ -10,10 +10,18 @@ function tqSettingsLoad(){ try{ Object.assign(G.set, JSON.parse(localStorage.get
 function tqSettingsSave(){ try{ localStorage.setItem("tq_settings", JSON.stringify(G.set)); }catch(_e){} }
 
 // ---------------------------------------------------------------- 文字の置きかえ（男女で話し方が変わる）
+// ---- 主人公の「一人称」（自分のことを なんと よぶか）----
+const TQ_PRONS = [["boku", "僕"], ["watashi", "私"], ["ore", "俺"], ["uchi", "うち"], ["washi", "わし"], ["orecchi", "おれっち"], ["jibun", "自分"], ["name", "自分の名前"], ["shujinko", "主人公"]];
+function tqPron(s){
+    const k = (s && s.pron) || (s && s.sex === "f" ? "watashi" : "boku");
+    if(k === "name") return (s && s.name) || "主人公";
+    if(k === "shujinko") return "主人公";
+    const e = TQ_PRONS.find((x) => x[0] === k); return e ? e[1] : "僕";
+}
 function rpgFmt(t){
-    const s = G.S || {sex:(G.draft && G.draft.sex) || "m", name:(G.draft && G.draft.name) || "主人公"}, m = s.sex === "m";
+    const s = G.S || {sex:(G.draft && G.draft.sex) || "m", name:(G.draft && G.draft.name) || "主人公", pron:(G.draft && G.draft.pron) || ""}, m = s.sex === "m";
     return String(t).replace(/\[\[([^|\]]*)\|([^\]]*)\]\]/g, (_x, a, b) => m ? a : b)
-        .replace(/\{名前\}/g, s.name).replace(/\{私\}/g, m ? "俺" : "わたし").replace(/\{くん\}/g, m ? "くん" : "ちゃん");
+        .replace(/\{名前\}/g, s.name).replace(/\{私\}/g, tqPron(s)).replace(/\{くん\}/g, m ? "くん" : "ちゃん");
 }
 
 // ---------------------------------------------------------------- 声（ブラウザの読み上げ・BGMなし）
@@ -138,7 +146,7 @@ function tqLoadFrom(i){
     const r = tqReadSlot(i); if(!r || r.corrupted) return {ok:false, msg:"読み込める 冒険の書が ありません。"};
     const base = tqNewState({name:"主人公", sex:"m"});
     const S = Object.assign(base, r.data); S.cx = Object.assign({}, r.data.cx || {}); S.f = Object.assign({}, r.data.f || {});
-    G.S = S; G.slot = i; G.saveName = r.name; G.scripts = []; G.b = null; G.auto = false; G.grind = null; tqClamp();
+    G.S = S; G.slot = i; G.saveName = r.name; G.scripts = []; G.b = null; G.auto = false; G.grind = null; try{ tqTempSync(S.map, true); }catch(_e){} tqClamp();
     return {ok:true, msg:"冒険の書 " + i + " を 読み込みました。"};
 }
 function tqPlayText(sec){ const m = Math.floor((sec || 0) / 60); return Math.floor(m / 60) + "時間" + String(m % 60).padStart(2, "0") + "分"; }
@@ -172,7 +180,7 @@ function tqApplyCheat(raw){
             const need = f.id === "party5" ? 1 : 2;
             if(n.length !== need) return {ok:false, msg:"NPC番号が " + need + "つ 必要です。"};
             const ids = n.map((x) => "n" + String(x).padStart(3, "0"));
-            if(ids.some((x) => !RPG_CLASS[x])) return {ok:false, msg:"NPC番号は 001〜010 です。"};
+            if(ids.some((x) => !RPG_CLASS[x])) return {ok:false, msg:"NPC番号は 001〜015 です。"};
             if(new Set(ids).size !== ids.length) return {ok:false, msg:"おなじ NPC は 2人 加えられません。"};
             if(ids.some((x) => S.party.includes(x))) return {ok:false, msg:"その NPC は すでに 仲間です。"};
             const target = f.id === "party5" ? 5 : 6;
@@ -180,10 +188,16 @@ function tqApplyCheat(raw){
             if(S.party.length + ids.length > 6) return {ok:false, msg:"パーティは チートでも 6人までです。"};
             ids.forEach((x) => tqAddMember(x, true)); msg = ids.map((x) => RPG_CLASS[x].n).join("・") + " が なかまに くわわった！（" + S.party.length + "人パーティ）"; break;
         }
+        case "bossally": {
+            if(n.length !== 1 || !(n[0] >= 1 && n[0] <= 15)) return {ok:false, msg:"ボス番号は 01〜15 です。（例：BossAlly09）"};
+            return tqCheatJoin(["b" + String(n[0]).padStart(2, "0")]);
+        }
+        case "miraboss": return tqCheatJoin(["mira_b"]);
+        case "miraally": return tqCheatJoin(["mira"]);
         case "fullheal": tqHealAll(); msg = "みんなの HPと MPが 全回復した！"; break;
         case "revive": all((id, m) => { if(m.hp <= 0) m.hp = tqStat(id).maxhp; }); msg = "たおれた 仲間が ふっかつした！"; break;
         case "items99": Object.keys(RPG_ITEMS).forEach((k) => { S.items[k] = 99; }); msg = "どうぐが ぜんぶ 99こ に なった！"; break;
-        case "bestgear": ["w4", "a4", "c3"].forEach((k) => { if(!S.own.includes(k)) S.own.push(k); S.eq[RPG_EQUIP[k].slot] = k; }); tqClamp(); msg = "さいきょうの そうびを てにいれた！"; break;
+        case "bestgear": ["w6", "a6", "c4"].forEach((k) => { if(!S.own.includes(k)) S.own.push(k); S.eq[RPG_EQUIP[k].slot] = k; }); tqClamp(); msg = "さいきょうの そうびを てにいれた！"; break;
         case "expx10": S.expmul = 10; msg = "もらえる経験値が 10倍に！"; break;
         case "expx100": S.expmul = 100; msg = "もらえる経験値が 100倍に！！"; break;
         case "expx1": S.expmul = 1; msg = "経験値の倍率を 1倍に もどした。"; break;
@@ -197,8 +211,8 @@ function tqApplyCheat(raw){
         case "speed": msg = tqToggle("speed", "あるくの 2倍速"); break;
         case "allgate": c.allgate = true; msg = "ゲートの 行き先が ぜんぶ ひらいた！"; break;
         case "memall": S.mem = [1, 1, 1, 1, 1, 1]; msg = "6つの メモリが ぜんぶ そろった！"; break;
-        case "clear": ["e_sendai", "e_tokyo", "e_white", "e_xmas", "e_labn", "e_future", "intro_done", "xr_open"].forEach((k) => { S.f[k] = 1; }); S.mem = [1, 1, 1, 1, 1, 1]; msg = "ストーリーを ぜんぶ クリアした！"; G.afterCheat = "end"; break;
-        case "bonus": S.f.xr_open = 1; c.allgate = true; msg = "おまけの『XRアドベンチャー体験会』が ひらいた！（ゲートから いけます）"; break;
+        case "clear": ["e_sendai", "e_tokyo", "e_white", "e_xmas", "e_labn", "e_future", "intro_done", "xr_open"].forEach((k) => { S.f[k] = 1; }); S.mem = [1, 1, 1, 1, 1, 1]; ["e_n8", "e_n9", "e_n10", "e_n11"].forEach((k) => { S.f[k] = 1; }); msg = "ストーリーを ぜんぶ クリアした！（第2部も）"; G.afterCheat = "end"; break;
+        case "bonus": S.f.xr_open = 1; S.f.e_n11 = 1; c.allgate = true; msg = "おまけの『XRアドベンチャー体験会』が ひらいた！（ゲートから いけます）"; break;
         case "rainbow": msg = tqToggle("rainbow", "にじいろモード"); break;
         case "showpos": msg = tqToggle("showpos", "座標ひょうじ"); break;
         case "voice": tqSpeak("チートコード、成功です。声は ちゃんと 出ています。", "アキト"); msg = G.set.voice ? "声の テスト！（聞こえない ときは ブラウザの 設定を 見てね）" : "声は いま オフです。せっていで オンに できます。"; break;
@@ -208,6 +222,19 @@ function tqApplyCheat(raw){
     }
     tqAutoSave();
     return {ok:true, msg};
+}
+// チートで 仲間を くわえる（ふつうの 仲間は 4人まで／チートは 6人まで）
+function tqCheatJoin(ids){
+    const S = G.S, out = [];
+    ids.forEach((id) => {
+        if(S.party.includes(id)){ out.push(RPG_CLASS[id].n + " は すでに 仲間です。"); return; }
+        if(id === "mira_b" && S.party.includes("mira")){ S.party = S.party.filter((x) => x !== "mira"); if(S.temp) delete S.temp.mira; }
+        if(id === "mira" && S.party.includes("mira_b")){ out.push("ミラは すでに（ノイズクイーンの すがたで）仲間です。"); return; }
+        if(S.party.length >= 6){ out.push("パーティは チートでも 6人までです。"); return; }
+        tqAddMember(id, true); if(S.temp) delete S.temp[id]; out.push(RPG_CLASS[id].n + " が なかまに くわわった！（" + S.party.length + "人パーティ）");
+    });
+    tqAutoSave();
+    return {ok:true, msg:out.join("\n")};
 }
 function tqFlushCheatQueue(){
     const out = [];

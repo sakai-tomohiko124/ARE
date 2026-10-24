@@ -134,7 +134,17 @@ const FEATURES = [
     ["typing","入力中の表示",initTyping],
     ["voice","音声メッセージ",initVoice],
     ["stamps","絵文字・スタンプ",initStamps],
-    ["mention","メンション",initMention]
+    ["mention","メンション",initMention],
+    ["tools","ツール入口",initTools],
+    ["story","ストーリー",initStory],
+    ["album","アルバム",initAlbum],
+    ["imgedit","画像編集",initImgEdit],
+    ["location","位置情報",initLocation],
+    ["share","プロフィール共有・QR",initShare],
+    ["games","ゲーム",() => { initGames(); }],
+    ["planner","タスク・カレンダー",initPlanner],
+    ["prefs","表示設定",initPrefs],
+    ["lang","多言語UI",initLang]
 ];
 
 function startFeatures(){

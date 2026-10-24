@@ -20,6 +20,24 @@ HTML・CSS・JavaScript だけで作った静的サイトを **GitHub Pages** �
 
 > 未対応：グループ通話、ライブ配信（無料で安定して動かす方法が見つかっていません）。通話は試験的で、回線によってはつながりません。
 
+### 第2弾の機能（ツール）
+
+「その他」タブの「🧩 ツール」から使えます。データベース側は `migration_batch2_features.sql` を先に実行してください（`stories` / `game_scores` / `user_tasks` / `user_events` と、`create_story`・`delete_story`・`submit_game_score`・`game_ranking`・`my_game_stats`）。
+
+| ファイル | 内容 |
+|---|---|
+| `chat-tools.js` | 入口カードと、シート内ボタンの共通ルーター（`data-t="名前:動作"`） |
+| `chat-story.js` | ストーリー（24時間・フォロー中の人のみ閲覧） |
+| `chat-album.js` | アルバム。期限切れの添付URLを自動で取り直す処理も担当 |
+| `chat-imgedit.js` | 画像編集（端末内で処理） |
+| `chat-location.js` | 位置情報の送信と表示（座標を約10mに丸める・数値以外は表示しない） |
+| `chat-share.js` / `qr.js` | プロフィール共有。`qr.js` は外部ライブラリなしのQR生成（バージョン1〜10・誤り訂正M・約210バイトまで） |
+| `chat-games.js` / `chat-game-play.js` | ゲームのメニュー・ランキング・実績／6種類のゲーム本体 |
+| `chat-planner.js` | タスク・カレンダー |
+| `chat-prefs.js` / `chat-lang.js` | 気分テーマ・省データモード／English表示（主なメニューだけの部分対応） |
+
+**既知の制限**：ゲームのスコアは端末から送るため、不正は完全には防げません（範囲外の値と連続送信だけサーバーで拒否）。ストーリーを削除・期限切れになっても、画像ファイルが Storage に残る場合があります（定期的に整理してください）。共有リンクは、未ログインで開くとログイン後にトップへ戻ります。
+
 ## 2. ファイル構成
 
 HTML・CSS・JavaScript を、画面ごと・機能ごとに別々のファイルにしています（例：`login.html` / `login.css` / `login.js`）。

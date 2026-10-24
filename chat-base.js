@@ -558,7 +558,7 @@ function parseMessageContent(content){
     if(typeof content !== "string") return {type:"text",text:String(content ?? "")};
     try{
         const parsed = JSON.parse(content);
-        if(parsed && typeof parsed === "object" && ["text","image","file","video","audio","poll"].includes(parsed.type)){
+        if(parsed && typeof parsed === "object" && ["text","image","file","video","audio","poll","location"].includes(parsed.type)){
             return parsed;
         }
     }catch(_error){}
@@ -577,8 +577,13 @@ function renderMessageContent(content){
         return '<div class="bubble">📊 <b>アンケート</b><br>' + escapeHtml(item.question || "") + '<br><button type="button" class="button-secondary" data-openpoll="' + escapeHtml(item.pollId || "") + '">回答・結果を見る</button></div>';
     }
 
+    if(item.type === "location"){
+        return typeof renderLocationBubble === "function" ? renderLocationBubble(item) : '<div class="bubble">📍 位置情報</div>';
+    }
+
     const url = item.url || "";
     const name = item.name || "添付ファイル";
+    const dataPath = item.path ? ' data-path="' + escapeHtml(String(item.path)) + '"' : "";
     const safeUrl = escapeHtml(safeHttpUrl(url));
     if(!safeUrl){
         return '<div class="bubble">' + escapeHtml(name) + '（添付ファイルのURLが不正なため表示できません）</div>';
@@ -587,15 +592,15 @@ function renderMessageContent(content){
     const size = item.size ? '<div class="file-meta">' + escapeHtml(formatBytes(Number(item.size))) + '</div>' : "";
 
     if(item.type === "audio"){
-        return '<div class="bubble"><div class="attachment">🎤 ボイスメッセージ<audio controls preload="metadata" src="' + safeUrl + '"></audio>' + size + '</div></div>';
+        return '<div class="bubble"><div class="attachment">🎤 ボイスメッセージ<audio controls preload="metadata"' + dataPath + ' src="' + safeUrl + '"></audio>' + size + '</div></div>';
     }
 
     if(item.type === "image"){
-        return '<div class="bubble"><div class="attachment"><a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer"><img src="' + safeUrl + '" alt="' + safeName + '" loading="lazy"></a><div class="file-meta">' + safeName + '</div></div></div>';
+        return '<div class="bubble"><div class="attachment"><a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer"><img' + dataPath + ' src="' + safeUrl + '" alt="' + safeName + '" loading="lazy"></a><div class="file-meta">' + safeName + '</div></div></div>';
     }
 
     if(item.type === "video"){
-        return '<div class="bubble"><div class="attachment"><video controls preload="metadata" src="' + safeUrl + '"></video><a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer">' + safeName + '</a>' + size + '</div></div>';
+        return '<div class="bubble"><div class="attachment"><video controls preload="metadata"' + dataPath + ' src="' + safeUrl + '"></video><a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer">' + safeName + '</a>' + size + '</div></div>';
     }
 
     return '<div class="bubble"><div class="attachment"><a class="file-card" href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" download="' + safeName + '"><span class="file-icon">📄</span><span><span class="file-name">' + safeName + '</span>' + size + '</span></a></div></div>';

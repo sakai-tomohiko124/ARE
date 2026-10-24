@@ -19,7 +19,9 @@ const FEAT_ERRORS = {
     bio_too_long:"自己紹介は150文字以内です。", status_too_long:"ステータスメッセージは60文字以内です。", invalid_avatar_url:"アイコン画像のURLが正しくありません。", invalid_display_name:"表示名は1〜30文字で入力してください。",
     verification_note_required:"本人確認の方法を5文字以上で入力してください。", user_not_found:"対象のユーザーが見つかりません。",
     cannot_target_admin:"管理者アカウントは再発行の対象にできません。", rate_limited:"短時間に再発行しすぎです。時間をおいてください。",
-    blocked:"このユーザーにはメッセージを送れません（ブロック中）。", too_many_pins:"固定できるのは1チャットあたり10件までです。", invalid_emoji:"その絵文字は使えません。", query_invalid:"検索ワードは1〜50文字で入力してください。", room_suspended:"このチャットは停止中です。"
+    blocked:"このユーザーにはメッセージを送れません（ブロック中）。", too_many_pins:"固定できるのは1チャットあたり10件までです。", invalid_emoji:"その絵文字は使えません。", query_invalid:"検索ワードは1〜50文字で入力してください。", room_suspended:"このチャットは停止中です。",
+    story_empty:"ひとこと、または写真を入力してください。", story_too_long:"ひとことは200文字以内です。", invalid_bg:"背景色が正しくありません。", too_many_stories:"ストーリーは同時に10件までです。",
+    invalid_game:"このゲームは記録できません。", invalid_score:"スコアが正しくありません。", too_many_rows:"登録できる件数の上限（500件）に達しました。"
 };
 
 const feat = {known:new Map(),readTimes:[],readKey:"",manual:"online",lastActivity:Date.now(),timers:[],partnerReadAt:null,pending:new Set(),editingId:null,isAdmin:false,adminView:"rooms"};
@@ -59,6 +61,7 @@ function messageSummary(item){
     if(!item) return "";
     if(item.type === "text") return String(item.text || "");
     if(item.type === "poll") return "[アンケート] " + String(item.question || "");
+    if(item.type === "location") return "[位置情報] " + String(item.label || "現在地");
     const label = {image:"画像",video:"動画",audio:"音声",file:"ファイル"}[item.type] || "添付";
     return "[" + label + "] " + String(item.name || "");
 }

@@ -104,6 +104,7 @@ ACT.tSet = () => { G.setFrom = "title"; G.mode = "settings"; render(); };
 // ==================================================================
 //  ★ しょうかい映像のリンク ★
 //  ↓ ここにリンクはりましょう（Google ドライブ / YouTube / 直接のmp4のURL が使えます）
+//    例）const TQ_MOVIE_URL = "https://drive.google.com/file/d/ここにID/view?usp=sharing";
 //    ※ Google ドライブは「リンクを知っている全員が閲覧可」にしておくこと
 // ==================================================================
 const TQ_MOVIE_URL = "https://drive.google.com/file/d/13xEw4xRGQiK9crsSKwPuLiYxyC1V-xlJ/view?usp=sharing";
@@ -123,7 +124,7 @@ ACT.tMovie = () => {
     G.moviePlaying = true; if(typeof tqBgmStop === "function") tqBgmStop();
     const box = document.createElement("div"); box.id = "movBox";
     let inner = "";
-    if(emb && emb.type === "frame") inner = '<iframe id="movV" src="' + esc(emb.src) + '" allow="autoplay; fullscreen" allowfullscreen referrerpolicy="no-referrer"></iframe>';
+    if(emb && emb.type === "frame") inner = '<iframe id="movV" src="' + esc(emb.src) + '" allow="autoplay; fullscreen" allowfullscreen></iframe>';
     else if(emb) inner = '<video id="movV" src="' + esc(emb.src) + '" controls autoplay playsinline></video>';
     box.innerHTML = inner + '<div id="movMsg">' + (emb ? "" : "しょうかい映像は じゅんび中です。") + '</div><button type="button" id="movX">✕ とじる</button>';
     $("stage").appendChild(box);

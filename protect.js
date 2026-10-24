@@ -16,7 +16,8 @@
         var ctrl = event.ctrlKey || event.metaKey;
         var blocked =
             event.key === "F12" ||
-            (ctrl && event.shiftKey && (key === "i" || key === "j" || key === "c" || key === "k")) ||
+            (ctrl && event.shiftKey && (key === "i" || key === "j" || key === "c" || key === "k" || key === "e" || key === "m")) ||
+            (ctrl && event.altKey && key === "i") ||
             (event.metaKey && event.altKey && (key === "i" || key === "j" || key === "c" || key === "u")) ||
             (ctrl && !event.shiftKey && (key === "u" || key === "s"));
         if (!blocked) return;
@@ -87,6 +88,13 @@
         if (exempt()) return;
         if (event.target && event.target.tagName === "IMG") event.preventDefault();
     }, true);
+
+    // スマホ・タブレット：画像や動画を長押ししたときの「保存」メニューを出さない
+    if (!exempt()) {
+        var st = document.createElement("style");
+        st.textContent = "img,video{-webkit-touch-callout:none;-webkit-user-drag:none}img{-webkit-user-select:none;user-select:none}";
+        (document.head || document.documentElement).appendChild(st);
+    }
 
     window.AREProtect = {
         setExempt: function (on) { try { if (on) localStorage.setItem("are_dev_ok", "1"); else localStorage.removeItem("are_dev_ok"); } catch (_e) { /* 何もしない */ } }

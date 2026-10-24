@@ -36,7 +36,7 @@ function resizeImage(file,maxSide,quality){
 
 function openSheet(html){ el.profileSheet.innerHTML = html; el.profileModal.hidden = false; }
 
-function closeSheet(){ el.profileModal.hidden = true; el.profileSheet.innerHTML = ""; feat.avatarBlob = null; }
+function closeSheet(){ if(typeof stopCamera === "function") stopCamera(); el.profileModal.hidden = true; el.profileSheet.innerHTML = ""; feat.avatarBlob = null; }
 
 function bigAvatar(profile){
     const url = safeHttpUrl(profile?.avatar_url || "");

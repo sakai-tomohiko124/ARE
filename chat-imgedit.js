@@ -1,38 +1,46 @@
 "use strict";
-// ===== 画像編集（端末の中だけで処理。回転・反転・切り抜き・明るさ・コントラスト・白黒・文字入れ）=====
+// ===== 画像編集（端末の中だけで処理。回転・反転・切り抜き（ドラッグで範囲指定）・明るさ・コントラスト・白黒・文字入れ）=====
 
 feat.ie = null;
 
-const IE_ASPECTS = {free:null, "1:1":[1, 1], "4:3":[4, 3], "3:4":[3, 4], "16:9":[16, 9]};
+const IE_ASPECTS = {free:null, "1:1":[1, 1], "4:3":[4, 3], "3:4":[3, 4], "16:9":[16, 9], "9:16":[9, 16]};
 const IE_COLORS = {white:"#ffffff", black:"#000000", yellow:"#ffe14d", red:"#ff4d4d"};
+const IE_MIN_CROP = 0.06;
 
 function initImgEdit(){ registerTool("ie", onImgEditAction); }
 
 function openImgEdit(){
     feat.ie = null;
     openSheet(toolHead("🎨 画像編集", "画像は端末の中で加工します。送信するまで外には出ません。") +
-        '<label class="tool-button">🖼️ 画像を選ぶ<input class="file-input" id="ieFile" type="file" accept="image/*" data-t="ie:file"></label>' +
+        '<div class="row" style="justify-content:flex-start"><label class="tool-button">🖼️ 画像を選ぶ<input class="file-input" id="ieFile" type="file" accept="image/*" data-t="ie:file"></label>' +
+        '<button type="button" class="tool-button" data-t="ie:camera">📸 写真を撮る</button></div>' +
         '<div id="ieBody"></div>' + toolClose());
 }
 
 function onImgEditAction(action, node){
     const s = feat.ie;
     if(action === "file"){ const file = node.files && node.files[0]; if(file) loadEditImage(file); return; }
+    if(action === "camera"){ return openPhotoChooser({multiple:false, allowEdit:false, onFiles:(files) => { openImgEdit(); loadEditImage(files[0]); }}); }
     if(!s) return;
-    if(action === "rotl"){ s.rot = (s.rot + 3) % 4; }
-    else if(action === "rotr"){ s.rot = (s.rot + 1) % 4; }
-    else if(action === "flip"){ s.flip = !s.flip; }
-    else if(action === "aspect"){ s.aspect = IE_ASPECTS[node.value] || null; }
+    if(action === "rotl"){ if(s.crop) cropCancel(); s.rot = (s.rot + 3) % 4; }
+    else if(action === "rotr"){ if(s.crop) cropCancel(); s.rot = (s.rot + 1) % 4; }
+    else if(action === "flip"){ if(s.crop) cropCancel(); s.flip = !s.flip; }
+    else if(action === "crop"){ return cropStart(); }
+    else if(action === "cropok"){ return cropCommit(); }
+    else if(action === "cropno"){ return cropCancel(); }
+    else if(action === "aspect"){ s.aspect = IE_ASPECTS[node.value] || null; return cropSetAspect(); }
+    else if(action === "undo"){ return undoEdit(); }
     else if(action === "b"){ s.bright = Number(node.value); }
     else if(action === "c"){ s.contrast = Number(node.value); }
     else if(action === "gray"){ s.gray = node.checked; }
     else if(action === "text"){ s.text = node.value.slice(0, 40); }
     else if(action === "tpos"){ s.tpos = node.value; }
     else if(action === "tcolor"){ s.tcolor = node.value; }
-    else if(action === "reset"){ Object.assign(s, {rot:0, flip:false, aspect:null, bright:0, contrast:0, gray:false, text:""}); paintEditControls(); }
+    else if(action === "reset"){ resetEdit(); return; }
     else if(action === "send"){ return sendEdited(node); }
     else if(action === "save"){ return saveEdited(); }
     renderEdit();
+    if(action === "rotl" || action === "rotr" || action === "flip") paintCropBar();
 }
 
 function loadEditImage(file){
@@ -44,7 +52,7 @@ function loadEditImage(file){
         const src = document.createElement("canvas");
         src.width = Math.max(1, Math.round(img.width * scale)); src.height = Math.max(1, Math.round(img.height * scale));
         src.getContext("2d").drawImage(img, 0, 0, src.width, src.height);
-        feat.ie = {src, rot:0, flip:false, aspect:null, bright:0, contrast:0, gray:false, text:"", tpos:"bottom", tcolor:"white", name:file.name};
+        feat.ie = {src, orig:src, rot:0, flip:false, aspect:null, bright:0, contrast:0, gray:false, text:"", tpos:"bottom", tcolor:"white", name:file.name, crop:null, history:[]};
         paintEditControls();
         renderEdit();
     };
@@ -52,26 +60,35 @@ function loadEditImage(file){
     img.src = url;
 }
 
+function resetEdit(){
+    const s = feat.ie;
+    Object.assign(s, {src:s.orig, rot:0, flip:false, aspect:null, bright:0, contrast:0, gray:false, text:"", crop:null, history:[]});
+    paintEditControls();
+    renderEdit();
+}
+
 function paintEditControls(){
     const box = $("ieBody");
     if(!box || !feat.ie) return;
     const s = feat.ie;
-    box.innerHTML = '<canvas id="ieCanvas" class="ie-canvas"></canvas>' +
+    box.innerHTML = '<div class="ie-wrap" id="ieWrap"><canvas id="ieCanvas" class="ie-canvas"></canvas><div class="ie-crop" id="ieCrop" hidden>' +
+        ["nw", "n", "ne", "e", "se", "s", "sw", "w"].map((h) => '<i class="ie-h ie-h-' + h + '" data-h="' + h + '"></i>').join("") + '</div></div>' +
         '<div class="row" style="justify-content:flex-start"><button type="button" class="button-secondary" data-t="ie:rotl">⟲ 左回転</button><button type="button" class="button-secondary" data-t="ie:rotr">⟳ 右回転</button><button type="button" class="button-secondary" data-t="ie:flip">⇋ 左右反転</button></div>' +
-        '<label>切り抜き（中央）<select id="ieAspect" data-t="ie:aspect" class="status-select">' + Object.keys(IE_ASPECTS).map((k) => '<option value="' + k + '">' + (k === "free" ? "そのまま" : k) + '</option>').join("") + '</select></label>' +
+        '<div id="ieCropBar" class="row" style="justify-content:flex-start;align-items:center"></div>' +
         '<label>明るさ <input type="range" min="-50" max="50" value="' + s.bright + '" data-t="ie:b"></label>' +
         '<label>コントラスト <input type="range" min="-50" max="50" value="' + s.contrast + '" data-t="ie:c"></label>' +
         '<label><input type="checkbox" data-t="ie:gray"' + (s.gray ? " checked" : "") + '> 白黒にする</label>' +
         '<label>文字を入れる（40文字まで）<input type="text" maxlength="40" data-live="1" data-t="ie:text" value="' + escapeHtml(s.text) + '"></label>' +
         '<div class="row" style="justify-content:flex-start"><select class="status-select" data-t="ie:tpos" aria-label="文字の位置"><option value="top">上</option><option value="center">中央</option><option value="bottom" selected>下</option></select>' +
         '<select class="status-select" data-t="ie:tcolor" aria-label="文字の色"><option value="white">白</option><option value="black">黒</option><option value="yellow">黄</option><option value="red">赤</option></select></div>' +
-        '<div class="row"><button type="button" class="button-secondary" data-t="ie:reset">元に戻す</button><button type="button" class="button-secondary" data-t="ie:save">端末に保存</button><button type="button" class="button" data-t="ie:send"' + (state.currentRoom ? "" : " disabled") + '>このチャットに送る</button></div>' +
-        (state.currentRoom ? "" : '<div class="meta">送信するには、先にチャットを開いてください。</div>');
+        '<div class="row"><button type="button" class="button-secondary" data-t="ie:reset">最初に戻す</button><button type="button" class="button-secondary" data-t="ie:save">端末に保存</button><button type="button" class="button" data-t="ie:send"' + (state.currentRoom ? "" : " disabled") + '>このチャットに送る</button></div>' +
+        (state.currentRoom ? "" : '<div class="meta">チャットに送るには、先にチャットを開いてください（「端末に保存」はいつでも使えます）。</div>');
+    paintCropBar();
+    bindCropDrag();
 }
 
-function renderEdit(){
-    const s = feat.ie, canvas = $("ieCanvas");
-    if(!s || !canvas) return;
+/** 回転・反転を反映した、加工前の画像（切り抜きの基準になる） */
+function transformedCanvas(s){
     const sw = s.src.width, sh = s.src.height, odd = s.rot % 2 === 1;
     const w = odd ? sh : sw, h = odd ? sw : sh;
     const tmp = document.createElement("canvas");
@@ -80,14 +97,16 @@ function renderEdit(){
     t.translate(w / 2, h / 2); t.rotate(s.rot * Math.PI / 2);
     if(s.flip) t.scale(-1, 1);
     t.drawImage(s.src, -sw / 2, -sh / 2);
-    let cw = w, ch = h;
-    if(s.aspect){
-        const ratio = s.aspect[0] / s.aspect[1];
-        if(w / h > ratio) cw = Math.round(h * ratio); else ch = Math.round(w / ratio);
-    }
+    return tmp;
+}
+
+function renderEdit(){
+    const s = feat.ie, canvas = $("ieCanvas");
+    if(!s || !canvas) return;
+    const tmp = transformedCanvas(s), cw = tmp.width, ch = tmp.height;
     canvas.width = cw; canvas.height = ch;
     const ctx = canvas.getContext("2d");
-    ctx.drawImage(tmp, (w - cw) / 2, (h - ch) / 2, cw, ch, 0, 0, cw, ch);
+    ctx.drawImage(tmp, 0, 0);
     if(s.bright || s.contrast || s.gray){
         const data = ctx.getImageData(0, 0, cw, ch), px = data.data;
         const c = s.contrast * 2.55, f = (259 * (c + 255)) / (255 * (259 - c)), add = s.bright * 2.55;
@@ -108,9 +127,140 @@ function renderEdit(){
         const y = s.tpos === "top" ? size : s.tpos === "center" ? ch / 2 : ch - size;
         ctx.strokeText(s.text, cw / 2, y, cw * 0.92); ctx.fillText(s.text, cw / 2, y, cw * 0.92);
     }
+    paintCropBox();
 }
 
+// ----- 切り抜き（ドラッグで範囲を決める。スマホは指、パソコンはマウス）-----
+
+function paintCropBar(){
+    const bar = $("ieCropBar"), s = feat.ie;
+    if(!bar || !s) return;
+    if(!s.crop){
+        bar.innerHTML = '<button type="button" class="button-secondary" data-t="ie:crop">✂️ 切り抜く</button>' +
+            (s.history.length ? '<button type="button" class="button-secondary" data-t="ie:undo">↶ 切り抜きを1つ戻す</button>' : "");
+        return;
+    }
+    const keys = Object.keys(IE_ASPECTS), current = keys.find((k) => IE_ASPECTS[k] === s.aspect) || "free";
+    bar.innerHTML = '<label style="display:inline-flex;gap:6px;align-items:center">比率<select class="status-select" data-t="ie:aspect" aria-label="切り抜きの比率">' +
+        keys.map((k) => '<option value="' + k + '"' + (k === current ? " selected" : "") + '>' + (k === "free" ? "自由" : k) + '</option>').join("") + '</select></label>' +
+        '<button type="button" class="button" data-t="ie:cropok">✅ 切り抜きを確定</button><button type="button" class="button-secondary" data-t="ie:cropno">✖ やめる</button>' +
+        '<div class="meta" style="flex-basis:100%">枠をドラッグで移動、四隅・辺をドラッグで大きさを変えます。</div>';
+}
+
+function cropStart(){
+    const s = feat.ie;
+    if(!s) return;
+    s.crop = {x:0.1, y:0.1, w:0.8, h:0.8};
+    cropSetAspect();
+    paintCropBar();
+}
+
+function cropSetAspect(){
+    const s = feat.ie;
+    if(!s || !s.crop) return;
+    if(s.aspect){
+        const tmp = transformedCanvas(s), W = tmp.width, H = tmp.height, r = s.aspect[0] / s.aspect[1];
+        let w = Math.min(0.9, 0.9 * H * r / W), h = w * W / (r * H);
+        if(h > 0.9){ h = 0.9; w = h * r * H / W; }
+        s.crop = {x:(1 - w) / 2, y:(1 - h) / 2, w, h};
+    }
+    paintCropBar();
+    paintCropBox();
+}
+
+function cropCancel(){
+    const s = feat.ie;
+    if(!s) return;
+    s.crop = null; s.aspect = null;
+    paintCropBar(); paintCropBox();
+}
+
+function cropCommit(){
+    const s = feat.ie;
+    if(!s || !s.crop) return;
+    const tmp = transformedCanvas(s), W = tmp.width, H = tmp.height, c = s.crop;
+    const x = Math.round(c.x * W), y = Math.round(c.y * H), w = Math.max(1, Math.round(c.w * W)), h = Math.max(1, Math.round(c.h * H));
+    const out = document.createElement("canvas");
+    out.width = w; out.height = h;
+    out.getContext("2d").drawImage(tmp, x, y, w, h, 0, 0, w, h);
+    s.history.push({src:s.src, rot:s.rot, flip:s.flip});
+    if(s.history.length > 8) s.history.shift();
+    s.src = out; s.rot = 0; s.flip = false; s.crop = null; s.aspect = null;
+    paintCropBar(); renderEdit();
+}
+
+function undoEdit(){
+    const s = feat.ie;
+    if(!s || !s.history.length) return;
+    const back = s.history.pop();
+    s.src = back.src; s.rot = back.rot; s.flip = back.flip; s.crop = null; s.aspect = null;
+    paintCropBar(); renderEdit();
+}
+
+function paintCropBox(){
+    const box = $("ieCrop"), s = feat.ie;
+    if(!box) return;
+    if(!s || !s.crop){ box.hidden = true; return; }
+    const c = s.crop;
+    box.hidden = false;
+    box.style.left = (c.x * 100) + "%"; box.style.top = (c.y * 100) + "%";
+    box.style.width = (c.w * 100) + "%"; box.style.height = (c.h * 100) + "%";
+    box.classList.toggle("locked", !!s.aspect);
+}
+
+function bindCropDrag(){
+    const box = $("ieCrop"), wrap = $("ieWrap");
+    if(!box || !wrap) return;
+    let drag = null;
+    box.addEventListener("pointerdown", (event) => {
+        const s = feat.ie;
+        if(!s || !s.crop) return;
+        const handle = event.target.closest("[data-h]");
+        const rect = wrap.getBoundingClientRect();
+        drag = {mode:handle ? handle.dataset.h : "move", rect, px:event.clientX, py:event.clientY, start:Object.assign({}, s.crop), id:event.pointerId};
+        try{ box.setPointerCapture(event.pointerId); }catch(_e){}
+        event.preventDefault();
+    });
+    box.addEventListener("pointermove", (event) => {
+        const s = feat.ie;
+        if(!drag || !s || !s.crop || event.pointerId !== drag.id) return;
+        const dx = (event.clientX - drag.px) / drag.rect.width, dy = (event.clientY - drag.py) / drag.rect.height;
+        s.crop = cropDrag(drag, dx, dy, s);
+        paintCropBox();
+    });
+    const end = (event) => { if(drag && event.pointerId === drag.id) drag = null; };
+    box.addEventListener("pointerup", end);
+    box.addEventListener("pointercancel", end);
+}
+
+function cropDrag(drag, dx, dy, s){
+    const o = drag.start, m = drag.mode, clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    if(m === "move") return {x:clamp(o.x + dx, 0, 1 - o.w), y:clamp(o.y + dy, 0, 1 - o.h), w:o.w, h:o.h};
+    let left = o.x, top = o.y, right = o.x + o.w, bottom = o.y + o.h;
+    const corner = m.length === 2;
+    if(s.aspect && corner){
+        const tmp = transformedCanvas(s), r = s.aspect[0] / s.aspect[1], k = tmp.width / (r * tmp.height); // h = w * k
+        const ax = m.includes("w") ? right : left, ay = m.includes("n") ? bottom : top;
+        const mx = clamp((m.includes("w") ? left : right) + dx, 0, 1);
+        const sx = mx >= ax ? 1 : -1;
+        const maxW = sx > 0 ? 1 - ax : ax, sy = m.includes("n") ? -1 : 1, maxH = sy > 0 ? 1 - ay : ay;
+        let w = clamp(Math.abs(mx - ax), IE_MIN_CROP, Math.min(maxW, maxH / k));
+        const h = w * k;
+        const nx = m.includes("w") ? ax - w : ax, ny = m.includes("n") ? ay - h : ay;
+        return {x:nx, y:ny, w, h};
+    }
+    if(s.aspect) return o;
+    if(m.includes("w")) left = clamp(o.x + dx, 0, right - IE_MIN_CROP);
+    if(m.includes("e")) right = clamp(o.x + o.w + dx, left + IE_MIN_CROP, 1);
+    if(m.includes("n")) top = clamp(o.y + dy, 0, bottom - IE_MIN_CROP);
+    if(m.includes("s")) bottom = clamp(o.y + o.h + dy, top + IE_MIN_CROP, 1);
+    return {x:left, y:top, w:right - left, h:bottom - top};
+}
+
+// ----- 書き出し -----
+
 function editedBlob(){
+    if(feat.ie && feat.ie.crop) cropCommit();
     return new Promise((resolve, reject) => {
         const canvas = $("ieCanvas");
         if(!canvas) { reject(new Error("画像を選んでください。")); return; }

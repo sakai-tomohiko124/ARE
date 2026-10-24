@@ -21,11 +21,21 @@ const FEAT_ERRORS = {
     cannot_target_admin:"管理者アカウントは再発行の対象にできません。", rate_limited:"短時間に再発行しすぎです。時間をおいてください。",
     blocked:"このユーザーにはメッセージを送れません（ブロック中）。", too_many_pins:"固定できるのは1チャットあたり10件までです。", invalid_emoji:"その絵文字は使えません。", query_invalid:"検索ワードは1〜50文字で入力してください。", room_suspended:"このチャットは停止中です。",
     story_empty:"ひとこと、または写真を入力してください。", story_too_long:"ひとことは200文字以内です。", invalid_bg:"背景色が正しくありません。", too_many_stories:"ストーリーは同時に10件までです。",
-    invalid_game:"このゲームは記録できません。", invalid_score:"スコアが正しくありません。", too_many_rows:"登録できる件数の上限（500件）に達しました。"
+    invalid_game:"このゲームは記録できません。", invalid_score:"スコアが正しくありません。", too_many_rows:"登録できる件数の上限（500件）に達しました。", invalid_ttl:"消える時間の指定が正しくありません。"
 };
 
 const feat = {known:new Map(),readTimes:[],readKey:"",manual:"online",lastActivity:Date.now(),timers:[],partnerReadAt:null,pending:new Set(),editingId:null,isAdmin:false,adminView:"rooms"};
 try{ const saved = localStorage.getItem("are_manual_status"); if(STATUS_LABELS[saved]) feat.manual = saved; }catch(_e){}
+
+/** 指定したチャットへメッセージ（JSON）を送る。「消えるメッセージ」がオンなら、期限つきで送る */
+function sendRpcContent(roomId, content){
+    const ttl = Number(feat.ttl) || 0;
+    return ttl > 0
+        ? requireClient().rpc("send_timed_message", {p_room_id:roomId, p_content:content, p_ttl_seconds:ttl})
+        : requireClient().rpc("send_message", {p_room_id:roomId, p_content:content});
+}
+
+function sendPayloadToRoom(roomId, payload){ return sendRpcContent(roomId, JSON.stringify(payload)); }
 
 function featError(error){
     if(isMissingBackend(error)) return "この機能は未実装です（サーバー側の準備ができていません）。";

@@ -13,7 +13,7 @@ const I18N_EN = {
     "既読を相手に表示する":"Show read receipts to others", "🛡️ 管理者パネル":"🛡️ Admin panel", "← 戻る":"← Back", "会話を始めよう":"Start a conversation", "AREへようこそ":"Welcome to ARE",
     "🖼️ 画像を選択":"🖼️ Image", "📎 ファイルを選択":"📎 File", "🎬 動画を選択":"🎬 Video", "😊 絵文字・スタンプ":"😊 Emoji & stamps", "🎤 音声":"🎤 Voice", "✖ 録音を取消":"✖ Cancel recording",
     "🕒 予約送信":"🕒 Schedule", "送信":"Send", "この日時に予約":"Schedule for this time", "閉じる":"Close", "読み込み中...":"Loading...", "接続を確認しています":"Checking connection",
-    "🟢 オンライン":"🟢 Online", "🔴 取り込み中":"🔴 Busy", "📞 通話中":"📞 In a call", "🟡 待機中":"🟡 Away"
+    "📷 写真":"📷 Photo", "📍 位置情報":"📍 Location", "🎙️ 音声入力":"🎙️ Dictate", "⏳ 消えるメッセージ":"⏳ Disappearing", "📝 自分専用メモ（Keep）":"📝 My notes (Keep)", "📝 自分専用メモ（Keep）":"📝 My notes (Keep)", "🟢 オンライン":"🟢 Online", "🔴 取り込み中":"🔴 Busy", "📞 通話中":"📞 In a call", "🟡 待機中":"🟡 Away"
 };
 
 const I18N_EN_PLACEHOLDERS = {

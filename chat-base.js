@@ -490,7 +490,7 @@ async function loadMessages(showFeedback,quiet){
     try{
         const result = await requireClient()
             .from(TABLES.messages)
-            .select("id,room_id,sender_id,content,created_at,edited_at")
+            .select("id,room_id,sender_id,content,created_at,edited_at,expires_at")
             .eq("room_id",state.currentRoom.id)
             .order("created_at",{ascending:false})
             .limit(500);
@@ -607,6 +607,8 @@ function renderMessageContent(content){
 }
 
 function renderMessages(scrollToBottom){
+    const nowMs = Date.now();
+    state.messages = state.messages.filter((m) => !m.expires_at || new Date(m.expires_at).getTime() > nowMs);
     if(!state.messages.length){
         el.messages.innerHTML = '<div class="welcome"><div class="welcome-icon">✉️</div><h2>最初のメッセージを送ろう</h2><div>メッセージやファイルを送信すると、ここに表示されます。</div></div>';
         return;
@@ -684,10 +686,7 @@ async function sendMessagePayload(payload,options){
     try{
         const client = requireClient();
         const content = JSON.stringify(payload);
-        const result = await client.rpc("send_message",{
-            p_room_id:state.currentRoom.id,
-            p_content:content
-        });
+        const result = await sendRpcContent(state.currentRoom.id,content);
 
         if(result.error) throw result.error;
 

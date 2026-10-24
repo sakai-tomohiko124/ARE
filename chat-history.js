@@ -96,6 +96,7 @@ async function exportHistory(mode){
             used.add(name);
             files.push({name:name,data:new TextEncoder().encode("\uFEFF" + (room.is_group ? "グループ：" : "相手：") + title + "\n保存日時：" + new Date().toLocaleString("ja-JP") + "\n\n" + lines.join("\n") + "\n")});
         }
+        await addOwnExtras(files, mode, cutoff, since);
         if(!files.length){ showToast("保存する履歴はありません。"); return false; }
         const d = new Date();
         const stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2,"0") + String(d.getDate()).padStart(2,"0");
@@ -125,4 +126,46 @@ async function maybePromptExport(){
         localStorage.setItem("are_export_prompt_day",today);
         if(window.confirm("30日を過ぎた会話履歴が " + r.count + " 件あります。\nZIPファイルとして、この端末に保存しますか？\n（サーバー上の履歴は消えません）")) await exportHistory("old");
     }catch(_e){ /* お知らせが出せなくても他の機能は続ける */ }
+}
+
+/** 自分のストーリー（アーカイブ含む）・メモ・CO2記録をZIPに足す。失敗しても会話履歴の保存は続ける */
+async function addOwnExtras(files, mode, cutoff, since){
+    const client = requireClient(), enc = (t) => new TextEncoder().encode("\uFEFF" + t);
+    try{
+        let q = client.from("stories").select("id,body,image_path,bg,created_at,expires_at").eq("user_id", state.user.id).order("created_at", {ascending:true}).limit(1000);
+        if(mode === "old") q = q.lt("created_at", cutoff);
+        if(since) q = q.gt("created_at", since);
+        const r = await q;
+        if(!r.error && r.data && r.data.length){
+            const lines = [], now = Date.now();
+            let imgCount = 0;
+            for(const st of r.data){
+                const archived = new Date(st.expires_at).getTime() <= now;
+                let imgName = "";
+                if(st.image_path && imgCount < 300){
+                    try{
+                        const dl = await client.storage.from("post-images").download(st.image_path);
+                        if(!dl.error && dl.data){
+                            imgCount++;
+                            imgName = "ストーリー/" + String(imgCount).padStart(3, "0") + "_" + st.created_at.slice(0, 10) + ".jpg";
+                            files.push({name:imgName, data:new Uint8Array(await dl.data.arrayBuffer())});
+                        }
+                    }catch(_e){ /* 画像1枚の失敗は無視 */ }
+                }
+                lines.push("[" + new Date(st.created_at).toLocaleString("ja-JP") + "] " + (archived ? "（アーカイブ）" : "（公開中）") + (st.body ? " " + st.body.replace(/\r?\n/g, "\n    ") : "") + (imgName ? "  画像：" + imgName : st.image_path ? "  画像：（保存の上限などで含まれていません）" : ""));
+            }
+            files.push({name:"ストーリー.txt", data:enc("自分のストーリー（公開中とアーカイブ）\n\n" + lines.join("\n") + "\n")});
+        }
+    }catch(_e){ /* ストーリーが取得できなくても続ける */ }
+    if(mode !== "all") return;
+    try{
+        const m = await client.from("user_memos").select("kind,title,body,items,labels,pinned,archived,deleted_at,created_at").eq("user_id", state.user.id).is("deleted_at", null).order("created_at", {ascending:true}).limit(500);
+        if(!m.error && m.data && m.data.length){
+            files.push({name:"Keepメモ.txt", data:enc(m.data.map((x) => "■ " + (x.title || "(無題)") + (x.pinned ? " 📌" : "") + (x.archived ? "（アーカイブ）" : "") + "\n" + (x.kind === "list" ? (x.items || []).map((i) => (i.d ? "[x] " : "[ ] ") + (i.t || "")).join("\n") : x.body || "") + ((x.labels || []).length ? "\nラベル：" + x.labels.join(", ") : "")).join("\n\n") + "\n")});
+        }
+    }catch(_e){ /* メモが取得できなくても続ける */ }
+    try{
+        const c = await client.from("user_co2_logs").select("day,category,amount,kg,note").eq("user_id", state.user.id).order("day", {ascending:true}).limit(2000);
+        if(!c.error && c.data && c.data.length) files.push({name:"CO2記録.txt", data:enc(c.data.map((x) => x.day + "  " + x.category + "  " + x.amount + "  " + x.kg + "kg" + (x.note ? "  " + x.note : "")).join("\n") + "\n")});
+    }catch(_e){ /* CO2記録が取得できなくても続ける */ }
 }

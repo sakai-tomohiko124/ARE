@@ -144,7 +144,14 @@ const FEATURES = [
     ["games","ゲーム",() => { initGames(); }],
     ["planner","タスク・カレンダー",initPlanner],
     ["prefs","表示設定",initPrefs],
-    ["lang","多言語UI",initLang]
+    ["lang","多言語UI",initLang],
+    ["camera","写真・カメラ",initCamera],
+    ["ctx","長押し・右クリックメニュー",initCtx],
+    ["memo","自分専用メモ",initMemo],
+    ["timed","消えるメッセージ",initTimed],
+    ["co2","CO2トラッカー",initCo2],
+    ["ai","会話分析・音声入力・翻訳",initAi],
+    ["archive","ストーリーのアーカイブ",() => {}]
 ];
 
 function startFeatures(){

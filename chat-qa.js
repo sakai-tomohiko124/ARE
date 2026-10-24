@@ -33,13 +33,14 @@
                 cache = response.ok ? qaToText(await response.json()) : "";
             }catch(_e){ cache = ""; }
         }
+        try{ console.info("[chat-qa] QA.json " + (cache ? "を追加しました" : "は追加されませんでした")); }catch(_e){}
         if(!cache) return new Response(text, {status:200, headers:{"Content-Type":"text/plain; charset=utf-8"}});
         return new Response(text.replace(/\s+$/, "") + "\n\n" + cache + "\n", {status:200, headers:{"Content-Type":"text/plain; charset=utf-8"}});
     }
 
     window.fetch = function(input, init){
         try{
-            const url = typeof input === "string" ? input : (input && input.url) || "";
+            const url = typeof input === "string" ? input : String((input && (input.url || input.href)) || input || "");
             if(/(^|\/)chatbot\.txt(\?|$)/.test(url)) return build(input, init);
         }catch(_e){ /* 失敗したら通常の読み込みに任せる */ }
         return nativeFetch(input, init);

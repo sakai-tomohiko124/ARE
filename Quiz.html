@@ -1,0 +1,389 @@
+<!--ARE.jsonとstory.json（このファイルと同じフォルダ）の中から30問出題-->
+<!--ARE.jsonは、AREクイズという名前　story.jsonは、物語クイズという名前-->
+<!--どちらも4択クイズとする-->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>クイズ — 4択クイズ</title>
+    <style>
+/* --- Provided futuristic CSS (trimmed/embedded) --- */
+:root {
+    --bg-dark: #121212;
+    --bg-medium: #1f1f1f;
+    --bg-light: #2a2a2a;
+    --text-primary: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --neon-blue: #00e0ff;
+    --neon-purple: #ae00ff;
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-blur: 10px;
+    --transition-speed: 0.3s;
+}
+body{font-family:'Noto Sans JP',sans-serif;line-height:1.8;margin:0;padding:0;background-color:var(--bg-dark);color:var(--text-primary);display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;position:relative}
+.background-effect{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 15% 15%, rgba(0,224,255,0.15) 0%, transparent 40%),radial-gradient(circle at 85% 85%, rgba(174,0,255,0.15) 0%, transparent 40%);opacity:0.7;z-index:-1;animation:pulseBackground 20s infinite alternate ease-in-out}
+@keyframes pulseBackground{0%{transform:scale(1);opacity:0.7}50%{transform:scale(1.05);opacity:0.8}100%{transform:scale(1);opacity:0.7}}
+.futuristic-header{background:linear-gradient(45deg,var(--bg-medium),var(--bg-dark) 70%);color:var(--text-primary);padding:3em 1em 2em;text-align:center;box-shadow:0 0 20px rgba(0,224,255,0.3),0 0 40px rgba(174,0,255,0.2);border-bottom:2px solid var(--neon-blue);position:relative;z-index:10}
+.header-content{max-width:900px;margin:0 auto;position:relative}
+.futuristic-header h1{font-family:'Roboto Mono',monospace;font-size:3.5em;margin-bottom:0.2em;text-transform:uppercase;letter-spacing:2px;text-shadow:0 0 10px var(--neon-blue),0 0 20px var(--neon-blue),0 0 30px var(--neon-blue);animation:neonGlow 2s infinite alternate}
+.futuristic-header .tagline{font-size:1.1em;opacity:0.7;color:var(--text-secondary);letter-spacing:0.5px}
+@keyframes neonGlow{from{text-shadow:0 0 5px var(--neon-blue),0 0 10px var(--neon-blue)}to{text-shadow:0 0 10px var(--neon-blue),0 0 20px var(--neon-blue),0 0 30px var(--neon-blue)}}
+.main-content{max-width:900px;margin:2.5em auto;padding:0 1.5em;flex-grow:1;position:relative;z-index:5}
+.quiz-selection{display:flex;gap:1.5em;justify-content:center;margin-bottom:2em}
+.quiz-btn{background-color:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));border:1px solid var(--glass-border);padding:1em 2em;border-radius:12px;color:var(--text-primary);font-family:'Roboto Mono',monospace;font-size:1.1em;cursor:pointer;transition:transform var(--transition-speed) ease,box-shadow var(--transition-speed) ease;box-shadow:0 6px 18px rgba(0,0,0,0.4)}
+.quiz-btn:hover{transform:translateY(-6px);box-shadow:0 16px 40px rgba(0,0,0,0.6),0 0 18px rgba(174,0,255,0.18);border-color:rgba(0,224,255,0.25)}
+.quiz-question{background-color:var(--bg-medium);border-radius:10px;padding:2em;margin-bottom:1.8em;border-left:4px solid var(--neon-purple);transition:transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, border-color 0.3s ease-in-out;position:relative;overflow:hidden}
+.quiz-question:hover{transform:translateY(-5px) scale(1.01);box-shadow:0 8px 25px rgba(0,0,0,0.5),0 0 20px rgba(174,0,255,0.4);border-left-color:var(--neon-blue)}
+.quiz-question .question{font-family:'Roboto Mono',monospace;font-size:1.5em;color:var(--neon-blue);margin-bottom:0.6em;border-bottom:1px dashed var(--text-secondary);padding-bottom:0.4em;letter-spacing:1px;text-shadow:0 0 8px rgba(0,224,255,0.4);position:relative;z-index:1}
+.quiz-options{display:flex;flex-direction:column;gap:0.5em}
+.quiz-option{background-color:var(--bg-light);border:1px solid rgba(0,224,255,0.3);padding:0.8em;border-radius:8px;color:var(--text-primary);cursor:pointer;transition:all var(--transition-speed) ease}
+.quiz-option:hover{background-color:var(--bg-medium);box-shadow:0 0 10px rgba(0,224,255,0.4)}
+.quiz-option.correct{background-color:#4caf50 !important;color:white}
+.quiz-option.incorrect{background-color:#f44336 !important;color:white}
+.quiz-explanation{margin-top:1em;padding:1em;background-color:var(--bg-light);border-radius:8px;border:1px solid var(--glass-border);color:var(--text-secondary)}
+.quiz-progress{text-align:center;margin-bottom:1em;color:var(--text-secondary)}
+.quiz-next{background-color:var(--neon-purple);border:none;padding:1em 2em;border-radius:8px;color:var(--text-primary);font-family:'Roboto Mono',monospace;font-size:1em;cursor:pointer;margin-top:1em;transition:background-color var(--transition-speed) ease}
+.quiz-next:hover{background-color:#8a00cc}
+.quiz-result{text-align:center;margin-top:2em}
+.quiz-result h2{color:var(--neon-blue)}
+.quiz-result p{font-size:1.2em}
+.futuristic-footer{margin-top:4em;background:linear-gradient(-45deg,var(--bg-medium),var(--bg-dark) 70%);color:var(--text-secondary);text-align:center;padding:1.5em 1em;font-size:0.9em;border-top:1px dashed var(--neon-purple);box-shadow:0 0 20px rgba(174,0,255,0.2);position:relative;z-index:10}
+@media(max-width:900px){.quiz-selection{flex-direction:column}.quiz-options{flex-direction:column}}
+@media(max-width:480px){.futuristic-header h1{font-size:1.8em}.quiz-question .question{font-size:1.2em}}
+.quiz-buttons{display:flex;justify-content:space-between;gap:1em;margin-top:1em}
+@media(max-width:768px){.quiz-buttons{flex-direction:column;align-items:center}}
+
+/* ハンバーガーメニューボタン */
+#hamburger-menu-btn {
+	display: none;
+	position: fixed;
+	top: 15px;
+	left: 15px;
+	z-index: 3000;
+	background: linear-gradient(135deg, #00e0ff, #ae00ff);
+	border: none;
+	border-radius: 8px;
+	padding: 12px 15px;
+	font-size: 1.5em;
+	color: #fff;
+	cursor: pointer;
+	box-shadow: 0 4px 10px rgba(0, 224, 255, 0.4);
+	transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+#hamburger-menu-btn:hover {
+	transform: scale(1.05);
+	box-shadow: 0 6px 15px rgba(0, 224, 255, 0.6);
+}
+
+/* PC用ナビゲーション */
+.responsive-nav {
+	display: none;
+	background: #222;
+	color: #fff;
+	padding: 0.7em 0;
+	text-align: center;
+	font-size: 1.1em;
+	letter-spacing: 1px;
+}
+.responsive-nav a {
+	color: #00e0ff;
+	margin: 0 1em;
+	text-decoration: underline;
+}
+
+/* サイドバーメニュー */
+#table-of-contents {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 280px;
+	height: 100vh;
+	background: rgba(20, 30, 60, 0.95);
+	backdrop-filter: blur(10px);
+	color: #f2f8ff;
+	padding: 20px;
+	box-shadow: 4px 0 20px rgba(0, 224, 255, 0.3);
+	z-index: 2000;
+	overflow-y: auto;
+	transform: translateX(-100%);
+	transition: transform 0.3s ease;
+}
+#table-of-contents.open {
+	transform: translateX(0);
+}
+#table-of-contents h2 {
+	color: #00e0ff;
+	text-shadow: 0 0 8px rgba(0, 224, 255, 0.8);
+	margin-top: 0;
+}
+#table-of-contents ul {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+#table-of-contents li {
+	margin: 0.8em 0;
+}
+#table-of-contents a {
+	color: #f2f8ff;
+	text-decoration: none;
+	font-size: 1.05em;
+	transition: color 0.3s ease, text-shadow 0.3s ease;
+}
+#table-of-contents a:hover {
+	color: #00e0ff;
+	text-shadow: 0 0 8px rgba(0, 224, 255, 0.8);
+}
+
+#hamburger-menu-btn {
+	display: block !important;
+	position: fixed;
+	top: 15px;
+	left: 15px;
+	z-index: 9999;
+	background: transparent;
+	border: none;
+	width: 40px;
+	height: 40px;
+	cursor: pointer;
+	padding: 0;
+	transition: all 0.3s ease;
+}
+
+/* ハンバーガーアイコンの3本線 */
+#hamburger-menu-btn::before,
+#hamburger-menu-btn::after,
+.hamburger-line {
+	content: '';
+	display: block;
+	width: 32px;
+	height: 4px;
+	background: #00e0ff;
+	border-radius: 2px;
+	margin: 0 auto 6px;
+	box-shadow: 0 0 10px rgba(0, 224, 255, 0.8), 0 0 20px rgba(0, 224, 255, 0.5);
+	transition: all 0.3s ease;
+}
+
+#hamburger-menu-btn::before {
+	margin-top: 8px;
+}
+
+#hamburger-menu-btn::after {
+	margin-bottom: 0;
+}
+
+#hamburger-menu-btn:hover::before,
+#hamburger-menu-btn:hover::after,
+#hamburger-menu-btn:hover .hamburger-line {
+	background: #ff00ff;
+	box-shadow: 0 0 15px rgba(255, 0, 255, 1), 0 0 30px rgba(255, 0, 255, 0.7);
+	transform: scaleX(1.1);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+	#hamburger-menu-btn {
+		display: block;
+	}
+	.responsive-nav {
+		display: none !important;
+	}
+}
+@media (min-width: 769px) {
+	.responsive-nav {
+		display: block;
+	}
+	#table-of-contents {
+		display: none;
+	}
+}
+    </style>
+</head>
+<body>
+    <div class="background-effect" aria-hidden="true"></div>
+
+    <header class="futuristic-header">
+        <div class="header-content">
+            <h1 class="neon-text">クイズ</h1>
+            <p class="tagline">30問出題 — 4択クイズ</p>
+        </div>
+    </header>
+
+    <main class="main-content" role="main">
+        <section id="quiz-selection" class="quiz-selection">
+            <button class="quiz-btn" onclick="startQuiz('ARE')">AREクイズ</button>
+            <button class="quiz-btn" onclick="startQuiz('story')">物語クイズ</button>
+        </section>
+
+        <section id="quiz-area" style="display:none;">
+            <div id="quiz-progress" class="quiz-progress"></div>
+            <div id="quiz-question" class="quiz-question"></div>
+            <div class="quiz-buttons">
+                <button id="next-btn" class="quiz-next" onclick="nextQuestion()" style="display:none;">次へ</button>
+                <button class="quiz-btn" onclick="retireQuiz()">リタイア</button>
+            </div>
+        </section>
+
+        <section id="quiz-result" style="display:none;" class="quiz-result">
+            <h2>結果</h2>
+            <p id="result-text"></p>
+            <button class="quiz-btn" onclick="restartQuiz()">もう一度</button>
+            <button class="quiz-btn" onclick="backToSelection()">クイズ選択に戻る</button>
+        </section>
+    </main>
+
+    <footer class="futuristic-footer">
+        <div>© サイト — クイズ</div>
+                <div class="footer-note">JSONファイルからランダムに30問出題します。</div>
+    </footer>
+
+    <script>
+        let resultComments = {
+            100: '🎉 パーフェクト！素晴らしい知識です！',
+            90: '🌟 優秀！かなりの実力をお持ちですね！',
+            80: '👍 良くできました！基礎はしっかりしています！',
+            70: '📚 もう少し！復習して再挑戦しましょう！',
+            60: '💪 基本から見直して頑張りましょう！',
+            0: '🔥 諦めずに学習を続けましょう！必ず上達します！',
+        };
+        const QUESTION_COUNT = 30; // 出題数
+        const QUIZ_FILES = {ARE: 'ARE.json', story: 'story.json'};
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let answered = 0;
+        let score = 0;
+        let selectedAnswer = null;
+        let quizType = '';
+
+        function esc(value) {
+            return String(value).replace(/[&<>"']/g, ch => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[ch]));
+        }
+
+        function shuffle(list) {
+            const copy = list.slice();
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        function getResultComment(score, total) {
+            if (!total) return resultComments[0];
+            const percentage = (score / total) * 100;
+            if (percentage >= 100) return resultComments[100];
+            if (percentage >= 90) return resultComments[90];
+            if (percentage >= 80) return resultComments[80];
+            if (percentage >= 70) return resultComments[70];
+            if (percentage >= 60) return resultComments[60];
+            return resultComments[0];
+        }
+
+        // データの形：{question, options:[...], answer:"選択肢と同じ文字", explanation}。壊れた問題は除外します。
+        function validQuestions(data) {
+            if (!Array.isArray(data)) return [];
+            return data.filter(q => q && typeof q.question === 'string' && Array.isArray(q.options) && q.options.length >= 2 && q.options.includes(q.answer));
+        }
+
+        async function startQuiz(type) {
+            quizType = type;
+            const url = QUIZ_FILES[type];
+            try {
+                const response = await fetch(url, {cache: 'no-store'});
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+                const all = validQuestions(await response.json());
+                if (!all.length) throw new Error('問題がありません');
+                questions = shuffle(all).slice(0, QUESTION_COUNT).map(q => {
+                    // ○×問題は並び順を変えず、選択式だけ選択肢をシャッフルする
+                    return Object.assign({}, q, {options: q.options.length > 2 ? shuffle(q.options) : q.options.slice()});
+                });
+                currentQuestionIndex = 0;
+                answered = 0;
+                score = 0;
+                document.getElementById('quiz-selection').style.display = 'none';
+                document.getElementById('quiz-area').style.display = 'block';
+                document.getElementById('quiz-result').style.display = 'none';
+                showQuestion();
+            } catch (error) {
+                console.error(error);
+                alert('クイズデータの読み込みに失敗しました。（' + url + '）');
+            }
+        }
+
+        function showQuestion() {
+            const question = questions[currentQuestionIndex];
+            document.getElementById('quiz-progress').textContent = `${currentQuestionIndex + 1} / ${questions.length}`;
+            document.getElementById('quiz-question').innerHTML = `
+                <div class="question">${esc(question.question)}</div>
+                <div class="quiz-options">
+                    ${question.options.map((option, index) => `
+                        <div class="quiz-option" onclick="selectAnswer(${index})">${esc(option)}</div>
+                    `).join('')}
+                </div>
+                <div id="quiz-explanation" class="quiz-explanation" style="display:none;"></div>
+            `;
+            selectedAnswer = null;
+            const next = document.getElementById('next-btn');
+            next.textContent = currentQuestionIndex + 1 < questions.length ? '次へ' : '結果を見る';
+            next.style.display = 'none';
+        }
+
+        function selectAnswer(index) {
+            if (selectedAnswer !== null) return;
+            selectedAnswer = index;
+            answered++;
+            const question = questions[currentQuestionIndex];
+            const options = document.querySelectorAll('.quiz-option');
+            const isCorrect = question.options[index] === question.answer;
+            if (isCorrect) score++;
+            options.forEach((opt, i) => {
+                const text = esc(question.options[i]);
+                if (question.options[i] === question.answer) {
+                    opt.classList.add('correct');
+                    opt.innerHTML = `${text} <span style="color:black;font-weight:bold;">(正解)</span>`;
+                } else if (i === index) {
+                    opt.classList.add('incorrect');
+                    opt.innerHTML = `${text} <span style="color:black;font-weight:bold;">(不正解)</span>`;
+                }
+                opt.onclick = null; // 選択後クリック無効
+            });
+            const explanationDiv = document.getElementById('quiz-explanation');
+            explanationDiv.textContent = question.explanation || '解説なし';
+            explanationDiv.style.display = 'block';
+            document.getElementById('next-btn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            if (selectedAnswer === null) return;
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) showQuestion();
+            else showResult();
+        }
+
+        function showResult() {
+            document.getElementById('quiz-area').style.display = 'none';
+            document.getElementById('quiz-result').style.display = 'block';
+            document.getElementById('result-text').innerHTML = `正解数: ${score} / ${questions.length}<br>${getResultComment(score, questions.length)}`;
+        }
+
+        function retireQuiz() {
+            document.getElementById('quiz-area').style.display = 'none';
+            document.getElementById('quiz-result').style.display = 'block';
+            document.getElementById('result-text').innerHTML = `リタイアしました。正解数: ${score} / ${answered}<br>${getResultComment(score, answered)}`;
+        }
+
+        function restartQuiz() {
+            startQuiz(quizType);
+        }
+
+        function backToSelection() {
+            document.getElementById('quiz-result').style.display = 'none';
+            document.getElementById('quiz-selection').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
+

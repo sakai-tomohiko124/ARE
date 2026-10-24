@@ -3,6 +3,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" href="data:,">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://geocoding-api.open-meteo.com; font-src 'self' data:; form-action 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="no-referrer">
 <script src="./guard.js"></script>
@@ -20,20 +21,20 @@
         <button class="rail-btn" data-tab="users" type="button"><span class="ico">👥</span><span>ユーザー</span></button>
         <button class="rail-btn" data-tab="posts" data-feature="posts" type="button"><span class="ico">📷</span><span>投稿</span></button>
         <button class="rail-btn" data-tab="more" type="button"><span class="ico">🧰</span><span>その他</span></button>
-        <button class="rail-btn" data-tab="me" type="button"><span class="ico">👤</span><span>マイページ</span></button>
+        <button class="rail-btn" data-tab="me" data-ctx="me" type="button"><span class="ico">👤</span><span>マイページ</span></button>
     </nav>
     <aside class="sidebar" id="sidebar" data-tab="chats">
         <div class="brand">
             <div><h1>ARE</h1><small>CONNECT YOUR WORLD</small></div>
             <button class="button-secondary" id="logoutButton" type="button">ログアウト</button>
         </div>
-        <div class="userbar pane-me">
+        <div class="userbar pane-me" data-ctx="me">
             <div class="avatar" id="myAvatar">A</div>
             <div class="user-info"><strong id="myName">読み込み中...</strong><small id="myLoginStatus">接続を確認しています</small></div>
             <select id="myStatus" class="status-select" aria-label="ステータス"><option value="online">🟢 オンライン</option><option value="busy">🔴 取り込み中</option><option value="in_call">📞 通話中</option><option value="away">🟡 待機中</option></select>
         </div>
         <div class="sidebar-content">
-            <div class="profile-card pane-me"><div class="profile-text" id="profileText"></div><button class="button" id="profileEditButton" data-feature="profile" type="button">✏️ プロフィールを編集</button></div>
+            <div class="profile-card pane-me" data-ctx="me"><div class="profile-text" id="profileText"></div><button class="button" id="memoOpenButton" data-feature="memo" type="button">📝 自分専用メモ（Keep）</button><button class="button" id="profileEditButton" data-feature="profile" type="button">✏️ プロフィールを編集</button></div>
             <div class="profile-card pane-me" id="delCard">
                 <div class="profile-text"><b>アカウントの削除</b><div class="bio" id="delStatus">削除を申請すると、管理者の承認後にアカウントとデータが完全に削除されます（元に戻せません）。</div></div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="button-danger" id="delRequestButton" data-feature="account" type="button">アカウント削除を申請</button><button class="button-secondary" id="delCancelButton" type="button" hidden>申請を取り消す</button></div>
@@ -96,7 +97,7 @@
         <section class="composer">
             <div class="typing-line" id="typingLine" aria-live="polite"></div>
             <div class="composer-tools">
-                <label class="tool-button" for="imageInput">🖼️ 画像を選択</label>
+                <button class="tool-button" id="photoButton" data-feature="camera" type="button">📷 写真</button>
                 <input class="file-input" id="imageInput" type="file" accept="image/*" multiple>
                 <label class="tool-button" for="fileInput">📎 ファイルを選択</label>
                 <input class="file-input" id="fileInput" type="file" multiple accept=".pdf,.docx,.xlsx,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation">
@@ -105,6 +106,9 @@
                 <button class="tool-button" id="emojiButton" data-feature="stamps" type="button">😊 絵文字・スタンプ</button>
                 <button class="tool-button" id="voiceButton" data-feature="voice" data-needs-room type="button" disabled>🎤 音声</button>
                 <button class="tool-button" id="voiceCancel" data-feature="voice" type="button" hidden>✖ 録音を取消</button>
+                <button class="tool-button" id="ttlButton" data-feature="timed" data-needs-room type="button" disabled>⏳ 消えるメッセージ</button>
+                <button class="tool-button" id="locationButton" data-feature="location" type="button">📍 位置情報</button>
+                <button class="tool-button" id="dictateButton" data-feature="ai" type="button">🎙️ 音声入力</button>
                 <button class="tool-button" id="scheduleButton" data-feature="messages" type="button" disabled>🕒 予約送信</button>
                 <span id="attachmentStatus" style="font-size:11px;color:var(--muted)"></span>
             </div>
@@ -141,6 +145,7 @@
 <script src="./apikey.js"></script>
 <script src="./password-toggle.js"></script>
 <script src="./system.js"></script>
+<script src="./chat-qa.js"></script>
 <script src="./extras.js"></script>
 <script src="./chat-base.js"></script>
 <script src="./chat-feat.js"></script>
@@ -177,6 +182,12 @@
 <script src="./chat-planner.js"></script>
 <script src="./chat-prefs.js"></script>
 <script src="./chat-lang.js"></script>
+<script src="./chat-camera.js"></script>
+<script src="./chat-ctx.js"></script>
+<script src="./chat-memo.js"></script>
+<script src="./chat-timed.js"></script>
+<script src="./chat-co2.js"></script>
+<script src="./chat-ai.js"></script>
 <script src="./chat-main.js"></script>
 <script src="./protect.js"></script>
 </body>

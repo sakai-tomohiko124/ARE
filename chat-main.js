@@ -168,6 +168,7 @@ const FEATURES = [
     ["announce","お知らせ",initAnnounce],
     ["fun","じゃんけん・ルーレット・あみだ",initFun],
     ["rpg","ARE 〜そういうときは、AREだ！〜（RPG）",initRpg],
+    ["ng","NGワード制裁",initNg],
     ["points","ポイント・AREShop",initPoints],
     ["story","ストーリー",initStory],
     ["album","アルバム",initAlbum],

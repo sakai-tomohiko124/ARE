@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:,">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; font-src 'self' data:; form-action 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#7a0000">
+<title>ARE | 警告</title>
+<link rel="stylesheet" href="./virus.css">
+</head>
+<body>
+<main id="vx" aria-live="assertive">
+  <div class="vx-flash" aria-hidden="true"></div>
+  <header class="vx-head"><span class="vx-tri">⚠</span> ARE セキュリティ警告 <span class="vx-tri">⚠</span></header>
+  <section class="vx-body">
+    <h1>お使いの端末は ウイルスに感染しました！</h1>
+    <p class="vx-lead">不適切な発言をくりかえした あなたの端末から<br><b>「おしおきウイルス」</b>が 見つかりました。</p>
+    <div class="vx-scan" aria-hidden="true">
+      <div class="vx-row"><span>スキャン済みファイル</span><b id="vxFiles">0</b></div>
+      <div class="vx-row"><span>感染したファイル</span><b id="vxInf" class="vx-red">0</b></div>
+      <div class="vx-bar"><i id="vxBar"></i></div>
+      <pre id="vxLog" class="vx-log"></pre>
+    </div>
+    <p class="vx-warn">このまま 画面を閉じようとしても、ウイルスは消えません。<br>反省して あやまるまで、ほかの操作は できません。</p>
+    <button type="button" id="vxSorry" class="vx-btn" disabled>ごめんなさい、申しません</button>
+    <p id="vxMsg" class="vx-msg" role="status"></p>
+    <p class="vx-fine">※これは ARE 運営の「おしおき演出」です。実際のウイルスには感染していません。<span id="vxPrev"></span></p>
+  </section>
+</main>
+<div id="vxBye" class="vx-bye" hidden><div>アカウントは 消えました。<br>…さようなら。</div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./apikey.js"></script>
+<script src="./system.js"></script>
+<script src="./virus.js"></script>
+<script src="./protect.js"></script>
+</body>
+</html>

@@ -490,3 +490,7 @@ button.vs-ch-c:not(:disabled){cursor:pointer}
 .pt-freeze-box{max-width:340px;text-align:center;padding:24px;display:flex;flex-direction:column;gap:10px;align-items:center}
 .pt-count{font-size:56px;font-weight:700;font-variant-numeric:tabular-nums}
 #ptCard b{font-variant-numeric:tabular-nums}
+
+.ng-warn{position:fixed;inset:0;z-index:2147483001;background:rgba(40,0,0,.78);display:flex;align-items:center;justify-content:center;color:#fff;padding:16px}
+.ng-warn[hidden]{display:none}
+.ng-warn-box{max-width:360px;background:#1b0f14;border:2px solid #ff5d5d;border-radius:16px;padding:22px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;box-shadow:0 0 40px #ff3b3b66}

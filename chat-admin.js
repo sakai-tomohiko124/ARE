@@ -44,6 +44,8 @@ async function renderAdmin(){
             await renderAdminAnnounce(client);
         }else if(feat.adminView === "shop"){
             await renderAdminShop(client);
+        }else if(feat.adminView === "ng"){
+            await renderAdminNg(client);
         }else if(feat.adminView === "reports"){
             await renderAdminReports(client);
         }else if(feat.adminView === "requests"){

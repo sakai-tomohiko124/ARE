@@ -3,7 +3,7 @@
 // ポイントの計算・購入・スパム判定はサーバー側（Supabase）で行います。この画面は表示と入口の案内です。
 // 注意：機能の「ロック」は画面側の制限です（データを守るサーバーの規則とは別）。仕様どおりの“案内”であり、厳密な課金防御ではありません。
 Object.assign(FEAT_ERRORS, {
-    spam_locked:"スパムの疑いで一時停止中です。", not_enough_points:"ポイントが足りません。", already_owned:"すでに交換済みです。",
+    spam_locked:"スパムの疑いで一時停止中です。", account_frozen:"アカウントは現在つかえません（不適切な発言による制限中です）。", not_enough_points:"ポイントが足りません。", already_owned:"すでに交換済みです。",
     not_owned:"まだ交換していません。", not_for_points:"この商品はポイントでは交換できません。"
 });
 
@@ -52,6 +52,7 @@ async function ptRefresh(){
         pt.acc = r.data; pt.ready = true;
         ptPaintCard();
         if(r.data && r.data.locked_until && new Date(r.data.locked_until) > new Date() && !r.data.admin) ptFreeze(new Date(r.data.locked_until).getTime());
+        if(typeof ngOnAccess === "function") ngOnAccess(r.data);
     }catch(e){ ptPaintCard(e); }
 }
 

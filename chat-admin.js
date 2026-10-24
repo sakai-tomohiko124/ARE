@@ -12,6 +12,7 @@ async function checkAdmin(){
     try{ const result = await requireClient().rpc("is_current_user_admin"); feat.isAdmin = result.data === true; }
     catch(_e){ feat.isAdmin = false; }
     el.adminTabButton.hidden = !feat.isAdmin;
+    if(window.AREProtect) window.AREProtect.setExempt(feat.isAdmin);
     if(feat.isAdmin) el.delCard.hidden = true;
     if(feat.posts && feat.posts.length) renderPosts();
     if(feat.isAdmin){ refreshAdminBadge(); feat.timers.push(setInterval(refreshAdminBadge,30000)); }

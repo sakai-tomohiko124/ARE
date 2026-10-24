@@ -389,3 +389,22 @@ button.vs-cell:not(:disabled){cursor:pointer}button.vs-cell:not(:disabled):hover
 .ma-msg{max-width:88%;padding:8px 12px;border-radius:12px;background:var(--panel2);display:flex;flex-direction:column;gap:4px;white-space:pre-wrap;word-break:break-word}
 .ma-msg.me{align-self:flex-end;background:#2b4a8f;color:#fff}
 .ma-msg.ai{align-self:flex-start}
+.qs-tray{border:1px dashed #5b7cff;border-radius:12px;padding:8px;margin:0 0 8px;background:rgba(91,124,255,.08)}
+.qs-items{display:flex;gap:8px;flex-wrap:wrap}
+.qs-item{position:relative;width:96px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.qs-item img{width:96px;height:72px;object-fit:cover;border-radius:8px;background:#000}
+.qs-doc{width:96px;height:72px;display:flex;align-items:center;justify-content:center;font-size:32px;background:var(--panel2);border-radius:8px}
+.qs-item small{max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+.qs-x{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:#e53935;color:#fff;cursor:pointer;line-height:1}
+.qs-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+main.qs-drag{outline:3px dashed #5b7cff;outline-offset:-6px}
+.av-preview{width:100%;max-width:360px;border-radius:14px;display:block;margin:8px auto;background:#000}
+.av-sw{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 8px}
+.av-c{width:30px;height:30px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+.av-c.on{border-color:#fff;box-shadow:0 0 0 2px #5b7cff}
+.av-emo{position:fixed;left:12px;bottom:12px;z-index:9998;display:flex;gap:6px;background:rgba(10,14,28,.85);padding:6px;border-radius:999px;border:1px solid #3a4666}
+.av-emo button{font-size:22px;background:transparent;border:0;cursor:pointer;border-radius:50%;width:40px;height:40px}
+.av-emo button:hover{background:rgba(255,255,255,.12)}
+.sites-grid{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.sites-btn{width:100%;text-align:left;padding:12px 14px}
+.admin-card input.st-name,.admin-card input.st-url,.admin-card input.st-app{display:block;width:100%;margin-top:6px}

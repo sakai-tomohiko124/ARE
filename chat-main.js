@@ -112,6 +112,9 @@ function initCalls(){
 }
 
 const FEATURES = [
+    ["sites","よく使うサイト",initSites],
+    ["avatar","アバター",initAvatar],
+    ["quicksend","スクショ・PDFのかんたん送信",initQuickSend],
     ["myai","マイAI",initMyAi],
     ["notify","未読バッジ・新着通知",initNotify],
     ["presence","在席状況・既読",initPresence],

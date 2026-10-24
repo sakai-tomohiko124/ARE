@@ -8,7 +8,7 @@
 //  ・覚えたことはこの端末のブラウザに保存します（サーバーには送りません）。「書き出し／読み込み」で別の端末にも移せます。
 //  ・文章を生成するAIではありません。覚えた内容と似ている質問に、覚えた答えを返す仕組みです。
 
-feat.myai = {facts:[], hist:[], smart:true, log:[], pending:null, builtin:null, learnedAt:0};
+feat.myai = {name:"AIともぴー", facts:[], hist:[], smart:true, log:[], pending:null, builtin:null, learnedAt:0};
 const MYAI_MAX_FACTS = 500, MYAI_MAX_HIST = 600;
 
 function myaiKey(){ return "are_myai_" + (state.user ? state.user.id : "x"); }
@@ -18,12 +18,13 @@ function myaiLoad(){
         feat.myai.facts = Array.isArray(d.facts) ? d.facts.filter((f) => f && typeof f.q === "string" && typeof f.a === "string").slice(0, MYAI_MAX_FACTS) : [];
         feat.myai.hist = Array.isArray(d.hist) ? d.hist.filter((h) => h && typeof h.q === "string" && typeof h.a === "string").slice(0, MYAI_MAX_HIST) : [];
         feat.myai.smart = d.smart !== false;
+        feat.myai.name = typeof d.name === "string" && d.name.trim() ? d.name.trim().slice(0, 20) : "AIともぴー";
         feat.myai.learnedAt = Number(d.learnedAt) || 0;
     }catch(_e){ /* 空から始める */ }
 }
 function myaiSave(){
     const m = feat.myai;
-    try{ localStorage.setItem(myaiKey(), JSON.stringify({facts:m.facts, hist:m.hist, smart:m.smart, learnedAt:m.learnedAt})); }
+    try{ localStorage.setItem(myaiKey(), JSON.stringify({name:m.name, facts:m.facts, hist:m.hist, smart:m.smart, learnedAt:m.learnedAt})); }
     catch(_e){ showToast("保存できませんでした（ブラウザの保存容量がいっぱいかもしれません）。"); }
 }
 
@@ -153,6 +154,7 @@ async function myaiLearnHistory(){
 function initMyAi(){
     registerTool("myai", onMyAiAction);
     myaiLoad();
+    setTimeout(myaiRelabel, 0);
     // スマート返信に「いつもの自分の返し」を足す
     if(typeof smartCandidates === "function"){
         const orig = smartCandidates;
@@ -165,11 +167,18 @@ function initMyAi(){
     }
 }
 
+/** 「その他」のカードの名前を、いまの名前にそろえる */
+function myaiRelabel(){
+    const b = document.querySelector('[data-tool="myai"]');
+    if(b && b.firstChild && b.firstChild.nodeType === 3) b.firstChild.textContent = "🧠 " + feat.myai.name + " ";
+}
+
 function openMyAi(){
     const m = feat.myai;
-    m.log = [{who:"ai", text:"こんにちは！私はあなた専用のAIです。質問してみてください。知らないことは、教えてもらえれば覚えます（「質問＝答え」の形で送ってもOK）。"}];
+    m.log = [{who:"ai", text:"こんにちは！私は" + m.name + "です。あなた専用のAIです。質問してみてください。知らないことは、教えてもらえれば覚えます（「質問＝答え」の形で送ってもOK）。"}];
     m.pending = null;
-    openSheet(toolHead("🧠 マイAI（あなた専用・無料）", "外部のAIは使わず、この端末の中だけで動きます。覚えた内容はこの端末にだけ保存されます。") +
+    openSheet(toolHead("🧠 " + escapeHtml(m.name), "あなた専用のAIです。外部のAIは使わず、この端末の中だけで動きます。覚えた内容はこの端末にだけ保存されます。") +
+        '<div class="row" style="justify-content:flex-start"><input id="maName" type="text" maxlength="20" value="' + escapeHtml(m.name) + '" aria-label="AIの名前" style="flex:1"><button type="button" class="button-secondary" data-t="myai:rename">名前を変える</button></div>' +
         '<div id="maLog" class="ma-log"></div>' +
         '<div class="row"><input id="maInput" type="text" maxlength="200" placeholder="質問、または「質問＝答え」で教える" style="flex:1"><button type="button" class="button" data-t="myai:ask">送る</button></div>' +
         '<div id="maSide"></div>' + toolClose());
@@ -223,7 +232,13 @@ async function onMyAiAction(action, node){
             if(!a){ showToast("答えを入力してください。"); return; }
             if(myaiLearn(m.pending.q, a, m.pending.fact)){ m.log.push({who:"ai", text:"覚えました！次から「" + m.pending.q + "」には「" + a + "」と答えます。"}); m.pending = null; }
         }else if(action === "cancel"){ m.pending = null; }
-        else if(action === "forget"){
+        else if(action === "rename"){
+            const n = ($("maName").value || "").trim().slice(0, 20);
+            if(!n){ showToast("名前を入力してください。"); return; }
+            m.name = n; myaiSave(); myaiRelabel();
+            m.log.push({who:"ai", text:"これからは「" + n + "」と呼んでください！"});
+            const h = document.querySelector("#profileSheet h3"); if(h) h.textContent = "🧠 " + n;
+        }else if(action === "forget"){
             m.facts = m.facts.filter((f) => f.id !== node.dataset.id); myaiSave();
         }else if(action === "smart"){ m.smart = !m.smart; myaiSave(); }
         else if(action === "history"){

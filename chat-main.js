@@ -112,6 +112,7 @@ function initCalls(){
 }
 
 const FEATURES = [
+    ["notify","未読バッジ・新着通知",initNotify],
     ["presence","在席状況・既読",initPresence],
     ["messages","メッセージの編集・削除申請・予約送信",initMessageTools],
     ["profile","プロフィール",initProfile],
@@ -152,6 +153,15 @@ const FEATURES = [
     ["co2","CO2トラッカー",initCo2],
     ["ai","会話分析・音声入力・翻訳",initAi],
     ["vs","対戦ゲーム",initVs],
+    ["bj","ブラックジャック",initBj],
+    ["cards","手札かくしカードゲーム",initCards],
+    ["work","ワークスペース",initWork],
+    ["thread","スレッド・保存ボタン",initThread],
+    ["misc","GIF・要約・気分テーマ",initMisc],
+    ["mood","気分テーマ画面",function(){}],
+    ["health","ヘルス記録",initHealth],
+    ["geo","場所つきメッセージ",initGeo],
+    ["sched","予定提案",function(){}],
     ["archive","ストーリーのアーカイブ",() => {}]
 ];
 

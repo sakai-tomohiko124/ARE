@@ -71,7 +71,7 @@ function messageSummary(item){
     if(!item) return "";
     if(item.type === "text") return String(item.text || "");
     if(item.type === "poll") return "[アンケート] " + String(item.question || "");
-    if(item.type === "game") return "[対戦] " + String((VS_GAMES[item.game] || {}).name || "ゲーム");
+    if(item.type === "game") return "[対戦] " + String((VS_GAMES[item.game] || (typeof CG_GAMES !== "undefined" ? CG_GAMES[item.cg] : null) || {}).name || "ゲーム");
     if(item.type === "location") return "[位置情報] " + String(item.label || "現在地");
     const label = {image:"画像",video:"動画",audio:"音声",file:"ファイル"}[item.type] || "添付";
     return "[" + label + "] " + String(item.name || "");

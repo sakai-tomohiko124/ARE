@@ -33,6 +33,7 @@ function onImgEditAction(action, node){
     else if(action === "b"){ s.bright = Number(node.value); }
     else if(action === "c"){ s.contrast = Number(node.value); }
     else if(action === "gray"){ s.gray = node.checked; }
+    else if(action === "filter"){ s.filter = node.value; }
     else if(action === "text"){ s.text = node.value.slice(0, 40); }
     else if(action === "tpos"){ s.tpos = node.value; }
     else if(action === "tcolor"){ s.tcolor = node.value; }
@@ -52,7 +53,7 @@ function loadEditImage(file){
         const src = document.createElement("canvas");
         src.width = Math.max(1, Math.round(img.width * scale)); src.height = Math.max(1, Math.round(img.height * scale));
         src.getContext("2d").drawImage(img, 0, 0, src.width, src.height);
-        feat.ie = {src, orig:src, rot:0, flip:false, aspect:null, bright:0, contrast:0, gray:false, text:"", tpos:"bottom", tcolor:"white", name:file.name, crop:null, history:[]};
+        feat.ie = {src, orig:src, rot:0, flip:false, aspect:null, bright:0, contrast:0, gray:false, filter:"none", text:"", tpos:"bottom", tcolor:"white", name:file.name, crop:null, history:[]};
         paintEditControls();
         renderEdit();
     };
@@ -62,7 +63,7 @@ function loadEditImage(file){
 
 function resetEdit(){
     const s = feat.ie;
-    Object.assign(s, {src:s.orig, rot:0, flip:false, aspect:null, bright:0, contrast:0, gray:false, text:"", crop:null, history:[]});
+    Object.assign(s, {src:s.orig, rot:0, flip:false, aspect:null, bright:0, contrast:0, gray:false, filter:"none", text:"", crop:null, history:[]});
     paintEditControls();
     renderEdit();
 }
@@ -77,6 +78,7 @@ function paintEditControls(){
         '<div id="ieCropBar" class="row" style="justify-content:flex-start;align-items:center"></div>' +
         '<label>明るさ <input type="range" min="-50" max="50" value="' + s.bright + '" data-t="ie:b"></label>' +
         '<label>コントラスト <input type="range" min="-50" max="50" value="' + s.contrast + '" data-t="ie:c"></label>' +
+        '<label>フィルター <select class="status-select" data-t="ie:filter" aria-label="フィルター">' + IE_FILTERS.map((f) => '<option value="' + f[0] + '"' + ((s.filter || "none") === f[0] ? " selected" : "") + '>' + f[1] + '</option>').join("") + '</select></label>' +
         '<label><input type="checkbox" data-t="ie:gray"' + (s.gray ? " checked" : "") + '> 白黒にする</label>' +
         '<label>文字を入れる（40文字まで）<input type="text" maxlength="40" data-live="1" data-t="ie:text" value="' + escapeHtml(s.text) + '"></label>' +
         '<div class="row" style="justify-content:flex-start"><select class="status-select" data-t="ie:tpos" aria-label="文字の位置"><option value="top">上</option><option value="center">中央</option><option value="bottom" selected>下</option></select>' +
@@ -107,12 +109,13 @@ function renderEdit(){
     canvas.width = cw; canvas.height = ch;
     const ctx = canvas.getContext("2d");
     ctx.drawImage(tmp, 0, 0);
-    if(s.bright || s.contrast || s.gray){
+    if(s.bright || s.contrast || s.gray || (s.filter && s.filter !== "none")){
         const data = ctx.getImageData(0, 0, cw, ch), px = data.data;
         const c = s.contrast * 2.55, f = (259 * (c + 255)) / (255 * (259 - c)), add = s.bright * 2.55;
         for(let i = 0; i < px.length; i += 4){
             let r = px[i], g = px[i + 1], b = px[i + 2];
             if(s.gray){ r = g = b = 0.299 * r + 0.587 * g + 0.114 * b; }
+            if(s.filter && s.filter !== "none"){ const o = ieApplyFilter(s.filter, r, g, b); r = o[0]; g = o[1]; b = o[2]; }
             px[i] = Math.max(0, Math.min(255, f * (r - 128) + 128 + add));
             px[i + 1] = Math.max(0, Math.min(255, f * (g - 128) + 128 + add));
             px[i + 2] = Math.max(0, Math.min(255, f * (b - 128) + 128 + add));
@@ -283,4 +286,17 @@ async function sendEdited(button){
 async function saveEdited(){
     const blob = await editedBlob();
     downloadBlob(blob, "ARE-edit-" + dayKey(new Date()) + ".jpg");
+}
+
+const IE_FILTERS = [["none", "なし"], ["sepia", "セピア"], ["vivid", "あざやか"], ["fade", "フェード"], ["warm", "あたたかい"], ["cool", "つめたい"], ["invert", "ネガ（反転）"], ["vintage", "ビンテージ"]];
+function ieApplyFilter(name, r, g, b){
+    const clamp = (v) => Math.max(0, Math.min(255, v));
+    if(name === "sepia") return [clamp(0.393 * r + 0.769 * g + 0.189 * b), clamp(0.349 * r + 0.686 * g + 0.168 * b), clamp(0.272 * r + 0.534 * g + 0.131 * b)];
+    if(name === "invert") return [255 - r, 255 - g, 255 - b];
+    if(name === "warm") return [clamp(r * 1.1 + 10), g, clamp(b * 0.88)];
+    if(name === "cool") return [clamp(r * 0.9), g, clamp(b * 1.12 + 10)];
+    if(name === "fade") return [clamp(r * 0.8 + 45), clamp(g * 0.8 + 45), clamp(b * 0.8 + 50)];
+    if(name === "vivid"){ const l = 0.299 * r + 0.587 * g + 0.114 * b; return [clamp(l + (r - l) * 1.5), clamp(l + (g - l) * 1.5), clamp(l + (b - l) * 1.5)]; }
+    if(name === "vintage"){ const s = [clamp(0.393 * r + 0.769 * g + 0.189 * b), clamp(0.349 * r + 0.686 * g + 0.168 * b), clamp(0.272 * r + 0.534 * g + 0.131 * b)]; return [clamp(r * 0.4 + s[0] * 0.6 + 8), clamp(g * 0.4 + s[1] * 0.6), clamp(b * 0.4 + s[2] * 0.6 - 8)]; }
+    return [r, g, b];
 }

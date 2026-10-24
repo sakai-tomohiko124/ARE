@@ -361,3 +361,14 @@ button.vs-cell:not(:disabled){cursor:pointer}button.vs-cell:not(:disabled):hover
 .vs-cell.win{outline:3px solid #ffd54a}
 .vs-drop{display:grid;grid-template-columns:repeat(7,38px);gap:3px;padding:0 6px}.vs-dropbtn{height:26px;font-size:13px;background:var(--panel2)}
 .vs-status{font-size:13px;margin-top:2px}.vs-move{font-size:12px;color:var(--muted)}
+.vs-rev{grid-template-columns:repeat(8,34px);background:#1f7a3a;padding:4px;gap:2px;border-radius:8px}
+.vs-rev .vs-cell{height:34px;width:34px;border-radius:4px;background:#2d9a4e;border:0;font-size:22px;padding:0}
+.vs-rev .vs-legal{color:#fff;font-size:26px;background:#38b05d}.vs-rev .last{outline:2px solid #ffd54a}
+.vs-mem{grid-template-columns:repeat(4,52px)}.vs-mem .vs-cell{height:52px}
+.vs-taken{opacity:.35}.vs-open{background:#fff;border-color:var(--accent)}
+.vs-sugo{grid-template-columns:repeat(8,38px);gap:3px}.vs-sg{height:46px;width:38px;font-size:14px;flex-direction:column;line-height:1.1;position:relative;padding:0}
+.vs-sg small{font-size:9px;color:var(--muted);font-weight:400}.vs-sg.sp{background:#4a3b1a}.vs-sg.goal{background:#1a4a2a}
+.vs-words{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.bj-hand{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}.bj-card{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:62px;border-radius:8px;background:#fff;color:#111;font-weight:700;font-size:18px;border:1px solid #bbb}.bj-card.red{color:#d32f2f}.bj-card.back{background:#2d4fd6;color:#fff}
+.cg-card.picked{outline:3px solid #ff9800;transform:translateY(-6px)}.cg-card[disabled]{opacity:1;cursor:default}
+.message-avatar{display:none!important}

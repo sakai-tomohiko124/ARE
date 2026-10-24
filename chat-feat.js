@@ -88,7 +88,7 @@ function senderName(message){
 }
 
 function jumpToMessage(id){
-    const row = el.messages.querySelector('article[data-mid="' + String(id).replace(/[^0-9a-f-]/gi,"") + '"]');
+    const row = el.messages.querySelector('article[data-mid="' + String(id).replace(/[^0-9a-z-]/gi,"") + '"]');
     if(!row){ showToast("そのメッセージは、いま表示されている範囲にありません。"); return false; }
     row.scrollIntoView({block:"center",behavior:"smooth"});
     row.classList.add("flash");

@@ -408,3 +408,38 @@ main.qs-drag{outline:3px dashed #5b7cff;outline-offset:-6px}
 .sites-grid{display:flex;flex-direction:column;gap:8px;margin:8px 0}
 .sites-btn{width:100%;text-align:left;padding:12px 14px}
 .admin-card input.st-name,.admin-card input.st-url,.admin-card input.st-app{display:block;width:100%;margin-top:6px}
+
+/* ===== 第5弾：使いやすさ（下書き・見やすさ・ジャンプ・フォルダ・通知） ===== */
+.room-item{position:relative}
+.cf-marks{position:absolute;right:34px;top:6px;font-size:12px;letter-spacing:1px;pointer-events:none}
+.cf-menu{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:700;cursor:pointer}
+.cf-menu:hover,.cf-menu:focus-visible{background:var(--panel2);color:var(--text);outline:1px solid var(--line)}
+.room-item:has(.nf-badge) .cf-marks{right:58px}
+.cf-chips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.cf-chip{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:999px;padding:5px 11px;font-size:12px}
+.cf-chip.on{background:var(--accent2);border-color:var(--accent2);color:#fff}
+.cf-jump{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;padding:4px clamp(12px,4vw,48px) 0}
+.cf-jump[hidden],.cf-jump [hidden]{display:none}
+.cf-jump button{font-size:12px;padding:5px 10px;border-radius:999px}
+.cf-star{font-size:12px}
+#muteBtn{padding:9px 11px}
+/* 文字サイズ */
+body.cf-s1 .bubble,body.cf-s1 #messageInput{font-size:17px!important}
+body.cf-s1 .room-item strong,body.cf-s1 .message-sender{font-size:15px!important}
+body.cf-s1 .room-item small,body.cf-s1 .message-time,body.cf-s1 .meta,body.cf-s1 .tool-button{font-size:13px!important}
+body.cf-s2 .bubble,body.cf-s2 #messageInput{font-size:20px!important}
+body.cf-s2 .room-item strong,body.cf-s2 .message-sender{font-size:17px!important}
+body.cf-s2 .room-item small,body.cf-s2 .message-time,body.cf-s2 .meta,body.cf-s2 .tool-button{font-size:15px!important}
+body.cf-s3 .bubble,body.cf-s3 #messageInput{font-size:24px!important}
+body.cf-s3 .room-item strong,body.cf-s3 .message-sender{font-size:20px!important}
+body.cf-s3 .room-item small,body.cf-s3 .message-time,body.cf-s3 .meta,body.cf-s3 .tool-button{font-size:17px!important}
+body.cf-s1 .sheet,body.cf-s2 .sheet,body.cf-s3 .sheet{font-size:16px}
+body.cf-s2 .sheet,body.cf-s3 .sheet{font-size:18px}
+/* 高コントラスト */
+body.cf-hc{--bg:#000;--panel:#000;--panel2:#161616;--line:#fff;--text:#fff;--muted:#e8e8e8;--accent:#ffe14d;--accent2:#0b57d0;--danger:#ff8a8a;--success:#7dffc4}
+body.cf-hc .sidebar{background:#000}
+body.cf-hc .bubble{border-width:2px;border-color:#fff}
+body.cf-hc .message-row.own .bubble{background:#0a2a7a;border-color:#fff}
+body.cf-hc .button-secondary,body.cf-hc .tool-button,body.cf-hc .cf-chip{border-color:#fff}
+body.cf-hc a{color:#ffe14d;text-decoration:underline}
+body.cf-hc :focus-visible{outline:3px solid #ffe14d;outline-offset:2px}

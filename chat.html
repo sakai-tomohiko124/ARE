@@ -3,7 +3,12 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<link rel="icon" href="data:,">
+<link rel="icon" type="image/png" href="./icon-192.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ARE">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://geocoding-api.open-meteo.com; font-src 'self' data:; form-action 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="no-referrer">
 <script src="./guard.js"></script>
@@ -206,6 +211,8 @@
 <script src="./chat-misc.js"></script>
 <script src="./chat-health.js"></script>
 <script src="./chat-geo.js"></script>
+<script src="./chat-push.js"></script>
+<script src="./chat-comfort.js"></script>
 <script src="./chat-main.js"></script>
 <script src="./protect.js"></script>
 </body>

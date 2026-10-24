@@ -137,7 +137,7 @@ ACT.slotNew = (v) => {
     if(r) askYes("冒険の書 " + i + " には データが あります。\n上書きして はじめますか？", go); else go();
 };
 ACT.slotSave = (v) => {
-    const i = Number(v), r = tqReadSlot(i), run = (nm) => { const res = tqSaveTo(i, nm); toast(res.msg); render(); };
+    const i = Number(v), r = tqReadSlot(i), run = (nm) => { const res = tqSaveTo(i, nm); toast(res.msg); if(res.ok && typeof tqSePlay === "function") tqSePlay("save"); render(); };
     const go = () => askText("冒険の書 " + i + " の 名前（24文字まで）", (r && !r.corrupted ? r.name : (G.saveName || G.S.name + "の冒険")), run, 24);
     if(r) askYes("冒険の書 " + i + " に 上書きセーブしますか？", go); else go();
 };

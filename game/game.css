@@ -103,3 +103,8 @@ body[data-mode=map] #top,body[data-mode=battle] #top{bottom:auto;top:6.2cqw;righ
 .hide{display:none!important}
 .shake{animation:sh .25s}
 @keyframes sh{25%{transform:translateX(-.6cqw)}75%{transform:translateX(.6cqw)}}
+
+#credBox{position:absolute;inset:0;background:#000c;overflow:hidden;z-index:4}
+#cred{position:absolute;left:0;right:0;top:0;text-align:center;color:#fff;font-size:2.5cqw;line-height:1.9;will-change:transform;transform:translateY(100cqh)}
+#cred .cl{min-height:1.9em}
+#credBtn{position:absolute;right:2cqw;bottom:2cqw;z-index:5}

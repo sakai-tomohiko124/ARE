@@ -172,7 +172,8 @@ function tqObjective(){
 function rpgEnding(){
     G.mode = "end"; G.scripts.length = 0; G.bg = ""; G.S.f.xr_open = 1;
     const S = G.S;
-    G.endText = rpgFmt("TOMOHIKO QUEST 〜そういうときは、AREだ！〜\n\nおわり\n\n{名前}は ARE を 完成させた！\nノイズだった ものは、いま ARE の やさしい マスコットに。\nそして 今日も どこかで だれかが つぶやく。\n「そうだ！ そういうときは、あれ(ARE)を使おう！」\n\n（歩数 " + S.steps + "・たおした数 " + S.kills + "・レベル " + S.lv + "・プレイ " + tqPlayText(S.play) + "）\n\n★ おまけ『XRアドベンチャー体験会』が ゲートに ひらいたよ！");
+    G.endText = rpgFmt("{名前}は ARE を 完成させた！\nノイズだった ものは、いま ARE の やさしい マスコットに。\nそして 今日も どこかで だれかが つぶやく。\n「そうだ！ そういうときは、あれ(ARE)を使おう！」\n\n（歩数 " + S.steps + "・たおした数 " + S.kills + "・レベル " + S.lv + "・プレイ " + tqPlayText(S.play) + "）\n\n★ おまけ『XRアドベンチャー体験会』が ゲートに ひらいたよ！");
+    G.endT0 = Date.now(); G.endBgm = true;
     tqSpeak("そうだ！ そういうときは、あれ(ARE)を使おう！", "アキト");
     tqAutoSave(); render();
 }
@@ -199,7 +200,7 @@ function fieldView(){
     else if(m === "shop") h += shopView();
     else if(m === "gate") h += gateView();
     else if(m === "rename") h += renameView();
-    else if(m === "end") h += '<div class="win panel scroll" style="text-align:center"><div style="white-space:pre-wrap;line-height:1.7">' + esc(G.endText || "") + '</div><div class="row" style="justify-content:center;margin-top:1cqw"><button class="btn" data-a="endback">ラボに もどる</button></div></div>';
+    else if(m === "end") h += creditsHtml();
     return h;
 }
 // ---- おみせ ----
@@ -391,3 +392,26 @@ function paint(){
 setInterval(() => { if(["map", "talk", "choice", "script", "shop", "gate", "menu", "rename", "battle", "end"].includes(G.mode)) paint(); }, 90);
 setInterval(() => { if(G.S && ["map", "talk", "choice", "script", "shop", "gate", "menu", "battle"].includes(G.mode)) G.S.play++; }, 1000);
 setInterval(() => { if(G.S && G.mode === "map") tqAutoSave(); }, 30000);
+
+// ---------------------------------------------------------------- エンディング：スタッフクレジット（下から上へ、曲の長さに合わせて自動スクロール）
+const TQ_CAST = ["ハルキ", "アキト", "海斗", "亜理紗", "ミナ", "玲也", "蒼太", "さえこ", "健斗", "美咲", "竜也", "龍之介", "紘", "サンタ", "はるや", "ももね", "アナウンくん", "後輩", "タカト", "花音", "良太", "雄介", "優花", "美優", "七海", "隼人", "羽奈", "蓮", "結衣", "大輔", "千尋", "光", "ミラ", "推し", "りかり", "ゆうざいくん", "悪魔", "ぬいぐるみ王"];
+function creditsText(){
+    const me = G.S ? G.S.name : "主人公", L = [];
+    L.push("そういうときは、AREだ！", "", "〜 ARE 〜", "", "", "― はじまりの ひとこと ―", "「そうだ！ そういうときは、あれ(ARE)を使おう！」", "", "", rpgFmt(G.endText || ""), "", "", "― ものがたりを つくった ひと ―", "", "企画・原案・シナリオ・設計・プログラム", "なぞひこ", "", "", "― しゅつえん ―", "", "主人公", me, "");
+    TQ_CAST.forEach((n) => { L.push(n); });
+    L.push("", "そして 世界じゅうの ARE の なかま たち", "", "", "― スペシャルサンクス ―", "", "ここまで あそんでくれた あなた", "", "", "ありがとう！", "", "また どこかで 会おう。", "", "そういうときは、AREだ！", "", "", "THE END");
+    return L;
+}
+function creditsHtml(){
+    return '<div id="credBox"><div id="cred">' + creditsText().map((t) => '<div class="cl">' + (t ? esc(t) : "&nbsp;") + '</div>').join("") + '</div></div><div id="credBtn"><button class="btn" data-a="endback">ラボに もどる（スキップ）</button></div>';
+}
+setInterval(() => {
+    if(G.mode !== "end") return;
+    const box = document.getElementById("credBox"), c = document.getElementById("cred"); if(!box || !c) return;
+    const a = (typeof tqBgm !== "undefined" && tqBgm.audios.ending) || null;
+    const total = a && isFinite(a.duration) && a.duration > 5 ? a.duration : 95;
+    let t = (Date.now() - (G.endT0 || Date.now())) / 1000;
+    if(a && !a.paused && isFinite(a.duration) && a.duration > 5) t = a.currentTime;     // 曲に ぴったり 合わせる
+    const p = Math.max(0, Math.min(1, t / total)), H = box.clientHeight, C = c.scrollHeight;
+    c.style.transform = "translateY(" + Math.round(H - p * (H + C)) + "px)";
+}, 50);

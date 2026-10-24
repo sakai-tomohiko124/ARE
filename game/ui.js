@@ -94,13 +94,24 @@ ACT.dlgok = () => { const v = ($("dlgIn") || {}).value || "", f = G.dlg.fn; G.dl
 // ---------------------------------------------------------------- タイトル
 function viewTitle(){
     G.draft = null;
-    return '<div id="tm" class="win"><button class="opt" data-a="tNew">はじめから</button><button class="opt" data-a="tLoad">つづきから</button><button class="opt" data-a="tHelp">あそびかた</button><button class="opt" data-a="tSet">せってい</button><button class="opt" data-a="tCheat">🔑 チート</button></div>' +
+    return '<div id="tm" class="win"><button class="opt" data-a="tNew">はじめから</button><button class="opt" data-a="tLoad">つづきから</button><button class="opt" data-a="tHelp">あそびかた</button><button class="opt" data-a="tSet">せってい</button><button class="opt" data-a="tMovie">🎬 しょうかい映像</button><button class="opt" data-a="tCheat">🔑 チート</button></div>' +
         '<div class="foot">TOMOHIKO QUEST 〜そういうときは、AREだ！〜　／　タップ・矢印キー+Enter で えらべます</div>';
 }
 ACT.tNew = () => { G.slotCtx = "new"; G.slotFrom = "title"; G.slotPick = null; G.mode = "slots"; render(); };
 ACT.tLoad = () => { if(!tqHasSaves()){ toast("まだ 冒険の書が ありません。『はじめから』で 冒険を はじめよう！"); return; } G.slotCtx = "load"; G.slotFrom = "title"; G.slotPick = null; G.mode = "slots"; render(); };
 ACT.tHelp = () => { G.helpFrom = "title"; G.mode = "help"; render(); };
 ACT.tSet = () => { G.setFrom = "title"; G.mode = "settings"; render(); };
+ACT.tMovie = () => {
+    if(document.getElementById("movBox")) return;
+    G.moviePlaying = true; if(typeof tqBgmStop === "function") tqBgmStop();
+    const box = document.createElement("div"); box.id = "movBox";
+    box.innerHTML = '<video id="movV" src="movie.mp4" controls autoplay playsinline></video><div id="movMsg"></div><button type="button" id="movX">✕ とじる</button>';
+    $("stage").appendChild(box);
+    const v = $("movV"), close = () => { try{ v.pause(); }catch(_e){} box.remove(); G.moviePlaying = false; if(typeof tqBgmSync === "function") tqBgmSync(); };
+    $("movX").addEventListener("click", close); v.addEventListener("ended", close);
+    v.addEventListener("error", () => { $("movMsg").textContent = "movie.mp4 が みつかりません。game フォルダに movie.mp4 を おいてください。"; });
+    box.addEventListener("keydown", (e) => { if(e.key === "Escape") close(); });
+};
 ACT.tCheat = () => { G.cheatFrom = "title"; G.cheatMsg = ""; G.mode = "cheat"; render(); };
 
 // ---------------------------------------------------------------- 冒険の書（3枠）

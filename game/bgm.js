@@ -50,6 +50,7 @@ function tqBgmVol(){ return Math.max(0, Math.min(1, [0.25, 0.5, 0.8][G.set.bgmVo
 function tqBgmStop(){ Object.keys(tqBgm.audios).forEach((k) => { try{ tqBgm.audios[k].pause(); }catch(_e){} }); tqBgm.cur = ""; }
 function tqBgmSync(){
     try{
+        if(G.moviePlaying){ if(tqBgm.cur) tqBgmStop(); return; }
         if(G.set.bgm === false || document.hidden){ if(tqBgm.cur) tqBgmStop(); return; }
         const key = tqBgmWant();
         if(key !== tqBgm.cur){

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; connect-src 'self'; font-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0b1020">
+<title>TOMOHIKO QUEST 〜そういうときは、AREだ！〜</title>
+<link rel="stylesheet" href="./game.css">
+</head>
+<body>
+<div id="stage">
+  <div id="bg"></div>
+  <canvas id="cv" width="1280" height="720" aria-label="ゲーム画面"></canvas>
+  <div id="ui"></div>
+  <div id="pad">
+    <div id="dp"><button class="u" data-k="up" aria-label="上">▲</button><button class="d" data-k="down" aria-label="下">▼</button><button class="l" data-k="left" aria-label="左">◀</button><button class="r" data-k="right" aria-label="右">▶</button></div>
+    <div id="ab"><button class="b" data-k="menu" aria-label="メニュー">メニュー</button><button class="a" data-k="ok" aria-label="話す・調べる・決定">A</button></div>
+  </div>
+  <div id="top"><button type="button" id="btnFs">全画面</button><button type="button" id="btnVoice">声：オン</button></div>
+  <div id="toast" class="win"></div>
+  <div id="flash"></div>
+</div>
+<div id="rot"><div>📱 よこむきに すると<br>もっと 大きく 遊べるよ！</div><button type="button" id="rotOk">このまま あそぶ</button></div>
+<script src="../protect.js"></script>
+<script src="./hash.js"></script>
+<script src="./cheat-table.js"></script>
+<script src="./data.js"></script>
+<script src="./data2.js"></script>
+<script src="./maps.js"></script>
+<script src="./story.js"></script>
+<script src="./maps2.js"></script>
+<script src="./story2.js"></script>
+<script src="./core.js"></script>
+<script src="./ui.js"></script>
+<script src="./field.js"></script>
+<script src="./battle.js"></script>
+<script src="./boot.js"></script>
+</body>
+</html>

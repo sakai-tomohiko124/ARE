@@ -33,7 +33,6 @@ const AREAccess = {
         const need = this.needFor(feature);
         if(!need) return true;
         if(!pt.acc) return true;            // 状態が取れていないうちは止めない（取得できたら判定）
-        if(need === "rpg") return this.owns("rpg");
         return this.trialActive() || this.passActive() || this.owns(need);
     }
 };
@@ -123,7 +122,7 @@ function ptLockDialog(feature){
     const need = AREAccess.needFor(feature);
     const rpg = feature === "rpg";
     const pk = PT_PACKS[need];
-    openSheet(toolHead("🔒 " + escapeHtml(ptLabel(feature)), rpg ? "この冒険は、AREShopで 1000pt と交換すると遊べます" : "お試し期間（90日）が終わったため、ポイントで解放します") +
+    openSheet(toolHead("🔒 " + escapeHtml(ptLabel(feature)), rpg ? "お試し期間（90日）が終わったため、この冒険は 1000pt と交換すると遊べます" : "お試し期間（90日）が終わったため、ポイントで解放します") +
         '<div class="admin-card">' + (rpg ? 'RPG「そういうときは、AREだ！」：<b>1000pt</b>' : escapeHtml(pk ? pk.name : "") + '：<b>' + (pk ? pk.price : "") + 'pt</b>で解放（または1か月パス）') +
         '<div class="meta">いまのポイント：' + (pt.acc ? pt.acc.points : 0) + 'pt</div></div>' +
         '<div class="row"><button type="button" class="button" data-t="pt:shop" data-tab="' + (rpg ? "rpg" : "pack") + '">AREShopへ</button><button type="button" class="button-secondary" data-pm="close">閉じる</button></div>');

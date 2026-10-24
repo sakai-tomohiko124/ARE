@@ -558,7 +558,7 @@ function parseMessageContent(content){
     if(typeof content !== "string") return {type:"text",text:String(content ?? "")};
     try{
         const parsed = JSON.parse(content);
-        if(parsed && typeof parsed === "object" && ["text","image","file","video","audio","poll","location"].includes(parsed.type)){
+        if(parsed && typeof parsed === "object" && ["text","image","file","video","audio","poll","location","game"].includes(parsed.type)){
             return parsed;
         }
     }catch(_error){}
@@ -577,6 +577,9 @@ function renderMessageContent(content){
         return '<div class="bubble">📊 <b>アンケート</b><br>' + escapeHtml(item.question || "") + '<br><button type="button" class="button-secondary" data-openpoll="' + escapeHtml(item.pollId || "") + '">回答・結果を見る</button></div>';
     }
 
+    if(item.type === "game"){
+        return typeof renderGameBubble === "function" ? renderGameBubble(item) : '<div class="bubble">🎮 対戦</div>';
+    }
     if(item.type === "location"){
         return typeof renderLocationBubble === "function" ? renderLocationBubble(item) : '<div class="bubble">📍 位置情報</div>';
     }

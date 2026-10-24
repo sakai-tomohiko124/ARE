@@ -151,6 +151,7 @@ const FEATURES = [
     ["timed","消えるメッセージ",initTimed],
     ["co2","CO2トラッカー",initCo2],
     ["ai","会話分析・音声入力・翻訳",initAi],
+    ["vs","対戦ゲーム",initVs],
     ["archive","ストーリーのアーカイブ",() => {}]
 ];
 

@@ -351,3 +351,13 @@ html,body{height:100%}
  .app.memo-open .sidebar,.app.memo-open .rail{display:none}
  .app.memo-open .main{display:flex}
 }
+
+.vs-bubble{min-width:210px}
+.vs-board{display:grid;gap:4px;margin:8px 0}
+.vs-ttt{grid-template-columns:repeat(3,56px)}.vs-c4{grid-template-columns:repeat(7,38px);background:#1d3fbf;padding:6px;border-radius:10px;gap:3px}
+.vs-cell{display:flex;align-items:center;justify-content:center;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--text);font-size:26px;font-weight:700;height:56px;padding:0;font-family:inherit}
+.vs-c4 .vs-cell{height:38px;width:38px;border-radius:50%;font-size:20px;background:#0b1a55;border:0}
+button.vs-cell:not(:disabled){cursor:pointer}button.vs-cell:not(:disabled):hover{background:var(--accent);color:#fff}
+.vs-cell.win{outline:3px solid #ffd54a}
+.vs-drop{display:grid;grid-template-columns:repeat(7,38px);gap:3px;padding:0 6px}.vs-dropbtn{height:26px;font-size:13px;background:var(--panel2)}
+.vs-status{font-size:13px;margin-top:2px}.vs-move{font-size:12px;color:var(--muted)}

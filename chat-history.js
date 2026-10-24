@@ -59,6 +59,7 @@ function contentLine(content){
     const item = parseMessageContent(content);
     if(item.type === "text") return item.text || "";
     if(item.type === "poll") return "[アンケート] " + (item.question || "");
+    if(item.type === "game") return "[対戦] " + (item.kind === "move" ? "手を打ちました" : "対戦を開始");
     return "[" + item.type + "] " + (item.name || "添付ファイル");
 }
 

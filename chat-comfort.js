@@ -4,7 +4,7 @@
 // ・スター付きメッセージだけは、別の端末でも見られるようにサーバー（starred_messages）に保存します。
 // ・読み上げは、ブラウザに入っている音声（無料・通信なし）を使います。
 
-const cf = {drafts:{}, room:null, saveT:null, phrases:[], a11y:{size:0, hc:false, rate:1}, stars:new Map(), snap:{}, folders:{list:[], map:{}, pins:[], sort:"recent", filter:"all"}, speakId:null, bar:null};
+const cf = {drafts:{}, room:null, saveT:null, phrases:[], a11y:{size:0, hc:false, rate:1}, stars:new Map(), snap:{}, folders:{list:[], map:{}, pins:[], favs:[], unreadTop:true, sort:"recent", filter:"all"}, last:{}, lastFetched:"", speakId:null, bar:null};
 const CF_PHRASES = ["了解です", "ありがとうございます", "少し待ってください", "あとで連絡します", "お疲れさまです", "今どこ？"];
 const CF_SIZES = ["ふつう", "大", "特大", "最大"];
 
@@ -295,11 +295,13 @@ function fdLoad(){
         cf.folders.list = (Array.isArray(v.list) ? v.list : []).filter((f) => f && f.id && f.name).slice(0, 8).map((f) => ({id:String(f.id), name:String(f.name).slice(0, 12)}));
         cf.folders.map = v.map && typeof v.map === "object" ? v.map : {};
         cf.folders.pins = Array.isArray(v.pins) ? v.pins.filter((x) => typeof x === "string") : [];
-        cf.folders.sort = ["recent", "name", "unread"].includes(v.sort) ? v.sort : "recent";
+        cf.folders.sort = ["recent", "name", "created", "fav"].includes(v.sort) ? v.sort : "recent";
+        cf.folders.favs = Array.isArray(v.favs) ? v.favs.filter((x) => typeof x === "string") : [];
+        cf.folders.unreadTop = v.unreadTop !== false;
         cf.folders.filter = typeof v.filter === "string" ? v.filter : "all";
     }
 }
-function fdSave(){ cfWrite("folders", {list:cf.folders.list, map:cf.folders.map, pins:cf.folders.pins, sort:cf.folders.sort, filter:cf.folders.filter}); }
+function fdSave(){ cfWrite("folders", {list:cf.folders.list, map:cf.folders.map, pins:cf.folders.pins, favs:cf.folders.favs, unreadTop:cf.folders.unreadTop, sort:cf.folders.sort, filter:cf.folders.filter}); }
 
 function cfPaintRooms(){
     const list = el.roomList; if(!list) return;
@@ -313,27 +315,45 @@ function cfPaintRooms(){
         const id = b.dataset.roomId;
         let m = b.querySelector(".cf-marks");
         if(!m){ m = document.createElement("span"); m.className = "cf-marks"; b.appendChild(m); }
-        m.textContent = (F.pins.includes(id) ? "📌" : "") + (cf.drafts[id] ? "✏️" : "") + (typeof isMuted === "function" && isMuted(id) ? "🔕" : "");
+        m.textContent = (F.favs.includes(id) ? "⭐" : "") + (F.pins.includes(id) ? "📌" : "") + (cf.drafts[id] ? "✏️" : "") + (typeof isMuted === "function" && isMuted(id) ? "🔕" : "");
         let g = b.querySelector(".cf-menu");
         if(!g){ g = document.createElement("span"); g.className = "cf-menu"; g.setAttribute("role", "button"); g.setAttribute("tabindex", "0"); g.setAttribute("aria-label", "整理メニュー"); g.textContent = "⋯"; b.appendChild(g); }
         const show = F.filter === "all" || (F.filter === "pin" && F.pins.includes(id)) || (F.filter === "none" && !F.map[id]) || F.map[id] === F.filter;
         b.hidden = !show;
         b.style.display = show ? "" : "none";
     });
-    // 並び：固定を上に。そのあとは「新着順（いまの並び）」「名前順」「未読優先」
+    // 並び：①固定 ②未読・通知のある部屋（オンのとき）③選んだ並び順（日時順／名前順／登録順／お気に入り順）
     const base = new Map(items.map((b, i) => [b, i]));
     const nameOf = (b) => { const s = b.querySelector("strong"); return s ? s.textContent : ""; };
     const unread = (b) => (feat.unread && feat.unread[b.dataset.roomId]) || 0;
+    const lastOf = (b) => cf.last[b.dataset.roomId] || ((state.rooms || []).find((r) => r.id === b.dataset.roomId) || {}).created_at || "";
+    const madeOf = (b) => ((state.rooms || []).find((r) => r.id === b.dataset.roomId) || {}).created_at || "";
+    const byRecent = (a, b) => { const x = lastOf(a), y = lastOf(b); return x === y ? base.get(a) - base.get(b) : (x < y ? 1 : -1); };
     const sorted = items.slice().sort((a, b) => {
         const pa = F.pins.includes(a.dataset.roomId) ? 0 : 1, pb = F.pins.includes(b.dataset.roomId) ? 0 : 1;
         if(pa !== pb) return pa - pb;
+        if(F.unreadTop){ const d = (unread(b) > 0) - (unread(a) > 0); if(d) return d; }
         if(F.sort === "name") return nameOf(a).localeCompare(nameOf(b), "ja");
-        if(F.sort === "unread"){ const d = (unread(b) > 0) - (unread(a) > 0); if(d) return d; }
-        return base.get(a) - base.get(b);
+        if(F.sort === "created"){ const x = madeOf(a), y = madeOf(b); return x === y ? base.get(a) - base.get(b) : (x < y ? -1 : 1); }
+        if(F.sort === "fav"){ const d = (F.favs.includes(b.dataset.roomId) ? 1 : 0) - (F.favs.includes(a.dataset.roomId) ? 1 : 0); if(d) return d; }
+        return byRecent(a, b);
     });
     sorted.forEach((b) => list.appendChild(b));
     cfPaintChips();
+    cfLoadLast();
 }
+async function cfLoadLast(){
+    const rooms = (state.rooms || []).map((r) => r.id); if(!rooms.length || !state.user) return;
+    const key = rooms.join(",");
+    if(cf.lastFetched === key) return; cf.lastFetched = key;
+    try{
+        const res = await requireClient().from(TABLES.messages).select("room_id,created_at").in("room_id", rooms).order("created_at", {ascending:false}).limit(600);
+        if(res.error) return;
+        (res.data || []).forEach((m) => { if(!cf.last[m.room_id] || m.created_at > cf.last[m.room_id]) cf.last[m.room_id] = m.created_at; });
+        cfPaintRooms();
+    }catch(_e){ /* 取れなければ いまの並びのまま */ }
+}
+function cfTouch(roomId, at){ if(!roomId) return; if(!cf.last[roomId] || at > cf.last[roomId]) cf.last[roomId] = at; try{ cfPaintRooms(); }catch(_e){} }
 function cfPaintChips(){
     const F = cf.folders;
     let chips = document.getElementById("cfChips");
@@ -351,6 +371,7 @@ function cfPaintChips(){
 function openRoomMenu(roomId){
     const F = cf.folders;
     openSheet(toolHead("📁 " + escapeHtml(roomNameById(roomId))) + '<div class="pick">' +
+        '<button type="button" data-t="fd:fav" data-room="' + escapeHtml(roomId) + '">' + (F.favs.includes(roomId) ? "⭐ お気に入りを外す" : "⭐ お気に入りに入れる") + '</button>' +
         '<button type="button" data-t="fd:pin" data-room="' + escapeHtml(roomId) + '">' + (F.pins.includes(roomId) ? "📌 固定を外す" : "📌 いちばん上に固定") + '</button>' +
         (typeof isMuted === "function" ? '<button type="button" data-t="fd:mute" data-room="' + escapeHtml(roomId) + '">' + (isMuted(roomId) ? "🔕 通知を再開" : "🔔 このチャットの通知を止める") + '</button>' : "") +
         '<button type="button" data-t="fd:move" data-room="' + escapeHtml(roomId) + '" data-f=""' + (!F.map[roomId] ? ' aria-current="true"' : "") + '>' + (!F.map[roomId] ? "✔ " : "") + '未分類</button>' +
@@ -360,8 +381,10 @@ function openRoomMenu(roomId){
 function openFolders(){
     const F = cf.folders;
     openSheet(toolHead("📁 チャットの整理", "フォルダ分け・固定・並び替え（この端末だけに保存）") +
-        '<label>並び順</label><div class="row" style="justify-content:flex-start">' + [["recent", "新着順"], ["name", "名前順"], ["unread", "未読を上に"]].map((o) =>
+        '<label>並び順</label><div class="row" style="justify-content:flex-start">' + [["recent", "日時順"], ["name", "名前順"], ["created", "登録順"], ["fav", "お気に入り順"]].map((o) =>
             '<button type="button" class="' + (F.sort === o[0] ? "" : "button-secondary") + '" data-t="fd:sort" data-v="' + o[0] + '">' + o[1] + '</button>').join("") + '</div>' +
+        '<div class="row" style="justify-content:flex-start"><button type="button" class="' + (F.unreadTop ? "" : "button-secondary") + '" data-t="fd:utop">' + (F.unreadTop ? "✔ " : "") + '未読・通知が来たチャットを一番上に</button></div>' +
+        '<div class="meta">日時順＝最後のメッセージが新しい順／登録順＝チャットを作った順／お気に入り順＝⭐をつけたチャットを上に。📌固定は、いつも一番上です。</div>' +
         '<label>フォルダ（最大8個。チャット一覧の「⋯」で振り分けます）</label>' +
         (F.list.length ? F.list.map((f) => '<div class="row" style="flex-wrap:nowrap"><input type="text" data-t="fd:rename" data-id="' + escapeHtml(f.id) + '" value="' + escapeHtml(f.name) + '" maxlength="12" style="flex:1"><button type="button" class="button-secondary" data-t="fd:del" data-id="' + escapeHtml(f.id) + '" aria-label="フォルダを削除">🗑</button></div>').join("") : '<div class="meta">まだありません。</div>') +
         '<div class="row" style="flex-wrap:nowrap"><input type="text" id="fdNew" maxlength="12" placeholder="新しいフォルダ名（例：仕事）" style="flex:1"><button type="button" data-t="fd:add">追加</button></div>' + toolClose());
@@ -382,6 +405,12 @@ function onFolderAction(action, node){
         const f = F.list.find((x) => x.id === node.dataset.id); const v = String(node.value || "").trim().slice(0, 12);
         if(f && v){ f.name = v; fdSave(); cfPaintRooms(); }
     }else if(action === "sort"){ F.sort = node.dataset.v; fdSave(); cfPaintRooms(); openFolders(); }
+    else if(action === "utop"){ F.unreadTop = !F.unreadTop; fdSave(); cfPaintRooms(); openFolders(); }
+    else if(action === "fav"){
+        const id = node.dataset.room;
+        F.favs = F.favs.includes(id) ? F.favs.filter((x) => x !== id) : F.favs.concat(id).slice(-200);
+        fdSave(); cfPaintRooms(); closeSheet();
+    }
     else if(action === "pin"){
         const id = node.dataset.room;
         F.pins = F.pins.includes(id) ? F.pins.filter((x) => x !== id) : F.pins.concat(id).slice(-30);

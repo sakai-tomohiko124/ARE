@@ -65,6 +65,7 @@ function nfPaint(){
         else{ if(!badge){ badge = document.createElement("span"); badge.className = "nf-badge nf-rail"; rail.appendChild(badge); } badge.textContent = nfLabel(total); }
     }
     document.title = (total ? "(" + total + ") " : "") + nf.baseTitle;
+    try{ if(typeof cfPaintRooms === "function") cfPaintRooms(); }catch(_e){}
 }
 
 function nfNotifyBanner(){
@@ -109,11 +110,13 @@ function nfPopup(room, m){
 }
 
 function nfOnInsert(m){
+    if(m && m.room_id){ try{ if(typeof cfTouch === "function") cfTouch(m.room_id, m.created_at || new Date().toISOString()); }catch(_e){} }
     if(!m || m.sender_id === state.user.id) return;
     const room = (state.rooms || []).find((r) => r.id === m.room_id);
     if(!room){ if(typeof loadRooms === "function") setTimeout(loadRooms, 500); return; }
     if(state.currentRoom && state.currentRoom.id === m.room_id && !document.hidden){ nfMarkSeen(m.room_id, m.created_at); return; }
     feat.unread[m.room_id] = (feat.unread[m.room_id] || 0) + 1;
+    try{ if(typeof cfTouch === "function") cfTouch(m.room_id, m.created_at); }catch(_e){}
     nfPaint();
     nfPopup(room, m);
 }

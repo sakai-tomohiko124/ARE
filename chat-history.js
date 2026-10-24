@@ -60,6 +60,9 @@ function contentLine(content){
     if(item.type === "text") return item.text || "";
     if(item.type === "poll") return "[アンケート] " + (item.question || "");
     if(item.type === "game") return "[対戦] " + (item.kind === "move" ? "手を打ちました" : "対戦を開始");
+    if(item.type === "board") return "[日程調整] " + (item.title || "");
+    if(item.type === "contact") return "[連絡先] " + (item.name || "");
+    if(item.type === "live") return "[ライブ位置共有]";
     return "[" + item.type + "] " + (item.name || "添付ファイル");
 }
 

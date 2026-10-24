@@ -9,9 +9,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ARE">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://geocoding-api.open-meteo.com; font-src 'self' data:; form-action 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co https://tile.openstreetmap.org; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://cdn.jsdelivr.net https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://geocoding-api.open-meteo.com; font-src 'self' data:; form-action 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="no-referrer">
 <script src="./guard.js"></script>
+<script src="./screen-early.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#0b1020">
 <meta name="theme-color" content="#111827">
@@ -139,6 +140,7 @@
     <header><b>🛡️ 管理者パネル</b><span class="admin-note">閲覧・承認の操作はすべて監査ログに記録されます</span>
         <button class="button-secondary" data-admin-view="rooms" type="button">会話一覧</button>
         <button class="button-secondary" data-admin-view="requests" type="button">削除申請</button>
+        <button class="button-secondary" data-admin-view="reports" type="button">通報</button>
         <button class="button-secondary" data-admin-view="users" type="button">ユーザー管理</button>
         <button class="button-secondary" data-admin-view="acctdel" type="button">アカウント削除</button>
         <button class="button-secondary" data-admin-view="security" type="button">セキュリティ</button>
@@ -213,6 +215,16 @@
 <script src="./chat-geo.js"></script>
 <script src="./chat-push.js"></script>
 <script src="./chat-comfort.js"></script>
+<script src="./chat-nick.js"></script>
+<script src="./chat-draw.js"></script>
+<script src="./chat-split.js"></script>
+<script src="./chat-board.js"></script>
+<script src="./chat-livenote.js"></script>
+<script src="./chat-report.js"></script>
+<script src="./chat-screen.js"></script>
+<script src="./chat-live.js"></script>
+<script src="./chat-ocr.js"></script>
+<script src="./chat-contact.js"></script>
 <script src="./chat-main.js"></script>
 <script src="./protect.js"></script>
 </body>

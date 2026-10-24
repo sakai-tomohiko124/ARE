@@ -199,10 +199,11 @@ async function wkNotesHtml(){
         if(!n){ w.note = null; return await wkNotesHtml(); }
         const busy = n.editing_by && n.editing_by !== state.user.id && new Date(n.editing_until) > new Date();
         const editing = w.note.editing;
+        if(w.note.live && typeof lnHtml === "function") return lnHtml(n);
         return '<h4 style="margin:6px 0">📝 ' + escapeHtml(n.title) + '</h4><div class="meta">最終更新：' + escapeHtml(wkName(n.updated_by)) + ' ' + wkDateTime(n.updated_at) + '（v' + n.version + '）' + (busy ? ' ／ ' + escapeHtml(wkName(n.editing_by)) + ' さんが編集中' : "") + '</div>' +
             '<div class="row" style="justify-content:flex-start"><button type="button" class="button-secondary" data-t="wk:notelist">← メモ一覧</button><button type="button" class="button-secondary" data-t="wk:noteview">最新を読み込む</button></div>' +
             (editing ? '<textarea id="wkNoteBody" rows="12" maxlength="20000">' + escapeHtml(n.body) + '</textarea><div class="meta">編集できるのは3分間。保存すると次の人に順番が移ります。</div><div class="row"><button type="button" class="button" data-t="wk:notesave">保存して終わる</button><button type="button" class="button-secondary" data-t="wk:notecancel">やめる</button></div>'
-                : '<div class="admin-card" style="white-space:pre-wrap">' + (n.body ? escapeHtml(n.body) : '<span class="meta">（まだ内容がありません）</span>') + '</div><div class="row"><button type="button" class="button"' + (busy ? " disabled" : "") + ' data-t="wk:noteedit">✏️ 編集する</button></div>');
+                : '<div class="admin-card" style="white-space:pre-wrap">' + (n.body ? escapeHtml(n.body) : '<span class="meta">（まだ内容がありません）</span>') + '</div><div class="row"><button type="button" class="button"' + (busy ? " disabled" : "") + ' data-t="wk:noteedit">✏️ 編集する（順番に）</button>' + (typeof lnHtml === "function" ? '<button type="button" class="button" data-t="wk:notelive">⚡ みんなで同時に編集</button>' : "") + '</div>');
     }
     const notes = await wkQ(wkFrom("shared_notes", "id,title,created_by,updated_at").eq("workspace_id", w.ws.id).order("updated_at", {ascending:false}).limit(100));
     return '<h4 style="margin:6px 0">📝 共同メモ</h4>' + (notes.length ? notes.map((n) => '<button type="button" class="admin-card more-item" data-t="wk:noteopen" data-id="' + escapeHtml(n.id) + '" data-title="' + escapeHtml(n.title) + '">📝 ' + escapeHtml(n.title) + '<small class="meta">' + wkDateTime(n.updated_at) + '</small></button>').join("") : '<div class="empty-list">メモがありません。</div>') +
@@ -351,6 +352,7 @@ async function onWkAction(action, node){
         else if(action === "noteopen"){ w.note = {id:node.dataset.id, title:node.dataset.title, editing:false}; }
         else if(action === "notelist"){ if(w.note && w.note.editing) await wkRpc("note_release", {p_id:w.note.id}).catch(() => {}); w.note = null; }
         else if(action === "noteview"){ /* 再描画だけ */ }
+        else if(action === "notelive"){ w.note.live = true; }
         else if(action === "noteedit"){
             const r = await wkRpc("note_lock", {p_id:w.note.id});
             if(!r.ok){ showToast(wkName(r.by) + " さんが編集中です。終わるまで待ってください。"); }

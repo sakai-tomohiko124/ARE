@@ -38,6 +38,8 @@ async function renderAdmin(){
             await renderAdminBackup(client);
         }else if(feat.adminView === "users"){
             await renderAdminUsers(client);
+        }else if(feat.adminView === "reports"){
+            await renderAdminReports(client);
         }else if(feat.adminView === "requests"){
             const result = await client.rpc("admin_list_delete_requests",{p_status:"pending"});
             if(result.error) throw result.error;

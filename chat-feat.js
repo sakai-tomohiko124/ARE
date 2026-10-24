@@ -18,10 +18,13 @@ const FEAT_ERRORS = {
     post_too_long:"投稿は500文字以内で入力してください。", post_empty:"投稿の内容を入力してください。", invalid_image_path:"画像の保存先が正しくありません。",
     bio_too_long:"自己紹介は150文字以内です。", status_too_long:"ステータスメッセージは60文字以内です。", invalid_avatar_url:"アイコン画像のURLが正しくありません。", invalid_display_name:"表示名は1〜30文字で入力してください。",
     verification_note_required:"本人確認の方法を5文字以上で入力してください。", user_not_found:"対象のユーザーが見つかりません。",
-    cannot_target_admin:"管理者アカウントは再発行の対象にできません。", rate_limited:"短時間に再発行しすぎです。時間をおいてください。",
+    cannot_target_admin:"管理者アカウントは再発行の対象にできません。", rate_limited:"短時間に操作しすぎです。時間をおいてください（通報は1日10件まで）。",
     blocked:"このユーザーにはメッセージを送れません（ブロック中）。", too_many_pins:"固定できるのは1チャットあたり10件までです。", invalid_emoji:"その絵文字は使えません。", query_invalid:"検索ワードは1〜50文字で入力してください。", room_suspended:"このチャットは停止中です。",
     story_empty:"ひとこと、または写真を入力してください。", story_too_long:"ひとことは200文字以内です。", invalid_bg:"背景色が正しくありません。", too_many_stories:"ストーリーは同時に10件までです。",
-    invalid_game:"このゲームは記録できません。", invalid_score:"スコアが正しくありません。", too_many_rows:"登録できる件数の上限（500件）に達しました。", invalid_ttl:"消える時間の指定が正しくありません。"
+    invalid_game:"このゲームは記録できません。", invalid_score:"スコアが正しくありません。", too_many_rows:"登録できる件数の上限（500件）に達しました。",
+    nickname_invalid:"名前は1〜20文字で入力してください。", board_title_invalid:"タイトルは1〜60文字で入力してください。", board_options_invalid:"候補は2〜10個（各30文字以内）で入力してください。",
+    board_closed:"この日程調整は締め切られています。", invalid_reason:"理由を選んでください。", cannot_report_self:"自分自身は通報できません。",
+    not_sharing:"位置の共有が終了しています。もう一度開始してください。", invalid_location:"位置情報が正しくありません。", invalid_ttl:"消える時間の指定が正しくありません。"
 };
 
 const feat = {known:new Map(),readTimes:[],readKey:"",manual:"online",lastActivity:Date.now(),timers:[],partnerReadAt:null,pending:new Set(),editingId:null,isAdmin:false,adminView:"rooms"};
@@ -46,6 +49,14 @@ function featError(error){
 
 // ===== 機能どうしをつなぐ共通部品（各機能は別ファイル。1つ壊れても他は動く） =====
 const renderHooks = [], roomHooks = [], msgTools = [], payloadDecorators = [], payloadSentHooks = [];
+
+/** 新しい種類のメッセージ（日程調整・連絡先・ライブ位置など）の吹き出しを、各機能が登録する */
+const extraBubbles = {};
+function renderExtraBubble(item){
+    const make = extraBubbles[item.type];
+    try{ if(make){ const html = make(item); if(html) return html; } }catch(error){ console.error("[ARE bubble]", error); }
+    return '<div class="bubble">（この版では表示できないメッセージです）</div>';
+}
 
 function addRenderHook(fn){ renderHooks.push(fn); }
 function addRoomHook(fn){ roomHooks.push(fn); }
@@ -73,6 +84,9 @@ function messageSummary(item){
     if(item.type === "poll") return "[アンケート] " + String(item.question || "");
     if(item.type === "game") return "[対戦] " + String((VS_GAMES[item.game] || (typeof CG_GAMES !== "undefined" ? CG_GAMES[item.cg] : null) || {}).name || "ゲーム");
     if(item.type === "location") return "[位置情報] " + String(item.label || "現在地");
+    if(item.type === "board") return "[日程調整] " + String(item.title || "");
+    if(item.type === "contact") return "[連絡先] " + String(item.name || "");
+    if(item.type === "live") return "[ライブ位置共有]";
     const label = {image:"画像",video:"動画",audio:"音声",file:"ファイル"}[item.type] || "添付";
     return "[" + label + "] " + String(item.name || "");
 }

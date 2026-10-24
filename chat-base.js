@@ -558,7 +558,7 @@ function parseMessageContent(content){
     if(typeof content !== "string") return {type:"text",text:String(content ?? "")};
     try{
         const parsed = JSON.parse(content);
-        if(parsed && typeof parsed === "object" && ["text","image","file","video","audio","poll","location","game"].includes(parsed.type)){
+        if(parsed && typeof parsed === "object" && ["text","image","file","video","audio","poll","location","game","board","contact","live"].includes(parsed.type)){
             return parsed;
         }
     }catch(_error){}
@@ -580,6 +580,9 @@ function renderMessageContent(content){
     if(item.type === "game"){
         return typeof renderGameBubble === "function" ? renderGameBubble(item) : '<div class="bubble">🎮 対戦</div>';
     }
+    if(item.type === "board" || item.type === "contact" || item.type === "live"){
+        return typeof renderExtraBubble === "function" ? renderExtraBubble(item) : '<div class="bubble">（この版では表示できません）</div>';
+    }
     if(item.type === "location"){
         return typeof renderLocationBubble === "function" ? renderLocationBubble(item) : '<div class="bubble">📍 位置情報</div>';
     }
@@ -599,7 +602,7 @@ function renderMessageContent(content){
     }
 
     if(item.type === "image"){
-        return '<div class="bubble"><div class="attachment"><a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer"><img' + dataPath + ' src="' + safeUrl + '" alt="' + safeName + '" loading="lazy"></a><div class="file-meta">' + safeName + '</div></div></div>';
+        return '<div class="bubble' + (item.stamp ? ' stamp-img' : '') + '"><div class="attachment"><a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer"><img' + dataPath + ' src="' + safeUrl + '" alt="' + safeName + '" loading="lazy"></a><div class="file-meta">' + safeName + '</div></div></div>';
     }
 
     if(item.type === "video"){
@@ -840,6 +843,7 @@ async function uploadAndSend(file,kind){
             mimeType:resolveMime(file),
             size:file.size
         };
+        if(feat.pendingStamp && kind === "image") payload.stamp = true;
 
         await sendMessagePayload(payload);
     }catch(error){

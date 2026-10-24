@@ -1,7 +1,7 @@
 "use strict";
 // ===== 将棋（チャットの中で2人対戦）=====
 // 駒の動き・成り・持ち駒（打つ）・王手放置/二歩/打ち歩詰め/行き所のない駒の反則チェック・詰み判定・投了に対応。
-// 未対応：千日手・持将棋（500手で引き分け）。先手＝始めた人、後手＝最初に指した別の人。
+// 千日手（同じ局面が4回で引き分け。ただし王手をかけ続けていた側は負け）、入玉宣言（24点法）、500手で引き分けに対応。先手＝始めた人、後手＝最初に指した別の人。
 // 仕組みは他の対戦と同じ（手をメッセージにして、盤面は毎回つくり直す）。みんなで遊ぶ用で、本気の不正対策ではありません。
 
 const SG_NAMES = {P:"歩", L:"香", N:"桂", S:"銀", G:"金", B:"角", R:"飛", K:"玉"};
@@ -10,7 +10,7 @@ const SG_HAND_ORDER = ["P", "L", "N", "S", "G", "B", "R"];
 const SG_KANJI = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
 let sgSel = null;
 
-VS_GAMES.shogi = {name:"将棋", icon:"♟️", desc:"9×9。成り・持ち駒・王手・詰み・投了に対応（千日手は未対応）", marks:["☗先手", "☖後手"]};
+VS_GAMES.shogi = {name:"将棋", icon:"♟️", desc:"9×9。成り・持ち駒・王手・詰み・千日手・入玉宣言・投了に対応", marks:["☗先手", "☖後手"]};
 
 function sgOwner(c){ return c === "" ? -1 : Number(c[0]); }
 function sgProm(c){ return c[1] === "+"; }
@@ -138,18 +138,55 @@ function sgApplyMove(cells, hands, o, m){
     return {cells:next, hands:h};
 }
 
+/** 入玉宣言（24点法）：玉が敵陣にいて王手されておらず、敵陣の玉以外の駒が10枚以上、点数（大駒5・小駒1、持ち駒を含む）が先手28／後手27以上 */
+function sgDeclarable(cells, hands, o){
+    const k = sgKingPos(cells, o);
+    if(k < 0 || !sgInZone(k, o) || sgInCheck(cells, o)) return false;
+    let n = 0, pts = 0;
+    for(let i = 0; i < 81; i++){
+        const c = cells[i];
+        if(!c || sgOwner(c) !== o || sgType(c) === "K" || !sgInZone(i, o)) continue;
+        n++; pts += (sgType(c) === "R" || sgType(c) === "B") ? 5 : 1;
+    }
+    if(n < 10) return false;
+    SG_HAND_ORDER.forEach((t) => { const c = hands[o][t] || 0; pts += c * ((t === "R" || t === "B") ? 5 : 1); });
+    return pts >= (o === 0 ? 28 : 27);
+}
+
 function sgEncode(m){ return (m.src * 81 + m.to) * 2 + (m.promote ? 1 : 0); }
 function sgDecode(i){ i = Number(i); if(!Number.isInteger(i) || i < 0) return null; const promote = i % 2 === 1, rest = (i - (promote ? 1 : 0)) / 2; return {src:Math.floor(rest / 81), to:rest % 81, promote}; }
 function sgSquare(idx){ return (9 - (idx % 9)) + SG_KANJI[Math.floor(idx / 9) + 1]; }
 
+/** 千日手：同じ局面（持ち駒・手番とも同じ）が4回目になったら終局。連続王手をかけ続けた側がいれば、その側の負け */
+function sgRepetition(S, mover){
+    const key = S.cells.join(",") + "|" + JSON.stringify(SG_HAND_ORDER.map((t) => [S.hands[0][t] || 0, S.hands[1][t] || 0])) + "|" + S.turn;
+    S.plies.push({key, mover, check:S.check});
+    let first = -1, count = 0;
+    S.plies.forEach((p, i) => { if(p.key === key){ count++; if(first < 0) first = i; } });
+    if(count < 4) return false;
+    const cycle = S.plies.slice(first + 1);
+    const allCheck = (side) => { const mine = cycle.filter((p) => p.mover === side); return mine.length > 0 && mine.every((p) => p.check); };
+    const a = allCheck(0), b = allCheck(1);
+    S.over = true;
+    if(a && !b){ S.winner = 1; S.reason = "千日手（連続王手のため先手の負け）"; }
+    else if(b && !a){ S.winner = 0; S.reason = "千日手（連続王手のため後手の負け）"; }
+    else{ S.winner = -1; S.reason = "千日手"; }
+    return true;
+}
+
 VS_ENGINES.shogi = {
-    init:() => ({players:[null, null], turn:0, over:false, winner:-1, cells:sgInitial(), hands:[{}, {}], last:null, moves:0, check:false, reason:""}),
+    init:() => ({players:[null, null], turn:0, over:false, winner:-1, cells:sgInitial(), hands:[{}, {}], last:null, moves:0, check:false, reason:"", plies:[]}),
     apply:(S, item, sender) => {
         if(item.kind === "resign"){
             const idx = S.players.indexOf(sender);
             if(idx < 0) return;
             S.over = true; S.winner = 1 - idx; S.reason = "投了";
             return;
+        }
+        if(item.kind === "declare"){
+            if(!vsEntitled(S, sender) || !sgDeclarable(S.cells, S.hands, S.turn)) return;
+            vsClaim(S, sender);
+            S.over = true; S.winner = S.turn; S.reason = "入玉宣言"; return;
         }
         if(item.kind !== "move" || !vsEntitled(S, sender)) return;
         const m = sgDecode(item.i);
@@ -162,6 +199,7 @@ VS_ENGINES.shogi = {
         const mover = S.turn; S.turn = 1 - S.turn;
         S.check = sgInCheck(S.cells, S.turn);
         if(!sgLegal(S.cells, S.hands, S.turn, true).length){ S.over = true; S.winner = mover; S.reason = S.check ? "詰み" : "指せる手なし"; }
+        else if(sgRepetition(S, mover)) return;
         else if(S.moves >= 500){ S.over = true; S.winner = -1; S.reason = "500手で引き分け"; }
     },
     score:(S) => S.winner >= 0 ? VS_GAMES.shogi.marks[S.winner] + " " + vsName(S.players[S.winner]) + " の勝ち！" : "引き分け",
@@ -187,10 +225,12 @@ VS_ENGINES.shogi = {
         const top = flip ? 0 : 1, bottom = flip ? 1 : 0;
         return handHtml(top, myIdx === top) + '<div class="vs-sg-board">' + cellsHtml + '</div>' + handHtml(bottom, myIdx === bottom) +
             (S.check && !S.over ? '<div class="vs-status"><b>王手！</b></div>' : "") + '<div class="meta">' + S.moves + '手目' + (S.last ? '　直前：' + sgSquare(S.last.to) : "") + '</div>' +
+            (myIdx >= 0 && ctx.myTurn && sgDeclarable(S.cells, S.hands, S.turn) ? '<button type="button" class="button" data-vs="' + gid + '" data-k="declare">入玉宣言（24点）</button> ' : "") +
             (myIdx >= 0 && !S.over && S.players[1] !== null ? '<button type="button" class="button-secondary" data-vs="' + gid + '" data-k="resign">投了</button>' : "");
     },
     moveText:(item) => {
         if(item.kind === "resign") return "投了しました";
+        if(item.kind === "declare") return "入玉宣言をしました";
         const m = sgDecode(item.i);
         if(!m) return "指しました";
         return sgSquare(m.to) + (m.src >= 81 ? "に " + SG_NAMES[SG_HAND_ORDER[m.src - 81]] + " を打ちました" : "へ指しました" + (m.promote ? "（成り）" : ""));

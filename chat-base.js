@@ -835,7 +835,7 @@ async function uploadAndSend(file,kind){
         const signedResult = await client.storage.from(STORAGE_BUCKET).createSignedUrl(objectPath,60 * 60 * 24 * 7);
         if(signedResult.error) throw signedResult.error;
 
-        const payload = {
+        let payload = {
             type:kind,
             name:String(file.name || "attachment").slice(0,120),
             url:signedResult.data.signedUrl,
@@ -844,6 +844,7 @@ async function uploadAndSend(file,kind){
             size:file.size
         };
         if(feat.pendingStamp && kind === "image") payload.stamp = true;
+        if(feat.pendingGame && kind === "image") payload = Object.assign({}, feat.pendingGame, {type:"game", name:payload.name, url:payload.url, path:payload.path, size:payload.size});
 
         await sendMessagePayload(payload);
     }catch(error){

@@ -466,3 +466,27 @@ body.cf-hc :focus-visible{outline:3px solid #ffe14d;outline-offset:2px}
 .lv-attr{position:absolute;right:0;bottom:0;font-size:10px;background:#fffc;color:#333;padding:1px 4px;text-decoration:none}
 .scr-float{position:fixed;right:12px;bottom:90px;z-index:9999;border-radius:999px;padding:10px 14px;box-shadow:0 2px 8px #0005}
 .ln-status{font-size:12px;color:var(--muted)}
+
+/* ===== バッチ7：ゲーム・ロック・タイマー ===== */
+.vs-gm{display:grid;grid-template-columns:repeat(15,1fr);gap:1px;background:#a0763a;padding:2px;border-radius:6px;max-width:360px}
+.vs-gm-c{aspect-ratio:1;padding:0;border:0;border-radius:2px;background:#e8c27a;font-size:13px;line-height:1;color:#111;min-width:0}
+button.vs-gm-c:not(:disabled){cursor:pointer}button.vs-gm-c:not(:disabled):hover{background:#f3d79b}
+.vs-gm-c.last{outline:2px solid #e03131}.vs-gm-c.win{background:#ffd54a}
+.vs-ch{display:grid;grid-template-columns:repeat(8,1fr);max-width:340px;border:2px solid #5c4326;border-radius:4px;overflow:hidden}
+.vs-ch-c{aspect-ratio:1;padding:0;border:0;border-radius:0;background:#f0d9b5;min-width:0;position:relative}
+.vs-ch-c.d{background:#b58863}.vs-ch-c.last{box-shadow:inset 0 0 0 100px rgba(255,235,59,.35)}.vs-ch-c.sel{box-shadow:inset 0 0 0 3px #1971c2}
+.vs-ch-c.tgt::after{content:"";position:absolute;inset:36%;border-radius:50%;background:rgba(25,113,194,.55)}.vs-ch-c.chk{box-shadow:inset 0 0 0 100px rgba(224,49,49,.45)}
+button.vs-ch-c:not(:disabled){cursor:pointer}
+.vs-ch-p{font-size:min(7vw,30px);line-height:1}.vs-ch-p.w{color:#fff;text-shadow:0 0 2px #000,0 0 2px #000,0 0 1px #000}.vs-ch-p.b{color:#111}
+.vs-hb{display:flex;flex-direction:column;gap:2px;max-height:200px;overflow:auto;margin:4px 0}
+.vs-esh{display:flex;flex-direction:column;gap:6px}.vs-esh-r img{max-width:150px;border-radius:8px;background:#fff;border:1px solid var(--line)}
+.lk-overlay{position:fixed;inset:0;z-index:100000;background:var(--bg,#111);display:grid;place-items:center;padding:20px}
+.lk-box{display:flex;flex-direction:column;gap:10px;align-items:stretch;text-align:center;width:min(320px,100%)}
+.lk-blur{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;text-align:center;padding:20px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:rgba(0,0,0,.35);color:#fff;font-weight:700;cursor:pointer}
+.lk-blur[hidden],.lk-overlay[hidden]{display:none}
+.tm-pill{position:fixed;left:12px;bottom:90px;z-index:9998;border-radius:999px;padding:8px 14px;box-shadow:0 2px 8px #0005;font-variant-numeric:tabular-nums}
+
+.pt-freeze{position:fixed;inset:0;z-index:2147483000;background:rgba(8,12,24,.94);display:flex;align-items:center;justify-content:center;color:#fff;touch-action:none}
+.pt-freeze-box{max-width:340px;text-align:center;padding:24px;display:flex;flex-direction:column;gap:10px;align-items:center}
+.pt-count{font-size:56px;font-weight:700;font-variant-numeric:tabular-nums}
+#ptCard b{font-variant-numeric:tabular-nums}

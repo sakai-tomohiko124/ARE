@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="ARE">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co https://tile.openstreetmap.org; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://cdn.jsdelivr.net https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://geocoding-api.open-meteo.com; font-src 'self' data:; form-action 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co https://tile.openstreetmap.org; media-src 'self' blob: https://*.supabase.co; connect-src 'self' https://cdn.jsdelivr.net https://api.frankfurter.dev https://*.supabase.co wss://*.supabase.co https://api.open-meteo.com https://geocoding-api.open-meteo.com; font-src 'self' data:; form-action 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; manifest-src 'self'">
 <meta name="referrer" content="no-referrer">
 <script src="./guard.js"></script>
 <script src="./screen-early.js"></script>
@@ -141,6 +141,9 @@
         <button class="button-secondary" data-admin-view="rooms" type="button">会話一覧</button>
         <button class="button-secondary" data-admin-view="requests" type="button">削除申請</button>
         <button class="button-secondary" data-admin-view="reports" type="button">通報</button>
+        <button class="button-secondary" data-admin-view="stats" type="button">利用状況</button>
+        <button class="button-secondary" data-admin-view="announce" type="button">お知らせ</button>
+        <button class="button-secondary" data-admin-view="shop" type="button">ショップ管理</button>
         <button class="button-secondary" data-admin-view="users" type="button">ユーザー管理</button>
         <button class="button-secondary" data-admin-view="acctdel" type="button">アカウント削除</button>
         <button class="button-secondary" data-admin-view="security" type="button">セキュリティ</button>
@@ -201,6 +204,7 @@
 <script src="./chat-ai.js"></script>
 <script src="./chat-vs.js"></script>
 <script src="./chat-shogi.js"></script>
+<script src="./chat-vs2.js"></script>
 <script src="./chat-notify.js"></script>
 <script src="./chat-myai.js"></script>
 <script src="./chat-quicksend.js"></script>
@@ -225,6 +229,15 @@
 <script src="./chat-live.js"></script>
 <script src="./chat-ocr.js"></script>
 <script src="./chat-contact.js"></script>
+<script src="./chat-self.js"></script>
+<script src="./chat-timer.js"></script>
+<script src="./chat-calc.js"></script>
+<script src="./chat-shop.js"></script>
+<script src="./chat-lock.js"></script>
+<script src="./chat-admin2.js"></script>
+<script src="./chat-fun.js"></script>
+<script src="./chat-rpg.js"></script>
+<script src="./chat-points.js"></script>
 <script src="./chat-main.js"></script>
 <script src="./protect.js"></script>
 </body>

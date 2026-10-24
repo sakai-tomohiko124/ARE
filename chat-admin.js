@@ -38,6 +38,12 @@ async function renderAdmin(){
             await renderAdminBackup(client);
         }else if(feat.adminView === "users"){
             await renderAdminUsers(client);
+        }else if(feat.adminView === "stats"){
+            await renderAdminStats(client);
+        }else if(feat.adminView === "announce"){
+            await renderAdminAnnounce(client);
+        }else if(feat.adminView === "shop"){
+            await renderAdminShop(client);
         }else if(feat.adminView === "reports"){
             await renderAdminReports(client);
         }else if(feat.adminView === "requests"){

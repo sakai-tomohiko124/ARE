@@ -10,9 +10,10 @@ const STAMP_MAX = 12, STAMP_PX = 256;
 const stp = {list:[], src:null, shape:"circle", zoom:1, ox:0, oy:0, bg:false, thr:40, pre:null};
 
 // ---------- お絵かき ----------
-function openDraw(){
+function openDraw(opts){
+    dr.game = opts && opts.game ? opts.game : null;
     if(!state.currentRoom){ showToast("先にチャットを開いてください。"); return; }
-    openSheet(toolHead("✏️ お絵かき", "描いた絵を、画像としてこのチャットに送れます") +
+    openSheet(toolHead(dr.game ? "🖍️ 絵しりとり" : "✏️ お絵かき", dr.game ? "ことばを絵にして送ります（文字は書かないでね）" : "描いた絵を、画像としてこのチャットに送れます") +
         '<canvas id="drCanvas" width="640" height="640" style="width:100%;aspect-ratio:1/1;background:#fff;border-radius:12px;touch-action:none;border:1px solid var(--line)" aria-label="お絵かきのキャンバス"></canvas>' +
         '<div class="row" style="justify-content:flex-start" id="drColors">' + DR_COLORS.map((c) => '<button type="button" data-t="draw:color" data-c="' + c + '" aria-label="色 ' + c + '" style="width:30px;height:30px;border-radius:50%;background:' + c + ';border:2px solid var(--line);padding:0"></button>').join("") +
         '<input type="color" id="drPick" data-t="draw:pick" value="#111111" aria-label="好きな色" style="width:36px;height:30px;padding:0;border:0;background:none"></div>' +
@@ -73,7 +74,8 @@ async function onDrawAction(action, node){
         const blob = await new Promise((res) => dr.c.toBlob(res, "image/png"));
         if(!blob){ showToast("画像にできませんでした。"); return; }
         const file = new File([blob], "お絵かき-" + Date.now() + ".png", {type:"image/png"});
-        closeSheet();
+        const game = dr.game; closeSheet();
+        if(game){ feat.pendingGame = game; try{ await uploadAndSend(file, "image"); } finally{ feat.pendingGame = null; } return; }
         await handleFiles([file], "image");
     }
 }
